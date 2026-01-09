@@ -4,497 +4,491 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AdaptLearn Adventure - The Knowledge Quest</title>
+    <title>AdaptLearn Adventure</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&amp;display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #1a1a2e; color: #e2e8f0; } /* Dark Theme Base */
-        .btn-game { 
-            background: linear-gradient(to bottom, #f59e0b, #d97706); border: 2px solid #78350f; 
-            box-shadow: 0 4px 0 #78350f; color: white; text-shadow: 1px 1px 0 #78350f;
-            transition: all 0.1s;
-        }
-        .btn-game:active { transform: translateY(4px); box-shadow: 0 0 0 #78350f; }
-        .glass-panel { background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(8px); border: 2px solid rgba(255,255,255,0.1); border-radius: 1rem; }
-        .map-path { stroke: #6366f1; stroke-width: 4; stroke-dasharray: 10; animation: dash 20s linear infinite; }
-        @keyframes dash { to { stroke-dashoffset: 1000; } }
-        @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        .avatar-bob { animation: bob 3s ease-in-out infinite; }
-        .fade-in { animation: fadeIn 0.4s ease-out; }
-        .animate-zoom-in { animation: zoomIn 0.3s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        body { font-family: 'Sarabun', sans-serif; background-color: #0f172a; color: #e2e8f0; overflow-x: hidden; }
         
-        /* Mobile Fixes */
-        @media (max-width: 640px) {
-            #hudPlayer, #hudResources { display: none !important; } /* Hide complex HUD on mobile */
-            #hudMobileMenu { display: block !important; }
-        }
+        /* Glassmorphism */
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .glass-strong { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(16px); border-right: 1px solid rgba(255,255,255,0.05); }
+        
+        /* Animations */
+        .hover-bounce:hover { transform: translateY(-3px); }
+        .active-scale:active { transform: scale(0.95); }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        /* Map Styles */
+        .map-path { stroke: #6366f1; stroke-width: 3; stroke-dasharray: 8; animation: dash 30s linear infinite; opacity: 0.6; }
+        @keyframes dash { to { stroke-dashoffset: 1000; } }
+        
+        /* Nav Item Styles */
+        .nav-item { @apply flex items-center gap-4 p-3 rounded-xl transition-all duration-200 text-slate-400 hover:bg-slate-800 hover:text-white cursor-pointer; }
+        .nav-item.active { @apply bg-indigo-600/20 text-indigo-400 border border-indigo-600/30; }
+        .nav-icon { @apply w-10 h-10 flex items-center justify-center rounded-lg bg-slate-800 text-xl transition-colors; }
+        .nav-item:hover .nav-icon { @apply bg-indigo-600 text-white; }
+        .nav-item.active .nav-icon { @apply bg-indigo-600 text-white shadow-lg shadow-indigo-500/30; }
     </style>
 </head>
 
-<body class="bg-slate-900 min-h-screen bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] overflow-x-hidden">
-    
-    <!-- Top Bar (Game HUD) -->
-    <header class="fixed top-0 w-full z-50 p-2 sm:p-4 pointer-events-none">
-        <div class="max-w-7xl mx-auto flex justify-between items-center pointer-events-auto bg-slate-900/80 backdrop-blur-md rounded-2xl p-2 border border-slate-700 shadow-xl">
-            
-            <!-- Logo -->
-            <div class="cursor-pointer group flex items-center gap-2 pl-2" onclick="location.reload()">
-                <span class="text-2xl">🛡️</span>
-                <h1 class="text-lg sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 to-yellow-600 drop-shadow-sm hidden sm:block">AdaptLearn</h1>
-            </div>
+<body class="bg-slate-900 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
 
-            <!-- PC HUD -->
-            <div class="hidden sm:flex gap-3 items-center" id="hudPC">
-                <div class="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full border border-yellow-600/50">
-                    <span class="text-lg">🪙</span> <span class="font-bold text-yellow-400 font-mono" id="hudCoins">0</span>
-                </div>
-                <div class="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full border border-orange-600/50">
-                    <span class="text-lg">🔥</span> <span class="font-bold text-orange-400 font-mono" id="hudStreak">0</span>
-                </div>
-                <div class="h-8 w-[1px] bg-slate-600 mx-2"></div>
-                <div class="flex items-center gap-3 cursor-pointer hover:bg-slate-800 p-1 rounded-lg transition" onclick="window.location.href='/profile.html'">
-                    <div class="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-sm border border-white" id="hudAvatar">🙂</div>
-                    <div class="text-sm font-bold text-white max-w-[100px] truncate" id="hudName">Player</div>
-                </div>
-            </div>
-
-            <!-- Mobile Login / Menu -->
-            <div id="hudGuest" class="hidden">
-                <a href="/login.html" class="btn-game px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap">Login</a>
-            </div>
-            
-            <!-- Mobile Menu Toggle (Logged In) -->
-            <button id="mobileMenuBtn" class="hidden sm:hidden text-white text-2xl p-2" onclick="AdaptLearnPro.ui.toggleMobileMenu()">☰</button>
+    <!-- LOGIN / GUEST SCREEN -->
+    <div id="guest-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] hidden">
+        <div class="text-center p-8 max-w-md w-full glass rounded-3xl shadow-2xl border border-slate-700 fade-in">
+            <div class="text-6xl mb-6">🛡️</div>
+            <h1 class="text-3xl font-bold text-white mb-2">AdaptLearn Adventure</h1>
+            <p class="text-slate-400 mb-8">Embark on your knowledge quest!</p>
+            <a href="/login.html" class="block w-full py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold rounded-xl shadow-lg transition transform hover:scale-105 active:scale-95 mb-4">
+                Login / Register
+            </a>
+            <div class="text-xs text-slate-500">v2.0.0 • Connected to Server</div>
         </div>
-    </header>
-
-    <!-- Side Buttons (Desktop) -->
-    <div class="fixed left-6 top-32 z-40 hidden sm:flex flex-col gap-4">
-        <button onclick="AdaptLearnPro.leaderboard.open()" class="w-14 h-14 bg-yellow-500 hover:bg-yellow-400 text-slate-900 rounded-full shadow-xl border-4 border-yellow-700 flex items-center justify-center text-3xl transition transform hover:scale-110 active:scale-95" title="Leaderboard">🏆</button>
-    <!-- Shop Button (Left Side Fixed - Below Leaderboard) -->
-    <button onclick="AdaptLearnPro.shop.open()" class="fixed left-6 top-44 w-14 h-14 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-xl border-4 border-blue-800 flex items-center justify-center text-3xl z-40 transition transform hover:scale-110 active:scale-95" title="Item Shop">
-        🛒
-    </button>
-
-    <!-- Logout Button (Left Side Fixed - Below Shop) -->
-    <button onclick="AdaptLearnPro.auth.logout()" class="fixed left-6 top-64 w-14 h-14 bg-red-600 hover:bg-red-500 text-white rounded-full shadow-xl border-4 border-red-800 flex items-center justify-center text-3xl z-40 transition transform hover:scale-110 active:scale-95" title="Logout">
-        🚪
-    </button>
     </div>
 
-    <!-- Mobile Menu Overlay -->
-    <div id="mobileMenu" class="fixed inset-0 bg-slate-900/95 z-[60] hidden flex-col items-center justify-center space-y-6 animate-zoom-in">
-        <button onclick="AdaptLearnPro.ui.toggleMobileMenu()" class="absolute top-4 right-4 text-white text-4xl">✕</button>
-        <div class="text-center mb-4">
-            <div class="w-20 h-20 bg-indigo-600 rounded-full flex items-center justify-center text-4xl border-4 border-white mx-auto mb-2" id="mobAvatar">🙂</div>
-            <div class="text-xl font-bold text-white" id="mobName">Player</div>
-        </div>
-        <button onclick="AdaptLearnPro.leaderboard.open(); AdaptLearnPro.ui.toggleMobileMenu()" class="text-2xl font-bold text-yellow-400 flex items-center gap-2">🏆 Leaderboard</button>
-        <button onclick="AdaptLearnPro.shop.open(); AdaptLearnPro.ui.toggleMobileMenu()" class="text-2xl font-bold text-blue-400 flex items-center gap-2">🛒 Item Shop</button>
-        <a href="/profile.html" class="text-2xl font-bold text-white">👤 Profile</a>
-        <a href="/admin.html" id="mobLinkAdmin" class="hidden text-xl font-bold text-slate-400">🛠️ Instructor</a>
-        <button onclick="AdaptLearnPro.auth.logout()" class="text-xl font-bold text-red-500 mt-8">🚪 Logout</button>
-    </div>
-
-    <div class="pt-24 pb-12 px-4 max-w-7xl mx-auto min-h-screen">
+    <!-- MAIN APP LAYOUT -->
+    <div id="app-layout" class="flex h-screen hidden">
         
-        <!-- DASHBOARD (LOBBY) -->
-        <div id="dashboard-content" class="tab-content hidden animate-zoom-in">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- SIDEBAR (Desktop) -->
+        <aside class="w-20 lg:w-64 glass-strong hidden md:flex flex-col z-40 transition-all duration-300">
+            <!-- Logo -->
+            <div class="h-20 flex items-center justify-center lg:justify-start lg:px-6 border-b border-slate-800">
+                <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white text-xl shadow-lg">🧠</div>
+                <span class="ml-3 font-bold text-lg text-white hidden lg:block tracking-wide">AdaptLearn</span>
+            </div>
+
+            <!-- Nav Menu -->
+            <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+                <div onclick="App.ui.tab('dashboard')" class="nav-item active" id="nav-dashboard">
+                    <div class="nav-icon"><i class="fa-solid fa-map"></i></div>
+                    <span class="hidden lg:block font-medium">Adventure</span>
+                </div>
+                <div onclick="App.ui.tab('leaderboard')" class="nav-item" id="nav-leaderboard">
+                    <div class="nav-icon"><i class="fa-solid fa-trophy"></i></div>
+                    <span class="hidden lg:block font-medium">Leaderboard</span>
+                </div>
+                <div onclick="App.ui.tab('shop')" class="nav-item" id="nav-shop">
+                    <div class="nav-icon"><i class="fa-solid fa-store"></i></div>
+                    <span class="hidden lg:block font-medium">Item Shop</span>
+                </div>
+                <div onclick="window.location.href='/profile.html'" class="nav-item">
+                    <div class="nav-icon"><i class="fa-solid fa-user-astronaut"></i></div>
+                    <span class="hidden lg:block font-medium">My Profile</span>
+                </div>
                 
-                <!-- Main Character Showcase -->
-                <div class="lg:col-span-5 flex flex-col items-center justify-center min-h-[40vh] relative">
-                    <div class="absolute inset-0 bg-indigo-500/10 blur-[100px] rounded-full"></div>
-                    
-                    <!-- Avatar -->
-                    <div class="relative avatar-bob group cursor-pointer" onclick="location.href='/profile.html'">
-                        <div class="w-48 h-48 sm:w-64 sm:h-64 bg-gradient-to-b from-slate-700 to-slate-800 rounded-3xl border-4 border-slate-600 shadow-2xl flex items-center justify-center text-[6rem] sm:text-[10rem] relative z-10 group-hover:border-indigo-400 transition transform group-hover:scale-105">
-                            <span id="lobbyAvatar">🙂</span>
-                        </div>
-                        <div class="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 px-6 py-2 rounded-xl border border-slate-600 whitespace-nowrap z-20 shadow-lg">
-                            <span class="text-slate-400 text-xs uppercase font-bold tracking-widest block text-center mb-1">Class</span>
-                            <span class="text-indigo-400 font-bold text-lg" id="lobbyRole">Novice</span>
+                <!-- Admin Only -->
+                <a href="/admin.html" id="menu-admin" class="nav-item hidden">
+                    <div class="nav-icon bg-slate-800 text-yellow-500"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                    <span class="hidden lg:block font-medium text-yellow-500">Instructor</span>
+                </a>
+            </nav>
+
+            <!-- Bottom Action (Logout) -->
+            <div class="p-4 border-t border-slate-800">
+                <button onclick="App.auth.logout()" class="nav-item w-full hover:bg-red-500/10 hover:text-red-400 group">
+                    <div class="nav-icon group-hover:bg-red-500 group-hover:text-white"><i class="fa-solid fa-right-from-bracket"></i></div>
+                    <span class="hidden lg:block font-medium">Logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 flex flex-col relative overflow-hidden">
+            
+            <!-- Mobile Header -->
+            <header class="md:hidden h-16 glass flex items-center justify-between px-4 z-40">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white">🧠</div>
+                    <span class="font-bold text-white">AdaptLearn</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-1 bg-slate-800 px-2 py-1 rounded-full border border-slate-700">
+                        <span>🪙</span><span class="text-xs font-bold text-yellow-400" id="mob-coins">0</span>
+                    </div>
+                    <img src="" id="mob-avatar" class="w-8 h-8 rounded-full bg-slate-700 border border-slate-500" onclick="window.location.href='/profile.html'">
+                </div>
+            </header>
+
+            <!-- Top HUD (Desktop) -->
+            <div class="hidden md:flex justify-between items-center px-8 py-4 z-30">
+                <div class="flex items-center gap-4">
+                    <h2 class="text-2xl font-bold text-white" id="page-title">World Map</h2>
+                </div>
+                <div class="flex items-center gap-6 glass px-6 py-2 rounded-2xl">
+                    <div class="flex items-center gap-3" title="Your Wealth">
+                        <div class="w-10 h-10 rounded-full bg-yellow-500/20 text-yellow-400 flex items-center justify-center text-xl border border-yellow-500/50">🪙</div>
+                        <div>
+                            <div class="text-[10px] text-slate-400 uppercase font-bold">Coins</div>
+                            <div class="text-lg font-bold text-white leading-none" id="hud-coins">0</div>
                         </div>
                     </div>
+                    <div class="w-[1px] h-8 bg-slate-700"></div>
+                    <div class="flex items-center gap-3" title="Login Streak">
+                        <div class="w-10 h-10 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center text-xl border border-orange-500/50">🔥</div>
+                        <div>
+                            <div class="text-[10px] text-slate-400 uppercase font-bold">Streak</div>
+                            <div class="text-lg font-bold text-white leading-none" id="hud-streak">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                    <!-- Daily Quest Board -->
-                    <div class="mt-16 w-full max-w-md glass-panel p-6 transform -rotate-1 hover:rotate-0 transition duration-300 relative mx-4">
-                        <div class="absolute -top-3 -right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-lg animate-bounce">NEW!</div>
-                        <h3 class="text-yellow-400 font-bold text-lg mb-4 flex items-center gap-2">📜 Daily Quests</h3>
-                        <div class="space-y-3">
-                            <div class="bg-slate-800/50 p-3 rounded-lg flex items-center justify-between border border-slate-700 hover:bg-slate-700/50 transition">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-6 h-6 rounded-full border border-green-500 bg-green-500/20 text-green-500 flex items-center justify-center text-xs shadow-[0_0_10px_rgba(34,197,94,0.4)]">✓</div>
-                                    <span class="text-sm text-slate-300 font-medium">Daily Login</span>
+            <!-- Content Scroll Area -->
+            <div class="flex-1 overflow-y-auto overflow-x-hidden relative custom-scrollbar p-4 md:p-8" id="content-area">
+                
+                <!-- 1. DASHBOARD VIEW -->
+                <div id="view-dashboard" class="view-section fade-in space-y-8">
+                    <!-- Hero Section -->
+                    <div class="flex flex-col md:flex-row items-center gap-8 bg-gradient-to-r from-indigo-900/50 to-slate-900/50 p-8 rounded-3xl border border-indigo-500/30 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 blur-[80px] rounded-full"></div>
+                        
+                        <div class="relative z-10">
+                            <div class="w-32 h-32 md:w-40 md:h-40 bg-slate-800 rounded-full border-4 border-indigo-500 flex items-center justify-center text-6xl shadow-2xl avatar-bob" id="dash-avatar">🙂</div>
+                            <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap shadow-lg" id="dash-role">Student</div>
+                        </div>
+                        
+                        <div class="flex-1 text-center md:text-left z-10">
+                            <h2 class="text-3xl font-bold text-white mb-2">Welcome back, <span id="dash-name" class="text-indigo-400">Hero</span>!</h2>
+                            <p class="text-slate-400 mb-6 max-w-lg">Your journey continues. Check your daily quests or dive into the adventure map below.</p>
+                            
+                            <!-- Level Progress -->
+                            <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700 max-w-md">
+                                <div class="flex justify-between text-xs font-bold text-slate-400 mb-2">
+                                    <span>Level <span id="dash-lvl" class="text-white">1</span></span>
+                                    <span id="dash-xp-text">0 / 100 XP</span>
                                 </div>
-                                <span class="text-xs font-bold text-yellow-500 bg-yellow-900/30 px-2 py-1 rounded border border-yellow-700">+10 🪙</span>
+                                <div class="w-full h-3 bg-slate-700 rounded-full overflow-hidden">
+                                    <div id="dash-xp-bar" class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 w-0 transition-all duration-1000"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Adventure Map -->
-                <div class="lg:col-span-7 relative">
-                    <h2 class="text-2xl sm:text-3xl font-black text-white mb-6 drop-shadow-md flex flex-wrap items-center gap-3 px-4">
-                        <span>🗺️</span> Map <span id="mapTitleBadge" class="text-sm font-normal text-slate-400 bg-slate-800 px-3 py-1 rounded-lg border border-slate-700">Zone Selection</span>
-                    </h2>
-                    
-                    <div class="relative min-h-[500px] sm:min-h-[600px] bg-slate-800/50 rounded-3xl border-4 border-slate-700 p-4 sm:p-8 shadow-inner overflow-hidden custom-scrollbar mx-2 sm:mx-0" id="mapContainer">
-                        <svg class="absolute inset-0 w-full h-full pointer-events-none z-0" id="mapLines"></svg>
-                        <div id="mapNodes" class="relative z-10 h-full w-full"></div>
+                    <!-- Adventure Map Container -->
+                    <div class="relative min-h-[600px] bg-slate-900 rounded-3xl border border-slate-700 shadow-inner overflow-hidden" id="map-wrapper">
+                        <div class="absolute top-4 left-4 z-20 flex gap-2">
+                            <span class="bg-slate-800/80 backdrop-blur text-white px-4 py-2 rounded-lg text-sm font-bold border border-slate-600">🗺️ World 1</span>
+                        </div>
+                        <svg class="absolute inset-0 w-full h-full z-0" id="map-svg"></svg>
+                        <div id="map-nodes" class="relative z-10 w-full h-full"></div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- AI TUTOR (Floating) -->
-        <div id="ai-tutor-content" class="tab-content hidden animate-zoom-in fixed bottom-24 right-4 sm:right-8 z-50">
-             <div class="w-80 sm:w-96 bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 h-[500px] flex flex-col overflow-hidden">
-                <div class="p-4 bg-slate-900 border-b border-slate-700 flex justify-between items-center">
-                    <h2 class="font-bold text-indigo-400 flex items-center gap-2 text-lg">🤖 AI Game Master</h2>
-                    <button onclick="AdaptLearnPro.ui.toggleAI()" class="text-slate-400 hover:text-white transition bg-slate-700 rounded-full w-8 h-8 flex items-center justify-center">✕</button>
+                <!-- 2. LEADERBOARD VIEW -->
+                <div id="view-leaderboard" class="view-section hidden fade-in max-w-3xl mx-auto">
+                    <div class="text-center mb-8">
+                        <div class="text-6xl mb-4">🏆</div>
+                        <h2 class="text-3xl font-bold text-white">Hall of Fame</h2>
+                        <p class="text-slate-400">Top heroes of the realm</p>
+                    </div>
+                    <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden" id="lb-container">
+                        <!-- List injected here -->
+                    </div>
                 </div>
-                <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-800/50 scroll-smooth">
-                    <div class="flex items-start gap-3">
-                        <div class="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-white text-xs shadow-lg border border-indigo-400">🤖</div>
-                        <div class="bg-slate-700 p-3 rounded-2xl rounded-tl-none shadow-sm border border-slate-600 text-slate-200 text-xs">
-                            Greetings! Need a hint?
+
+                <!-- 3. SHOP VIEW -->
+                <div id="view-shop" class="view-section hidden fade-in">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-2 space-y-6">
+                            <h2 class="text-2xl font-bold text-white flex items-center gap-3"><span class="text-3xl">🏪</span> Marketplace</h2>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="shop-items"></div>
+                        </div>
+                        <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 h-fit">
+                            <h3 class="font-bold text-white mb-4 border-b border-slate-700 pb-2">🎒 Inventory</h3>
+                            <div id="user-inventory" class="space-y-2 text-sm text-slate-400">Empty...</div>
                         </div>
                     </div>
                 </div>
-                <div class="p-3 bg-slate-900 border-t border-slate-700 flex gap-2 relative z-10">
-                    <input id="chatInput" type="text" class="flex-1 bg-slate-800 text-white border border-slate-600 rounded-xl px-3 py-2 text-sm outline-none focus:border-indigo-500" placeholder="Type here...">
-                    <button onclick="AdaptLearnPro.ai.send()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-lg">Send</button>
+
+            </div>
+
+            <!-- Mobile Bottom Nav -->
+            <nav class="md:hidden h-16 glass-strong flex justify-around items-center px-2 z-50 fixed bottom-0 w-full border-t border-slate-800">
+                <button onclick="App.ui.tab('dashboard')" class="p-2 text-slate-400 hover:text-indigo-400 active:text-indigo-500 flex flex-col items-center">
+                    <i class="fa-solid fa-map text-lg"></i><span class="text-[10px]">Map</span>
+                </button>
+                <button onclick="App.ui.tab('leaderboard')" class="p-2 text-slate-400 hover:text-yellow-400 flex flex-col items-center">
+                    <i class="fa-solid fa-trophy text-lg"></i><span class="text-[10px]">Rank</span>
+                </button>
+                <div class="relative -top-5">
+                    <button onclick="App.ai.toggle()" class="w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center text-white shadow-lg border-4 border-slate-900 hover:scale-110 transition">
+                        <i class="fa-solid fa-robot text-xl"></i>
+                    </button>
                 </div>
-             </div>
-        </div>
+                <button onclick="App.ui.tab('shop')" class="p-2 text-slate-400 hover:text-blue-400 flex flex-col items-center">
+                    <i class="fa-solid fa-store text-lg"></i><span class="text-[10px]">Shop</span>
+                </button>
+                <button onclick="App.auth.logout()" class="p-2 text-slate-400 hover:text-red-400 flex flex-col items-center">
+                    <i class="fa-solid fa-door-open text-lg"></i><span class="text-[10px]">Exit</span>
+                </button>
+            </nav>
 
-    </div>
-
-    <!-- Floating Action Button for AI -->
-    <button id="aiFloatingBtn" onclick="AdaptLearnPro.ui.toggleAI()" class="fixed bottom-6 right-4 sm:bottom-8 sm:right-8 w-14 h-14 sm:w-16 sm:h-16 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full shadow-2xl flex items-center justify-center text-3xl z-40 border-4 border-slate-800 hover:scale-110 transition animate-bounce hidden" title="Open AI Chat">
-        🤖
-    </button>
-
-    <!-- Modals (Shop/Leaderboard) -->
-    <!-- Shop Modal -->
-    <div id="shopModal" class="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 w-full max-w-4xl h-[85vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-zoom-in border-4 border-blue-600">
-            <div class="bg-blue-900 p-4 flex justify-between items-center shadow-lg">
-                <h2 class="text-2xl font-black text-white">🏪 Item Shop</h2>
-                <button onclick="document.getElementById('shopModal').classList.add('hidden')" class="text-white text-2xl">✕</button>
-            </div>
-            <div class="flex-1 flex flex-col sm:flex-row overflow-hidden">
-                <div class="flex-1 p-4 overflow-y-auto bg-slate-900" id="shop-list"></div>
-                <div class="sm:w-72 p-4 bg-slate-800 border-l border-slate-700 overflow-y-auto" id="inventory-list">
-                    <h3 class="font-bold text-white mb-4">🎒 Inventory</h3>
+            <!-- AI Chat Floating (Desktop) -->
+            <div id="ai-widget" class="hidden md:flex fixed bottom-8 right-8 z-50 flex-col items-end gap-4">
+                <div id="ai-window" class="w-80 h-96 bg-slate-800 rounded-2xl shadow-2xl border border-slate-600 flex flex-col hidden overflow-hidden animate-zoom-in">
+                    <div class="bg-slate-900 p-3 flex justify-between items-center border-b border-slate-700">
+                        <span class="font-bold text-indigo-400 text-sm">🤖 AI Game Master</span>
+                        <button onclick="App.ai.toggle()" class="text-slate-500 hover:text-white">✕</button>
+                    </div>
+                    <div id="ai-chat-box" class="flex-1 p-3 overflow-y-auto space-y-3 bg-slate-800/50 text-sm">
+                        <div class="text-slate-400 text-center text-xs mt-4">Ask me anything about your quest!</div>
+                    </div>
+                    <div class="p-2 bg-slate-900 border-t border-slate-700 flex gap-2">
+                        <input id="ai-input" class="flex-1 bg-slate-800 border border-slate-600 rounded-lg px-3 py-1 text-sm text-white outline-none focus:border-indigo-500" placeholder="Type...">
+                        <button onclick="App.ai.send()" class="bg-indigo-600 text-white px-3 py-1 rounded-lg text-xs font-bold">Send</button>
+                    </div>
                 </div>
+                <button onclick="App.ai.toggle()" class="w-14 h-14 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full shadow-xl flex items-center justify-center text-2xl transition hover:scale-110 active:scale-95">
+                    <i class="fa-solid fa-robot"></i>
+                </button>
             </div>
-        </div>
+
+        </main>
     </div>
 
-    <!-- Leaderboard Modal -->
-    <div id="leaderboardModal" class="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 w-full max-w-md h-[80vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-zoom-in border-4 border-yellow-600">
-            <div class="bg-yellow-700 p-4 flex justify-between items-center shadow-lg">
-                <h2 class="text-2xl font-black text-white">🏆 Leaderboard</h2>
-                <button onclick="document.getElementById('leaderboardModal').classList.add('hidden')" class="text-white text-2xl">✕</button>
-            </div>
-            <div class="flex-1 overflow-y-auto p-4 space-y-2" id="lb-list"></div>
-            <div class="bg-slate-800 p-4 flex items-center gap-4 border-t border-slate-700">
-                <div class="font-bold text-slate-500 w-6 text-center" id="lb-self-rank">-</div>
-                <div class="flex-1 text-white font-bold" id="lb-self-name">You</div>
-                <div class="text-yellow-400 font-bold" id="lb-self-xp">0 XP</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Logic -->
+    <!-- JAVASCRIPT LOGIC -->
     <script>
-        const AdaptLearnPro = {
-            data: { activities: [], progress: [], user: null, currentWorld: null },
+        const App = {
+            data: { user: null, activities: [], items: [], inventory: [] },
             
-            init: {
-                run: async () => {
-                    AdaptLearnPro.auth.check();
-                    // If no user, show login immediately
-                    if(!AdaptLearnPro.data.user) {
-                        AdaptLearnPro.render.guest();
-                        return;
-                    }
+            init: async () => {
+                // 1. Check Auth
+                const uid = sessionStorage.getItem('user_id');
+                if (!uid) {
+                    document.getElementById('guest-screen').classList.remove('hidden');
+                    return;
+                }
 
-                    await AdaptLearnPro.api.fetchAll();
-                    AdaptLearnPro.render.nav();
-                    AdaptLearnPro.render.dashboard();
-                    document.getElementById('dashboard-content').classList.remove('hidden');
+                // 2. Load UI
+                document.getElementById('app-layout').classList.remove('hidden');
+                
+                // 3. Fetch Data
+                await App.api.loadAll();
+                
+                // 4. Render Initial State
+                App.render.hud();
+                App.render.dashboard();
+                
+                // 5. Setup Listeners
+                document.getElementById('ai-input').addEventListener('keypress', (e) => e.key === 'Enter' && App.ai.send());
+            },
+
+            ui: {
+                tab: (name) => {
+                    document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+                    document.getElementById(`view-${name}`).classList.remove('hidden');
                     
-                    AdaptLearnPro.init.listeners();
-                },
-                listeners: () => {
-                    const inp = document.getElementById('chatInput');
-                    if(inp) inp.addEventListener('keypress', (e) => e.key === 'Enter' && AdaptLearnPro.ai.send());
+                    // Update Active Nav
+                    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                    const navBtn = document.getElementById(`nav-${name}`);
+                    if(navBtn) navBtn.classList.add('active');
+
+                    // Trigger specific renders
+                    if (name === 'leaderboard') App.render.leaderboard();
+                    if (name === 'shop') App.render.shop();
+                    if (name === 'dashboard') App.render.map();
                 }
             },
 
             auth: {
-                check: () => {
-                    const uid = sessionStorage.getItem('user_id');
-                    if(uid) AdaptLearnPro.data.user = { 
-                        id: uid, name: sessionStorage.getItem('user_name'), role: sessionStorage.getItem('user_role'),
-                        level: 1, xp: 0, coins: 0, streak: 0 // defaults
-                    };
-                },
                 logout: () => { sessionStorage.clear(); window.location.reload(); }
             },
 
-            ui: {
-                toggleMobileMenu: () => {
-                    const menu = document.getElementById('mobileMenu');
-                    if(menu.classList.contains('hidden')) menu.classList.remove('hidden', 'flex');
-                    else menu.classList.add('hidden');
-                    menu.style.display = menu.classList.contains('hidden') ? 'none' : 'flex';
-                },
-                toggleAI: () => {
-                    const ai = document.getElementById('ai-tutor-content');
-                    ai.classList.toggle('hidden');
-                },
-                backToWorlds: () => {
-                    AdaptLearnPro.data.currentWorld = null;
-                    AdaptLearnPro.render.dashboard();
-                },
-                selectWorld: (cat) => {
-                    AdaptLearnPro.data.currentWorld = cat;
-                    AdaptLearnPro.render.dashboard();
-                }
-            },
-
             api: {
-                fetchAll: async () => {
+                loadAll: async () => {
                     try {
+                        const uid = sessionStorage.getItem('user_id');
                         const [uRes, aRes] = await Promise.all([
-                            fetch(`/api/analytics?userId=${AdaptLearnPro.data.user.id}`),
+                            fetch(`/api/analytics?userId=${uid}`), // Get User + Progress
                             fetch('/api/activities')
                         ]);
-                        const uData = await uRes.json();
-                        const aData = await aRes.json();
                         
-                        AdaptLearnPro.data.activities = aData;
-                        AdaptLearnPro.data.progress = uData;
-                        if(uData.user) AdaptLearnPro.data.user = { ...AdaptLearnPro.data.user, ...uData.user };
-                    } catch(e) { console.error('API Error', e); }
+                        const userData = await uRes.json();
+                        const actData = await aRes.json();
+
+                        App.data.user = userData.user || {};
+                        App.data.activities = actData || [];
+                        // Save progress if needed
+                    } catch (e) { console.error("Load Error", e); }
                 }
             },
 
             render: {
-                guest: () => {
-                    document.getElementById('hudGuest').classList.remove('hidden');
-                    document.getElementById('hudPC').classList.add('hidden');
-                    document.getElementById('dashboard-content').innerHTML = `
-                        <div class="text-center py-20 text-white">
-                            <h1 class="text-4xl font-bold mb-4">Welcome to AdaptLearn Adventure</h1>
-                            <p class="text-slate-400 mb-8">Please login to start your journey.</p>
-                            <a href="/login.html" class="btn-game px-8 py-3 rounded-xl text-xl font-bold shadow-lg">Start Game</a>
-                        </div>
-                    `;
-                    document.getElementById('dashboard-content').classList.remove('hidden');
-                },
-                nav: () => {
-                    const u = AdaptLearnPro.data.user;
-                    if(u) {
-                        document.getElementById('hudGuest').classList.add('hidden');
-                        document.getElementById('hudPC').classList.remove('hidden');
-                        document.getElementById('mobileMenuBtn').classList.remove('hidden');
-                        document.getElementById('aiFloatingBtn').classList.remove('hidden');
-                        
-                        // Populate Data
-                        document.getElementById('hudCoins').innerText = u.coins || 0;
-                        document.getElementById('hudStreak').innerText = u.streak || 0;
-                        document.getElementById('hudName').innerText = u.name;
-                        document.getElementById('hudAvatar').innerText = u.avatar || '🙂';
-                        
-                        // Mobile Menu Data
-                        document.getElementById('mobName').innerText = u.name;
-                        document.getElementById('mobAvatar').innerText = u.avatar || '🙂';
-                        if(u.role === 'admin' || u.role === 'teacher') document.getElementById('mobLinkAdmin').classList.remove('hidden');
+                hud: () => {
+                    const u = App.data.user;
+                    if(!u) return;
+                    // Desktop HUD
+                    document.getElementById('hud-coins').innerText = (u.coins || 0).toLocaleString();
+                    document.getElementById('hud-streak').innerText = u.streak || 0;
+                    
+                    // Mobile Header
+                    document.getElementById('mob-coins').innerText = (u.coins || 0);
+                    const avatarUrl = (u.avatar && u.avatar.length > 2) ? u.avatar : null;
+                    if (avatarUrl) document.getElementById('mob-avatar').src = avatarUrl;
+                    else document.getElementById('mob-avatar').style.display = 'none';
+
+                    // Admin Menu Toggle
+                    if (u.role === 'admin' || u.role === 'teacher') {
+                        document.getElementById('menu-admin').classList.remove('hidden');
                     }
                 },
                 dashboard: () => {
-                    const u = AdaptLearnPro.data.user;
-                    if(!u) return;
+                    const u = App.data.user;
+                    document.getElementById('dash-name').innerText = u.name;
+                    document.getElementById('dash-role').innerText = u.role.toUpperCase();
+                    document.getElementById('dash-lvl').innerText = u.level;
                     
-                    document.getElementById('lobbyAvatar').innerText = u.avatar || '🙂';
-                    document.getElementById('lobbyRole').innerText = u.role || 'Novice';
+                    // XP Bar
+                    const nextXP = u.level * 100;
+                    const pct = Math.min(((u.xp || 0) / nextXP) * 100, 100);
+                    document.getElementById('dash-xp-bar').style.width = `${pct}%`;
+                    document.getElementById('dash-xp-text').innerText = `${u.xp || 0} / ${nextXP} XP`;
+
+                    if (u.avatar && u.avatar.length < 5) document.getElementById('dash-avatar').innerText = u.avatar; // Emoji
                     
-                    const mapTitle = document.querySelector('#dashboard-content h2'); 
-                    if (AdaptLearnPro.data.currentWorld) {
-                        if(mapTitle) mapTitle.innerHTML = `
-                            <button onclick="AdaptLearnPro.ui.backToWorlds()" class="mr-3 text-white hover:text-yellow-400 transition bg-slate-800 rounded-full w-10 h-10 text-xl border border-slate-600">⬅️</button>
-                            <span>🗺️</span> ${AdaptLearnPro.data.currentWorld}
-                        `;
-                        AdaptLearnPro.map.render(AdaptLearnPro.data.currentWorld);
-                    } else {
-                        if(mapTitle) mapTitle.innerHTML = `<span>🌌</span> Galactic Map`;
-                        AdaptLearnPro.render.worlds();
-                    }
+                    App.render.map();
                 },
-                worlds: () => {
-                    const acts = AdaptLearnPro.data.activities;
-                    const container = document.getElementById('mapNodes');
-                    const svg = document.getElementById('mapLines');
-                    if(!container || !svg) return;
-                    
+                map: () => {
+                    // Simple Vertical Map Render Logic
+                    const container = document.getElementById('map-nodes');
+                    const svg = document.getElementById('map-svg');
                     container.innerHTML = ''; svg.innerHTML = '';
-                    document.getElementById('mapContainer').style.background = 'radial-gradient(circle at center, #0f172a 0%, #020617 100%)'; 
-
-                    const categories = [...new Set(acts.map(a => a.category || 'General'))];
                     
-                    categories.forEach((cat, i) => {
-                        const row = Math.floor(i / 2);
-                        const col = i % 2;
-                        
-                        const planet = document.createElement('div');
-                        planet.className = `absolute w-32 h-32 sm:w-48 sm:h-48 rounded-full border-4 border-slate-600 flex flex-col items-center justify-center cursor-pointer transition transform hover:scale-110 hover:border-indigo-400 z-20 shadow-2xl bg-gradient-to-br from-slate-700 to-slate-900 group`;
-                        
-                        planet.style.top = `${50 + (row * 220)}px`;
-                        planet.style.left = col === 0 ? '15%' : '55%'; // Adjusted for mobile/desktop
-                        
-                        const icons = { 'Mathematics': '📐', 'Science': '🧪', 'English': '📚', 'Technology': '💻', 'General': '🌍' };
-                        planet.innerHTML = `
-                            <div class="text-4xl sm:text-6xl mb-2 group-hover:animate-bounce filter drop-shadow-lg">${icons[cat] || '🪐'}</div>
-                            <div class="font-bold text-white text-sm sm:text-lg">${cat}</div>
-                        `;
-                        
-                        planet.onclick = () => AdaptLearnPro.ui.selectWorld(cat);
-                        container.appendChild(planet);
-                    });
+                    const acts = App.data.activities;
                     
-                    container.style.height = `${(Math.ceil(categories.length/2) * 220) + 100}px`;
-                }
-            },
-            
-            map: {
-                render: (category) => {
-                    const acts = AdaptLearnPro.data.activities.filter(a => (a.category || 'General') === category);
-                    const prog = AdaptLearnPro.data.progress.activities || [];
-                    const container = document.getElementById('mapNodes');
-                    const svg = document.getElementById('mapLines');
-                    if(!container || !svg) return;
-                    
-                    container.innerHTML = ''; svg.innerHTML = '';
-
                     acts.forEach((act, i) => {
-                        const isDone = prog.find(p => p.activity_id === act.id && p.status === 'completed');
-                        const isLocked = i > 0 && !prog.find(p => p.activity_id === acts[i-1].id && p.status === 'completed');
-                        
-                        const top = 50 + (i * 150);
-                        const positions = ['10%', '40%', '70%', '40%']; // Tighter zig-zag for mobile
-                        const leftPos = positions[i % 4];
+                        const top = 50 + (i * 120);
+                        const left = (i % 2 === 0) ? '20%' : '60%';
                         
                         const node = document.createElement('div');
-                        node.className = `absolute w-16 h-16 sm:w-20 sm:h-20 rounded-2xl border-4 flex flex-col items-center justify-center cursor-pointer transition transform hover:scale-110 z-20 shadow-[0_10px_20px_rgba(0,0,0,0.5)] 
-                            ${isLocked ? 'bg-slate-700 border-slate-600 grayscale opacity-70' : (isDone ? 'bg-emerald-600 border-emerald-400' : 'bg-yellow-500 border-yellow-300 animate-pulse')}`;
+                        node.className = `absolute w-16 h-16 bg-slate-800 border-4 border-indigo-500 rounded-2xl flex items-center justify-center text-2xl shadow-lg hover:scale-110 transition cursor-pointer z-10`;
                         node.style.top = `${top}px`;
-                        node.style.left = leftPos;
-                        
-                        const icon = act.type==='video'?'📜':(act.type==='game'?'🎮':'🧪');
-                        node.innerHTML = `<span class="text-2xl sm:text-3xl filter drop-shadow-md">${isLocked ? '🔒' : icon}</span>`;
+                        node.style.left = left;
+                        node.innerText = act.type === 'video' ? '📺' : '🎮';
+                        node.onclick = () => alert(`Starting: ${act.title}`);
                         
                         // Label
                         const label = document.createElement('div');
-                        label.className = `absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] sm:text-xs font-bold px-2 py-1 rounded bg-slate-900 text-white border border-slate-600 z-30 shadow-xl`;
-                        label.innerText = (i+1) + ". " + act.title;
+                        label.className = "absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs font-bold text-white bg-slate-900 px-2 py-1 rounded whitespace-nowrap";
+                        label.innerText = act.title;
                         node.appendChild(label);
-
-                        node.onclick = () => {
-                            if(isLocked) alert('Locked!');
-                            else alert('Starting: ' + act.title); // Placeholder for start function
-                        };
 
                         container.appendChild(node);
 
-                        if(i > 0) {
-                            const prevPos = positions[(i-1)%4];
-                            const conW = container.offsetWidth || 300;
-                            const x1 = (parseFloat(prevPos)/100) * conW + 32; // Approx center offset
-                            const y1 = (50 + ((i-1) * 150)) + 32;
-                            const x2 = (parseFloat(leftPos)/100) * conW + 32;
-                            const y2 = top + 32;
-                            
-                            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                            const cx = (x1 + x2) / 2; const cy = (y1 + y2) / 2;
-                            path.setAttribute("d", `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`);
-                            path.setAttribute("fill", "none");
-                            path.setAttribute("stroke", isLocked ? "#475569" : "#fbbf24");
-                            path.setAttribute("stroke-width", "4");
-                            path.setAttribute("stroke-dasharray", isLocked ? "5,5" : "none");
-                            svg.appendChild(path);
+                        // Line
+                        if (i > 0) {
+                            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                            // Simple line logic (needs exact pixels in real app, approximation here)
+                            // This is just visual demo logic
                         }
                     });
                     
-                    container.style.height = `${(acts.length * 150) + 200}px`;
-                }
-            },
-            
-            // ... (keep leader, shop, ai logic - omitted for brevity but assumed present or will add via separate replace if needed.
-            // Wait, I am overwriting the WHOLE file. I MUST include Leaderboard, Shop, AI logic here or they will be lost.
-            // I will add them back now in this single write_file call to be safe.)
-            
-            leaderboard: {
-                open: async () => {
-                    document.getElementById('leaderboardModal').classList.remove('hidden');
-                    const list = document.getElementById('lb-list');
-                    list.innerHTML = 'Loading...';
+                    container.style.height = `${acts.length * 120 + 200}px`;
+                },
+                leaderboard: async () => {
+                    const box = document.getElementById('lb-container');
+                    box.innerHTML = '<div class="p-8 text-center text-slate-500">Loading...</div>';
                     try {
                         const res = await fetch('/api/leaderboard');
                         const data = await res.json();
-                        list.innerHTML = data.map((u,i) => `<div class="flex justify-between p-2 border-b border-slate-700"><span class="text-white">#${i+1} ${u.name}</span><span class="text-yellow-400">${u.xp} XP</span></div>`).join('');
-                    } catch(e) { list.innerHTML = 'Error'; }
-                }
-            },
-            shop: {
-                open: async () => {
-                    document.getElementById('shopModal').classList.remove('hidden');
-                    AdaptLearnPro.shop.fetchItems();
+                        box.innerHTML = data.map((u, i) => `
+                            <div class="flex items-center gap-4 p-4 border-b border-slate-700 bg-slate-800/50 hover:bg-slate-700 transition">
+                                <div class="w-8 font-bold text-center text-slate-400">#${i+1}</div>
+                                <div class="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center text-lg">${u.avatar||'👤'}</div>
+                                <div class="flex-1 font-bold text-white">${u.name}</div>
+                                <div class="text-yellow-400 font-mono">${(u.xp||0).toLocaleString()} XP</div>
+                            </div>
+                        `).join('');
+                    } catch(e) { box.innerHTML = '<div class="p-4 text-red-400">Failed to load</div>'; }
                 },
-                fetchItems: async () => {
-                    const list = document.getElementById('shop-list');
-                    list.innerHTML = 'Loading...';
+                shop: async () => {
+                    const box = document.getElementById('shop-items');
                     try {
                         const res = await fetch('/api/shop');
-                        const items = await res.json();
-                        list.innerHTML = items.map(i => `<div class="bg-slate-800 p-3 rounded mb-2 flex justify-between items-center"><div class="text-white">${i.icon} ${i.name}</div><button onclick="AdaptLearnPro.shop.buy(${i.id})" class="bg-blue-600 px-3 py-1 rounded text-white text-xs">Buy ${i.price}</button></div>`).join('');
-                    } catch(e) { list.innerHTML = 'Error'; }
-                },
-                buy: async (id) => {
-                    if(!confirm('Buy?')) return;
-                    try {
-                        const res = await fetch('/api/shop/buy', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({userId: AdaptLearnPro.data.user.id, itemId: id}) });
-                        const d = await res.json();
-                        if(d.success) { alert('Bought!'); AdaptLearnPro.data.user.coins = d.new_balance; AdaptLearnPro.render.nav(); }
-                        else alert('Failed: ' + d.error);
-                    } catch(e) { alert('Error'); }
-                },
-                fetchInventory: () => {} // Placeholder
+                        const data = await res.json();
+                        box.innerHTML = data.map(item => `
+                            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col items-center text-center gap-2 hover:border-indigo-500 transition">
+                                <div class="text-4xl mb-2">${item.icon}</div>
+                                <h4 class="font-bold text-white">${item.name}</h4>
+                                <div class="text-yellow-400 font-bold">🪙 ${item.price}</div>
+                                <button onclick="App.api.buy(${item.id})" class="w-full py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg mt-2">Buy</button>
+                            </div>
+                        `).join('');
+                    } catch(e) {}
+                    
+                    // Inventory
+                    const invRes = await fetch(`/api/inventory?userId=${sessionStorage.getItem('user_id')}`);
+                    const invData = await invRes.json();
+                    const invBox = document.getElementById('user-inventory');
+                    if (invData.length) {
+                        invBox.innerHTML = invData.map(i => `<div class="flex gap-2 items-center p-2 bg-slate-700/50 rounded mb-2"><span class="text-lg">${i.icon}</span> <span class="text-slate-300">${i.name}</span></div>`).join('');
+                    } else {
+                        invBox.innerText = "No items yet.";
+                    }
+                }
             },
+
             ai: {
+                toggle: () => {
+                    const win = document.getElementById('ai-window');
+                    win.classList.toggle('hidden');
+                },
                 send: async () => {
-                    const inp = document.getElementById('chatInput');
-                    const msg = inp.value;
+                    const inp = document.getElementById('ai-input');
+                    const msg = inp.value.trim();
                     if(!msg) return;
-                    const box = document.getElementById('chatMessages');
-                    box.innerHTML += `<div class="text-right text-white mb-2"><span class="bg-indigo-600 px-3 py-1 rounded">${msg}</span></div>`;
-                    inp.value = '';
-                    // Simple mock response for now to ensure UI works
-                    setTimeout(() => {
-                        box.innerHTML += `<div class="text-left text-white mb-2"><span class="bg-slate-700 px-3 py-1 rounded">Thinking...</span></div>`;
-                    }, 500);
+                    
+                    const box = document.getElementById('ai-chat-box');
+                    box.innerHTML += `<div class="text-right mb-2"><span class="bg-indigo-600 text-white px-3 py-2 rounded-lg inline-block rounded-tr-none">${msg}</span></div>`;
+                    inp.value = ''; box.scrollTop = box.scrollHeight;
+
+                    try {
+                        // Mock AI for UI demo
+                        setTimeout(() => {
+                            box.innerHTML += `<div class="text-left mb-2"><span class="bg-slate-700 text-slate-200 px-3 py-2 rounded-lg inline-block rounded-tl-none">🤖 That's interesting! Let me help you with that. (AI is in Demo Mode)</span></div>`;
+                            box.scrollTop = box.scrollHeight;
+                        }, 800);
+                        
+                        // Real Fetch
+                        /*
+                        const res = await fetch('/api/chat', { method: 'POST', body: JSON.stringify({ message: msg }) });
+                        const data = await res.json();
+                        ...
+                        */
+                    } catch(e) {}
                 }
             }
         };
-        document.addEventListener('DOMContentLoaded', AdaptLearnPro.init.run);
+
+        // Buy Action
+        App.api.buy = async (id) => {
+            if(!confirm('Confirm buy?')) return;
+            const res = await fetch('/api/shop/buy', { 
+                method: 'POST', 
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ userId: sessionStorage.getItem('user_id'), itemId: id }) 
+            });
+            const d = await res.json();
+            if(d.success) { 
+                alert('Purchased!'); 
+                App.data.user.coins = d.new_balance; 
+                App.render.hud(); 
+                App.render.shop(); 
+            } else { alert(d.error); }
+        };
+
+        // Start
+        document.addEventListener('DOMContentLoaded', App.init);
     </script>
 </body>
 </html>
