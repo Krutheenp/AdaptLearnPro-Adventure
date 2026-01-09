@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>โปรไฟล์สมาชิก - AdaptLearn Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; }
+        .profile-header { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); }
+        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.5); }
+        .avatar-glow { box-shadow: 0 0 20px rgba(79, 70, 229, 0.4); }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <!-- Simple Nav -->
+    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="/index.html" class="flex items-center gap-2 text-slate-800 font-bold hover:text-indigo-600 transition">
+                <span>🏠</span> แดชบอร์ด
+            </a>
+            <div class="text-slate-400 font-medium text-sm">โปรไฟล์สมาชิก</div>
+            <button onclick="location.href='/index.html'" class="px-4 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-sm font-bold hover:bg-slate-200 transition">กลับ</button>
+        </div>
+    </nav>
+
+    <main class="max-w-5xl mx-auto px-4 py-8">
+        
+        <!-- Header Card -->
+        <div class="relative mb-8 group/cover">
+            <!-- Cover Image -->
+            <div id="p-cover" class="h-48 w-full profile-header rounded-3xl shadow-lg bg-cover bg-center transition duration-500 relative overflow-hidden">
+                <div class="absolute inset-0 bg-black/10 group-hover/cover:bg-black/30 transition"></div>
+            </div>
+            
+            <!-- Edit Cover Button -->
+            <button onclick="document.getElementById('cover-input').click()" class="absolute top-4 right-4 bg-white/80 hover:bg-white text-slate-700 px-4 py-2 rounded-xl shadow-lg font-bold text-sm flex items-center gap-2 opacity-0 group-hover/cover:opacity-100 transition z-10">
+                <span>📷</span> เปลี่ยนปก
+            </button>
+            <input type="file" id="cover-input" class="hidden" accept="image/*" onchange="uploadCover(this)">
+
+            <div class="absolute -bottom-16 left-8 flex flex-col md:flex-row items-end gap-6 w-full px-4">
+                <div class="relative group">
+                    <!-- Avatar Display -->
+                    <div class="w-32 h-32 bg-white rounded-3xl flex items-center justify-center text-6xl shadow-xl avatar-glow border-4 border-white overflow-hidden cursor-pointer" onclick="document.getElementById('avatar-input').click()">
+                        <img id="p-avatar-img" src="" class="w-full h-full object-cover hidden" alt="Avatar">
+                        <span id="p-avatar-text">🙂</span>
+                        
+                        <!-- Hover Overlay -->
+                        <div class="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition rounded-2xl">
+                            เปลี่ยนรูป
+                        </div>
+                    </div>
+                    <!-- Hidden File Input -->
+                    <input type="file" id="avatar-input" class="hidden" accept="image/*" onchange="uploadAvatar(this)">
+                </div>
+
+                <div class="mb-4 flex-1">
+                    <h1 class="text-3xl font-bold text-slate-800" id="p-name">Loading...</h1>
+                    <p class="text-indigo-600 font-bold" id="p-role">Student</p>
+                </div>
+                <div class="mb-4 pr-12">
+                    <button onclick="openEditModal()" class="px-6 py-2.5 bg-white text-indigo-600 border-2 border-indigo-100 font-bold rounded-xl shadow-sm hover:bg-indigo-50 transition flex items-center gap-2">
+                        <span>✏️</span> แก้ไขโปรไฟล์
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-20">
+            
+            <!-- Left Column: Info -->
+            <div class="space-y-6">
+                
+                <!-- Teacher Skills (Only for Teachers) -->
+                <div id="skills-section" class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2"><span>✨</span> ทักษะ</h3>
+                        <button onclick="openSkillModal()" class="text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded hover:bg-indigo-100">เพิ่ม</button>
+                    </div>
+                    <div id="skills-list" class="space-y-3"></div>
+                </div>
+
+                <!-- About Me -->
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><span>📝</span> เกี่ยวกับฉัน</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed" id="p-bio">ไม่มีข้อมูลประวัติย่อ</p>
+                </div>
+
+                <!-- Contact Info -->
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><span>📞</span> ข้อมูลการติดต่อ</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">📧</div>
+                            <div>
+                                <p class="text-[10px] text-slate-400 font-bold uppercase">อีเมล</p>
+                                <p class="text-sm font-medium text-slate-700" id="p-email">-</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-green-50 text-green-600 rounded-lg flex items-center justify-center">📱</div>
+                            <div>
+                                <p class="text-[10px] text-slate-400 font-bold uppercase">เบอร์โทรศัพท์</p>
+                                <p class="text-sm font-medium text-slate-700" id="p-phone">-</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center">🏫</div>
+                            <div>
+                                <p class="text-[10px] text-slate-400 font-bold uppercase">สถานศึกษา</p>
+                                <p class="text-sm font-medium text-slate-700" id="p-school">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Personal Details -->
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2"><span>📍</span> ข้อมูลส่วนตัวอื่น ๆ</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">วันเกิด</p>
+                            <p class="text-sm font-medium text-slate-700" id="p-birthdate">-</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">ที่อยู่</p>
+                            <p class="text-sm font-medium text-slate-700" id="p-address">-</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">โซเชียลมีเดีย</p>
+                            <a href="#" target="_blank" class="text-sm font-medium text-indigo-600 hover:underline" id="p-social">-</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Stats & Progress -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Stats Overview -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-white p-4 rounded-3xl shadow-sm border border-slate-100 text-center">
+                        <p class="text-2xl font-bold text-indigo-600" id="s-level">1</p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">Level</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-3xl shadow-sm border border-slate-100 text-center">
+                        <p class="text-2xl font-bold text-purple-600" id="s-xp">0</p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">Total XP</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-3xl shadow-sm border border-slate-100 text-center relative group">
+                         <div class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md animate-bounce hidden" id="rank-badge">Top 10</div>
+                        <p class="text-2xl font-bold text-emerald-600" id="s-rank">-</p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">Rank</p>
+                        <div class="opacity-0 group-hover:opacity-100 absolute bottom-full left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs p-2 rounded w-40 text-center transition pointer-events-none mb-2">
+                             อันดับจากผู้เรียนทั้งหมด <span id="s-total-users">0</span> คน
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-3xl shadow-sm border border-slate-100 text-center">
+                        <p class="text-2xl font-bold text-orange-500" id="s-certs">0</p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">Certs</p>
+                    </div>
+                </div>
+
+                <!-- XP Progress Bar -->
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <div class="flex justify-between items-end mb-2">
+                        <h3 class="font-bold text-slate-800">ความก้าวหน้า (Level Progress)</h3>
+                        <span class="text-xs text-slate-400 font-bold" id="s-xp-label">0 / 100 XP</span>
+                    </div>
+                    <div class="w-full h-4 bg-slate-100 rounded-full overflow-hidden p-1 mb-6">
+                        <div id="s-xp-bar" class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-1000 shadow-md" style="width: 0%"></div>
+                    </div>
+                    
+                    <h4 class="font-bold text-slate-800 mb-4 text-sm">🔥 ความถี่ในการเข้าเรียน (Learning Frequency)</h4>
+                    <div class="flex justify-between items-end h-24 gap-1" id="freq-chart">
+                        <!-- Bars injected by JS -->
+                    </div>
+                    <div class="flex justify-between text-[10px] text-slate-400 font-bold uppercase mt-2">
+                        <span>7 days ago</span>
+                        <span>Today</span>
+                    </div>
+                </div>
+
+                <!-- Portfolio Section -->
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2"><span>📂</span> แฟ้มสะสมผลงาน</h3>
+                        <button onclick="openPortfolioModal()" class="px-3 py-1 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700 transition">
+                            + เพิ่ม
+                        </button>
+                    </div>
+                    <div id="portfolio-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </div>
+
+                <!-- Certificates Gallery -->
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <h3 class="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2"><span>🎓</span> ใบประกาศนียบัตรของฉัน</h3>
+                    <div id="cert-gallery" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="text-center py-8 text-slate-400 italic col-span-2">ยังไม่มีใบประกาศนียบัตร</div>
+                    </div>
+                </div>
+
+                <!-- Completed Activities -->
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <h3 class="text-lg font-bold text-slate-800 mb-6">🏆 ประวัติการเรียนล่าสุด</h3>
+                    <div id="p-history" class="space-y-4 text-center py-8 text-slate-400 italic">
+                        ยังไม่มีประวัติการเรียน
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal: Edit Profile -->
+    <div id="profileModal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-8 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <h2 class="text-2xl font-bold mb-6 text-slate-800">แก้ไขข้อมูลส่วนตัว</h2>
+            <form id="profileForm" onsubmit="event.preventDefault(); saveProfile();" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase">ชื่อ-นามสกุล</label>
+                        <input type="text" name="name" class="w-full p-2 border border-slate-200 rounded-lg" required>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase">อีเมล</label>
+                        <input type="email" name="email" class="w-full p-2 border border-slate-200 rounded-lg">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase">Username</label>
+                        <input type="text" name="username" class="w-full p-2 border border-slate-200 rounded-lg bg-slate-100 text-slate-500 cursor-not-allowed" readonly disabled>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase">Password (เปลี่ยนใหม่)</label>
+                        <input type="password" name="password" placeholder="ว่างไว้ถ้าไม่เปลี่ยน" class="w-full p-2 border border-slate-200 rounded-lg">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase">เกี่ยวกับฉัน (Bio)</label>
+                    <textarea name="bio" class="w-full p-2 border border-slate-200 rounded-lg h-24"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase">โรงเรียน / สถานศึกษา</label>
+                        <input type="text" name="school" class="w-full p-2 border border-slate-200 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase">เบอร์โทรศัพท์</label>
+                        <input type="text" name="phone" class="w-full p-2 border border-slate-200 rounded-lg">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase">ที่อยู่</label>
+                    <input type="text" name="address" class="w-full p-2 border border-slate-200 rounded-lg">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase">วันเกิด (วว/ดด/ปปปป)</label>
+                        <input type="text" name="birthdate" class="w-full p-2 border border-slate-200 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase">Social Link</label>
+                        <input type="text" name="social_links" class="w-full p-2 border border-slate-200 rounded-lg">
+                    </div>
+                </div>
+                
+                <input type="hidden" name="avatar">
+                
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" onclick="closeEditModal()" class="px-4 py-2 text-slate-500 hover:bg-slate-100 rounded-lg">ยกเลิก</button>
+                    <button type="submit" class="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Add Portfolio -->
+    <div id="portfolioModal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-8 max-w-md w-full">
+            <h2 class="text-2xl font-bold mb-6 text-slate-800">เพิ่มผลงานใหม่</h2>
+            <form onsubmit="event.preventDefault(); savePortfolio();" class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase">ชื่อผลงาน</label>
+                    <input type="text" id="pf-title" class="w-full p-2 border border-slate-200 rounded-lg" required>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase">คำอธิบาย</label>
+                    <textarea id="pf-desc" class="w-full p-2 border border-slate-200 rounded-lg h-24"></textarea>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase">ประเภท</label>
+                    <select id="pf-type" class="w-full p-2 border border-slate-200 rounded-lg">
+                        <option value="project">โครงงาน (Project)</option>
+                        <option value="activity">กิจกรรม (Activity)</option>
+                        <option value="artwork">งานศิลปะ (Artwork)</option>
+                        <option value="research">งานวิจัย (Research)</option>
+                        <option value="certificate">เกียรติบัตร (Certificate)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase">อัปโหลดรูปภาพ / ไฟล์</label>
+                    <input type="file" id="pf-file" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" onclick="document.getElementById('portfolioModal').classList.add('hidden')" class="px-4 py-2 text-slate-500 hover:bg-slate-100 rounded-lg">ยกเลิก</button>
+                    <button type="submit" class="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Add Skill -->
+    <div id="skillModal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-8 max-w-sm w-full">
+            <h2 class="text-xl font-bold mb-6 text-slate-800">เพิ่มทักษะ</h2>
+            <form onsubmit="event.preventDefault(); saveSkill();" class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase">ชื่อทักษะ</label>
+                    <input type="text" id="sk-name" class="w-full p-2 border border-slate-200 rounded-lg" required>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase">ระดับความเชี่ยวชาญ (0-100%)</label>
+                    <input type="number" id="sk-score" min="0" max="100" class="w-full p-2 border border-slate-200 rounded-lg" required>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" onclick="document.getElementById('skillModal').classList.add('hidden')" class="px-4 py-2 text-slate-500 hover:bg-slate-100 rounded-lg">ยกเลิก</button>
+                    <button type="submit" class="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let userData = null;
+
+        async function init() {
+            const userId = sessionStorage.getItem('user_id');
+            if(!userId) {
+                location.href = '/login.html';
+                return;
+            }
+            await fetchProfile(userId);
+        }
+
+        async function fetchProfile(userId) {
+            try {
+                // Fetch user analytics AND leaderboard info
+                const res = await fetch(`/api/analytics?userId=${userId}&includeRank=true`);
+                const data = await res.json();
+                userData = data.user;
+                renderProfile(data);
+            } catch (err) {
+                console.error(err);
+                alert('โหลดข้อมูลล้มเหลว');
+            }
+        }
+
+        function renderProfile(data) {
+            const u = data.user;
+            
+            // Cover Image
+            const coverDiv = document.getElementById('p-cover');
+            if (u.cover_image && u.cover_image.startsWith('/uploads/')) {
+                coverDiv.style.backgroundImage = `url('${u.cover_image}')`;
+                coverDiv.classList.remove('profile-header'); // Remove default gradient class if image exists
+            } else {
+                coverDiv.style.backgroundImage = '';
+                coverDiv.classList.add('profile-header'); // Add default gradient class
+            }
+
+            // Avatar Handling
+            const avatarDiv = document.getElementById('p-avatar-text');
+            const avatarImg = document.getElementById('p-avatar-img');
+            if (u.avatar && u.avatar.startsWith('/uploads/')) {
+                avatarImg.src = u.avatar;
+                avatarImg.classList.remove('hidden');
+                avatarDiv.classList.add('hidden');
+            } else {
+                avatarDiv.innerText = u.avatar || '🙂';
+                avatarDiv.classList.remove('hidden');
+                avatarImg.classList.add('hidden');
+            }
+
+            document.getElementById('p-name').innerText = u.name;
+            document.getElementById('p-role').innerText = u.role === 'admin' ? 'Administrator' : (u.role === 'teacher' ? 'Teacher' : 'Student Member');
+            
+            // Show Teacher Specifics
+            if (u.role === 'teacher' || u.role === 'admin') {
+                document.getElementById('skills-section').classList.remove('hidden');
+                renderSkills(data.skills || []);
+            }
+
+            document.getElementById('p-bio').innerText = u.bio || 'ยังไม่มีข้อมูลประวัติย่อ';
+            document.getElementById('p-email').innerText = u.email || '-';
+            document.getElementById('p-phone').innerText = u.phone || '-';
+            document.getElementById('p-school').innerText = u.school || '-';
+            document.getElementById('p-address').innerText = u.address || '-';
+            document.getElementById('p-birthdate').innerText = u.birthdate || '-';
+            
+            const social = document.getElementById('p-social');
+            if(u.social_links) {
+                social.href = u.social_links.startsWith('http') ? u.social_links : 'https://' + u.social_links;
+                social.innerText = 'Visit Link';
+            } else { social.innerText = '-'; social.href = '#'; }
+
+            // --- STATS & RANKING ---
+            document.getElementById('s-level').innerText = u.level;
+            document.getElementById('s-xp').innerText = u.xp.toLocaleString();
+            
+            // Rank Logic
+            const rank = data.rank || '-';
+            const totalUsers = data.total_users || 1;
+            document.getElementById('s-rank').innerText = `#${rank}`;
+            document.getElementById('s-total-users').innerText = totalUsers;
+            if(rank <= 10 && rank !== '-') document.getElementById('rank-badge').classList.remove('hidden');
+
+            // --- FREQUENCY CHART ---
+            const days = 7;
+            const freqChart = document.getElementById('freq-chart');
+            freqChart.innerHTML = '';
+            
+            const activityByDay = new Array(days).fill(0);
+            data.activities.forEach(a => {
+                const diffTime = Math.abs(new Date() - new Date(a.completed_at));
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                if(diffDays <= days) activityByDay[days - diffDays]++; 
+            });
+            
+            activityByDay.forEach((count, i) => {
+                const height = Math.max(10, Math.min(count * 20, 100)); // Scale height
+                const color = count > 0 ? 'bg-indigo-500' : 'bg-slate-200';
+                freqChart.innerHTML += `
+                    <div class="flex-1 flex flex-col justify-end group relative">
+                        <div class="w-full ${color} rounded-t-md transition-all hover:bg-indigo-600" style="height: ${height}%"></div>
+                        <div class="opacity-0 group-hover:opacity-100 absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-2 py-1 rounded pointer-events-none whitespace-nowrap">
+                            ${count} activities
+                        </div>
+                    </div>
+                `;
+            });
+
+            // --- PORTFOLIO ---
+            renderPortfolio(data.portfolios || []);
+
+            // --- CERTIFICATES ---
+            document.getElementById('s-certs').innerText = data.certificates.length;
+            const certGallery = document.getElementById('cert-gallery');
+            if(data.certificates.length > 0) {
+                certGallery.innerHTML = data.certificates.map(c => `
+                    <div class="bg-slate-50 border-2 border-slate-200 rounded-xl p-4 flex items-center gap-4 hover:border-yellow-400 transition group cursor-pointer" onclick="window.open('/cert_view?code=${c.code}', '_blank')">
+                        <div class="w-12 h-12 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center text-2xl shadow-sm group-hover:scale-110 transition">🏆</div>
+                        <div class="overflow-hidden">
+                            <h4 class="font-bold text-slate-800 truncate">${c.course_title}</h4>
+                            <p class="text-xs text-slate-500">${c.issue_date}</p>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                certGallery.innerHTML = `<div class="text-center py-8 text-slate-400 italic col-span-2 bg-slate-50 rounded-xl border border-dashed">ยังไม่มีใบประกาศนียบัตร<br><span class="text-xs">เรียนจบคอร์สเพื่อรับใบประกาศฯ</span></div>`;
+            }
+
+            // --- PROGRESS BAR ---
+            const nextLevelXP = u.level * 100;
+            const progress = Math.min((u.xp / nextLevelXP) * 100, 100);
+            document.getElementById('s-xp-bar').style.width = progress + '%';
+            document.getElementById('s-xp-label').innerText = `${u.xp} / ${nextLevelXP} XP`;
+
+            // --- HISTORY ---
+            const history = document.getElementById('p-history');
+            const completed = data.activities.filter(a => a.status === 'completed');
+            if(completed.length > 0) {
+                history.innerHTML = completed.map(a => `
+                    <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 bg-emerald-500 text-white rounded-full flex items-center justify-center text-sm">✓</div>
+                            <div class="text-left">
+                                <p class="font-bold text-slate-800">${a.title}</p>
+                                <p class="text-[10px] text-slate-400 uppercase">${a.type} • ${a.difficulty}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-slate-400">${new Date(a.completed_at).toLocaleDateString('th-TH')}</p>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function renderSkills(skills) {
+            const list = document.getElementById('skills-list');
+            list.innerHTML = skills.map(s => `
+                <div class="relative">
+                    <div class="flex justify-between text-xs font-bold text-slate-600 mb-1">
+                        <span>${s.skill_name}</span>
+                        <span>${s.proficiency}%</span>
+                    </div>
+                    <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                        <div class="bg-indigo-500 h-full rounded-full" style="width: ${s.proficiency}%"></div>
+                    </div>
+                    <button onclick="deleteSkill(${s.id})" class="absolute -right-6 top-0 text-red-400 hover:text-red-600 text-xs">x</button>
+                </div>
+            `).join('');
+        }
+
+        function renderPortfolio(items) {
+            const grid = document.getElementById('portfolio-grid');
+            if(items.length === 0) {
+                grid.innerHTML = `<div class="col-span-2 text-center py-6 text-slate-400 text-sm">ยังไม่มีผลงาน</div>`;
+                return;
+            }
+            grid.innerHTML = items.map(p => `
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 hover:shadow-md transition">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="px-2 py-0.5 bg-indigo-100 text-indigo-600 text-[10px] font-bold rounded uppercase">${p.type}</span>
+                        <button onclick="deletePortfolio(${p.id})" class="text-slate-400 hover:text-red-500 text-xs">ลบ</button>
+                    </div>
+                    <h4 class="font-bold text-slate-800 text-sm mb-1">${p.title}</h4>
+                    <p class="text-xs text-slate-500 line-clamp-2 mb-3">${p.description || ''}</p>
+                    ${p.media_url ? `<a href="${p.media_url}" target="_blank" class="block w-full py-1.5 bg-white border border-slate-300 text-center text-xs font-bold text-slate-600 rounded hover:bg-slate-50">ดูไฟล์แนบ</a>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // --- ACTIONS ---
+
+        async function uploadCover(input) {
+            if (input.files && input.files[0]) {
+                const formData = new FormData();
+                formData.append('file', input.files[0]);
+                try {
+                    const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if(data.success) {
+                        await fetch('/api/users', { 
+                            method: 'PUT', 
+                            headers: {'Content-Type': 'application/json'}, 
+                            body: JSON.stringify({ id: userData.id, cover_image: data.url }) 
+                        });
+                        await init(); // Reload
+                    }
+                } catch(e) { console.error(e); alert('Upload failed'); }
+            }
+        }
+
+        async function uploadAvatar(input) {
+            if (input.files && input.files[0]) {
+                const formData = new FormData();
+                formData.append('file', input.files[0]);
+                try {
+                    const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if(data.success) {
+                        // Update UI immediately (preview) but saving requires form submit or auto-save
+                        // Here we auto-save to user profile
+                        await fetch('/api/users', { 
+                            method: 'PUT', 
+                            headers: {'Content-Type': 'application/json'}, 
+                            body: JSON.stringify({ id: userData.id, avatar: data.url }) 
+                        });
+                        await init(); // Reload
+                    }
+                } catch(e) { console.error(e); alert('Upload failed'); }
+            }
+        }
+
+        function openPortfolioModal() { document.getElementById('portfolioModal').classList.remove('hidden'); }
+        function openSkillModal() { document.getElementById('skillModal').classList.remove('hidden'); }
+
+        async function savePortfolio() {
+            const title = document.getElementById('pf-title').value;
+            const desc = document.getElementById('pf-desc').value;
+            const type = document.getElementById('pf-type').value;
+            const fileInput = document.getElementById('pf-file');
+            
+            let mediaUrl = '';
+            if(fileInput.files[0]) {
+                const fd = new FormData();
+                fd.append('file', fileInput.files[0]);
+                const res = await fetch('/api/upload', { method: 'POST', body: fd });
+                const d = await res.json();
+                if(d.success) mediaUrl = d.url;
+            }
+
+            await fetch('/api/portfolios', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    user_id: userData.id,
+                    title, description: desc, type, media_url: mediaUrl
+                })
+            });
+            document.getElementById('portfolioModal').classList.add('hidden');
+            init();
+        }
+
+        async function deletePortfolio(id) {
+            if(!confirm('ลบผลงานนี้?')) return;
+            await fetch(`/api/portfolios?id=${id}`, { method: 'DELETE' });
+            init();
+        }
+
+        async function saveSkill() {
+            const name = document.getElementById('sk-name').value;
+            const score = document.getElementById('sk-score').value;
+            await fetch('/api/skills', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    user_id: userData.id,
+                    skill_name: name, proficiency: score
+                })
+            });
+            document.getElementById('skillModal').classList.add('hidden');
+            init();
+        }
+
+        async function deleteSkill(id) {
+            if(!confirm('ลบทักษะนี้?')) return;
+            await fetch(`/api/skills?id=${id}`, { method: 'DELETE' });
+            init();
+        }
+
+        // ... (Edit Modal Functions) ...
+        function openEditModal() {
+            const f = document.getElementById('profileForm');
+            f.name.value = userData.name || '';
+            f.email.value = userData.email || '';
+            f.username.value = userData.username || '';
+            f.password.value = ''; // Don't show password
+            f.phone.value = userData.phone || '';
+            f.school.value = userData.school || '';
+            f.bio.value = userData.bio || '';
+            f.address.value = userData.address || '';
+            f.birthdate.value = userData.birthdate || '';
+            f.avatar.value = userData.avatar || '🙂';
+            f.social_links.value = userData.social_links || '';
+            document.getElementById('profileModal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('profileModal').classList.add('hidden');
+        }
+
+        async function saveProfile() {
+            const f = document.getElementById('profileForm');
+            const body = {
+                id: userData.id,
+                name: f.name.value,
+                email: f.email.value,
+                phone: f.phone.value,
+                school: f.school.value,
+                bio: f.bio.value,
+                address: f.address.value,
+                birthdate: f.birthdate.value,
+                avatar: f.avatar.value, // This might be stale if upload happened separately, but standard flow is ok
+                social_links: f.social_links.value
+            };
+            if(f.username.value) body.username = f.username.value;
+            if(f.password.value) body.password = f.password.value;
+            
+            const res = await fetch('/api/users', { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
+            if(res.ok) {
+                closeEditModal();
+                await init();
+            } else {
+                alert('บันทึกล้มเหลว');
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

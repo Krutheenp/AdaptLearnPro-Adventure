@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - AdaptLearn Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; }
+        .glass {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        .blob {
+            position: absolute;
+            filter: blur(40px);
+            z-index: -1;
+            opacity: 0.6;
+            animation: move 10s infinite alternate;
+        }
+        @keyframes move {
+            from { transform: translate(0, 0) scale(1); }
+            to { transform: translate(20px, -20px) scale(1.1); }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 h-screen w-screen overflow-hidden flex items-center justify-center relative">
+
+    <!-- Background Animation -->
+    <div class="blob bg-purple-600 w-96 h-96 rounded-full top-0 left-0 -translate-x-1/2 -translate-y-1/2"></div>
+    <div class="blob bg-indigo-600 w-96 h-96 rounded-full bottom-0 right-0 translate-x-1/2 translate-y-1/2"></div>
+    <div class="blob bg-blue-500 w-64 h-64 rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animation-delay-2000"></div>
+
+    <!-- Login Card -->
+    <div class="glass p-10 rounded-3xl shadow-2xl w-full max-w-md transform transition-all hover:scale-[1.01]">
+        <div class="text-center mb-8">
+            <div class="w-20 h-20 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-indigo-500/30">
+                <span class="text-4xl text-white">🔐</span>
+            </div>
+            <h1 class="text-3xl font-bold text-slate-800 mb-2">เข้าสู่ระบบ</h1>
+            <p class="text-slate-500">AdaptLearn Pro Learning Platform</p>
+        </div>
+
+        <form id="loginForm" class="space-y-6">
+            <div class="group">
+                <label class="block text-sm font-medium text-slate-700 mb-2 ml-1">บัญชีผู้ใช้</label>
+                <div class="relative">
+                    <input type="text" id="username" class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition outline-none bg-white/50" placeholder="Username" required>
+                    <div class="absolute left-4 top-3.5 text-slate-400 group-focus-within:text-indigo-500 transition">👤</div>
+                </div>
+            </div>
+            
+            <div class="group">
+                <label class="block text-sm font-medium text-slate-700 mb-2 ml-1">รหัสผ่าน</label>
+                <div class="relative">
+                    <input type="password" id="password" class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition outline-none bg-white/50" placeholder="Password" required>
+                    <div class="absolute left-4 top-3.5 text-slate-400 group-focus-within:text-indigo-500 transition">🔒</div>
+                </div>
+            </div>
+
+            <button type="submit" id="submitBtn" class="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:-translate-y-0.5 transition-all duration-300 flex justify-center items-center gap-2">
+                <span>เข้าสู่ระบบ</span>
+                <span id="loadingSpinner" class="hidden animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
+            </button>
+        </form>
+
+        <div class="mt-6 text-center text-sm text-slate-600">
+            ยังไม่มีบัญชี? <a href="/register.html" class="text-indigo-600 font-bold hover:underline">สมัครสมาชิก</a>
+        </div>
+
+        <div id="toast" class="fixed top-4 right-4 transform translate-x-full transition-transform duration-300 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-lg flex items-center gap-3">
+            <span>⚠️</span>
+            <span id="toastMsg">Error Message</span>
+        </div>
+    </div>
+
+    <script>
+        const ui = {
+            toast: (msg) => {
+                const el = document.getElementById('toast');
+                document.getElementById('toastMsg').innerText = msg;
+                el.classList.remove('translate-x-full');
+                setTimeout(() => el.classList.add('translate-x-full'), 3000);
+            },
+            loading: (isLoading) => {
+                const btn = document.getElementById('submitBtn');
+                const spinner = document.getElementById('loadingSpinner');
+                if(isLoading) {
+                    btn.disabled = true;
+                    btn.classList.add('opacity-75', 'cursor-not-allowed');
+                    spinner.classList.remove('hidden');
+                } else {
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-75', 'cursor-not-allowed');
+                    spinner.classList.add('hidden');
+                }
+            }
+        };
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            ui.loading(true);
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                // Simulate network delay for UX
+                await new Promise(r => setTimeout(r, 800));
+
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await res.json();
+                
+                if (data.success) {
+                    sessionStorage.setItem('auth', 'true');
+                    sessionStorage.setItem('user_id', data.id);
+                    sessionStorage.setItem('user_name', data.name);
+                    sessionStorage.setItem('user_role', data.role);
+                    sessionStorage.setItem('user_level', data.level);
+                    sessionStorage.setItem('user_xp', data.xp);
+                    
+                    // Allow both Admin and Teacher to access backend features
+                    if (data.role === 'admin') {
+                        sessionStorage.setItem('admin_auth', 'true');
+                        window.location.href = '/admin.html';
+                    } else if (data.role === 'teacher') {
+                        // Teachers go to index first, but can access dashboard
+                        window.location.href = '/'; 
+                    } else {
+                        window.location.href = '/';
+                    }
+                } else {
+                    ui.toast(data.message || 'เข้าสู่ระบบไม่สำเร็จ');
+                }
+            } catch (err) {
+                ui.toast('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+            } finally {
+                ui.loading(false);
+            }
+        });
+    </script>
+</body>
+</html>

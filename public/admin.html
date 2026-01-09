@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - AdaptLearn Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script>
+        const role = sessionStorage.getItem('user_role');
+        const isAdmin = sessionStorage.getItem('admin_auth');
+        // Allow if role is teacher OR admin
+        if (!isAdmin && role !== 'teacher' && role !== 'admin') window.location.href = '/login.html';
+    </script>
+    <style>
+        body { font-family: 'Sarabun', sans-serif; }
+        .modal-bg { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+        .slide-in { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-screen flex overflow-hidden">
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-slate-900 text-white flex flex-col shadow-2xl z-20">
+        <div class="p-6 flex items-center gap-3">
+            <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-xl font-bold">T</div>
+            <div><h1 class="font-bold text-lg">Instructor Studio</h1><p class="text-xs text-slate-400">Course Manager</p></div>
+        </div>
+        <nav class="flex-1 p-4 space-y-2">
+            <button id="menu-users" onclick="App.router('users')" class="nav-item w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800 flex gap-3"><span>👥</span> <span>สมาชิก</span></button>
+            <button onclick="App.router('activities')" class="nav-item bg-slate-800 w-full text-left px-4 py-3 rounded-xl hover:bg-slate-800 flex gap-3"><span>📚</span> <span>บทเรียนออนไลน์</span></button>
+        </nav>
+        <div class="p-4 border-t border-slate-800">
+            <button onclick="sessionStorage.clear(); location.href='/login.html'" class="w-full py-2 bg-red-600 rounded text-sm font-bold">ออกจากระบบ</button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        <header class="bg-white border-b px-8 py-4 flex justify-between items-center shadow-sm z-10">
+            <h2 class="text-2xl font-bold text-slate-800" id="pageTitle">จัดการบทเรียน</h2>
+            <div class="flex items-center gap-3">
+                <span class="text-sm font-bold text-slate-500" id="admin-name-display">Instructor</span>
+                <button onclick="window.open('/', '_blank')" class="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-sm font-bold">🌐 หน้าเว็บไซต์</button>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-8 bg-slate-50 relative">
+            
+            <!-- USERS VIEW -->
+            <div id="view-users" class="view-content hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="font-bold text-xl text-slate-800">รายชื่อสมาชิกในระบบ</h3>
+                        <p class="text-slate-500 text-sm">จัดการข้อมูลส่วนตัวและสิทธิ์การใช้งานของสมาชิก</p>
+                    </div>
+                    <button onclick="App.modals.user.open()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-xl font-bold shadow-lg transition">+ เพิ่มสมาชิกใหม่</button>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b">
+                                <tr>
+                                    <th class="p-4 font-bold">ชื่อ-นามสกุล</th>
+                                    <th class="p-4 font-bold">การติดต่อ / สถาบัน</th>
+                                    <th class="p-4 font-bold">สิทธิ์</th>
+                                    <th class="p-4 font-bold">ระดับ/XP</th>
+                                    <th class="p-4 font-bold text-right">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-users" class="divide-y divide-slate-100 text-sm">
+                                <!-- Users list will be injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ACTIVITIES VIEW -->
+            <div id="view-activities" class="view-content space-y-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="font-bold text-xl">หลักสูตรออนไลน์</h3>
+                        <p class="text-slate-500 text-sm">สร้างบทเรียน แนบรูปภาพ ไฟล์ และแบบทดสอบ</p>
+                    </div>
+                    <button onclick="App.modals.act.open()" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg transition flex gap-2">
+                        <span>✨</span> สร้างหลักสูตรใหม่
+                    </button>
+                </div>
+                <div id="grid-activities" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- COURSE BUILDER MODAL -->
+    <div id="modal-act" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-slate-100 flex flex-col slide-in">
+            <div class="bg-white border-b px-8 py-4 flex justify-between items-center shadow-sm">
+                <div>
+                    <h3 class="text-2xl font-bold text-slate-800">🛠️ Course Builder</h3>
+                    <p class="text-slate-500 text-sm">จัดการเนื้อหาและสื่อการสอน</p>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="App.modals.act.close()" class="px-6 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-lg">ยกเลิก</button>
+                    <button onclick="App.api.saveAct()" class="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-lg">💾 บันทึกหลักสูตร</button>
+                </div>
+            </div>
+
+            <div class="flex-1 flex overflow-hidden">
+                <!-- Settings -->
+                <div class="w-1/3 bg-white border-r p-8 overflow-y-auto">
+                    <h4 class="font-bold text-lg mb-4">ข้อมูลทั่วไป</h4>
+                    <input type="hidden" id="inp-act-id">
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <input type="text" id="inp-act-code" class="w-full p-3 border rounded-xl font-mono text-sm" placeholder="รหัสวิชา (e.g. CS101)">
+                            <select id="inp-act-category" class="w-full p-3 border rounded-xl">
+                                <option value="General">หมวดทั่วไป (General)</option>
+                                <option value="Mathematics">คณิตศาสตร์ (Math)</option>
+                                <option value="Science">วิทยาศาสตร์ (Science)</option>
+                                <option value="English">ภาษาอังกฤษ (English)</option>
+                                <option value="Technology">เทคโนโลยี (Tech)</option>
+                            </select>
+                        </div>
+                        <input type="text" id="inp-act-title" class="w-full p-3 border rounded-xl" placeholder="ชื่อหลักสูตร">
+                        <div class="grid grid-cols-2 gap-4">
+                            <select id="inp-act-diff" class="w-full p-3 border rounded-xl"><option>ง่าย</option><option>ปานกลาง</option><option>ยาก</option></select>
+                            <input type="text" id="inp-act-dur" class="w-full p-3 border rounded-xl" placeholder="เวลาเรียน">
+                        </div>
+                        <select id="inp-act-type" class="w-full p-3 border rounded-xl">
+                            <option value="video">📹 วิดีโอคอร์ส</option>
+                            <option value="game">🎮 เกมการเรียนรู้</option>
+                            <option value="simulation">🔬 ห้องทดลอง</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Content Units -->
+                <div class="w-2/3 bg-slate-50 p-8 overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-bold text-lg">เนื้อหาบทเรียน (Units)</h4>
+                        <button onclick="App.builder.addUnit()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-bold shadow hover:bg-indigo-700">+ เพิ่มบทเรียนใหม่</button>
+                    </div>
+                    
+                    <div id="course-content-list" class="space-y-6"></div>
+                    
+                    <div id="empty-state" class="text-center py-12 text-slate-400 border-2 border-dashed border-slate-300 rounded-xl mt-4 hidden">
+                        <div class="text-4xl mb-2">📂</div><p>ยังไม่มีเนื้อหา กดปุ่มเพื่อเพิ่มบทเรียนแรก</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden File Input -->
+    <input type="file" id="file-uploader" class="hidden">
+
+    <!-- User Modal (Expanded for Member Details) -->
+    <div id="modal-user" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 modal-bg" onclick="App.modals.user.close()"></div>
+        <div class="bg-white rounded-2xl w-full max-w-2xl z-10 shadow-2xl flex flex-col overflow-hidden animate-zoom-in">
+            <div class="bg-slate-50 px-6 py-4 border-b flex justify-between items-center">
+                <h3 class="font-bold text-xl text-slate-800" id="userModalTitle">จัดการสมาชิก</h3>
+                <button onclick="App.modals.user.close()" class="text-slate-400 hover:text-slate-600">✕</button>
+            </div>
+            <div class="p-8 overflow-y-auto max-h-[75vh]">
+                <form id="form-user-edit" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <input type="hidden" id="inp-user-id">
+                    
+                    <div class="col-span-2 md:col-span-1">
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Username</label>
+                        <input type="text" id="inp-user-username" class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition bg-slate-50">
+                    </div>
+
+                    <div class="col-span-2 md:col-span-1">
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Password (เปลี่ยนใหม่)</label>
+                        <input type="password" id="inp-user-password" placeholder="ว่างไว้ถ้าไม่เปลี่ยน" class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                    </div>
+
+                    <div class="col-span-2 md:col-span-1">
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">ชื่อ-นามสกุล</label>
+                        <input type="text" id="inp-user-name" class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                    </div>
+
+                    <div class="col-span-2 md:col-span-1">
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">สิทธิ์การใช้งาน</label>
+                        <select id="inp-user-role" class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                            <option value="student">Student</option>
+                            <option value="teacher">Teacher</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+
+                    <div class="col-span-2 md:col-span-1">
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">อีเมล</label>
+                        <input type="email" id="inp-user-email" class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                    </div>
+
+                    <div class="col-span-2 md:col-span-1">
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">เบอร์โทรศัพท์</label>
+                        <input type="tel" id="inp-user-phone" class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                    </div>
+
+                    <div class="col-span-2 md:col-span-1">
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">สถานศึกษา</label>
+                        <input type="text" id="inp-user-school" class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                    </div>
+
+                    <div class="col-span-2 md:col-span-1">
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">วันเกิด</label>
+                        <input type="date" id="inp-user-birthdate" class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                    </div>
+
+                    <div class="col-span-2">
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">ที่อยู่</label>
+                        <textarea id="inp-user-address" rows="2" class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition"></textarea>
+                    </div>
+
+                    <div class="col-span-2">
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">เกี่ยวกับฉัน (Bio)</label>
+                        <textarea id="inp-user-bio" rows="2" class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition"></textarea>
+                    </div>
+
+                    <div class="col-span-2">
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">ลิงก์โซเชียล</label>
+                        <input type="text" id="inp-user-social" class="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                    </div>
+                </form>
+            </div>
+            <div class="bg-slate-50 px-6 py-4 border-t flex justify-end gap-3">
+                <button onclick="App.modals.user.close()" class="px-6 py-2 bg-white text-slate-600 font-bold rounded-xl border hover:bg-slate-50 transition">ยกเลิก</button>
+                <button onclick="App.api.saveUser()" class="px-8 py-2 bg-indigo-600 text-white font-bold rounded-xl shadow-lg hover:bg-indigo-700 transition">บันทึกข้อมูลสมาชิก</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const App = {
+            data: { users: [], acts: [] },
+            builderContent: [], 
+            pendingUpload: { unitIdx: -1, blockIdx: -1 },
+
+            init: async () => {
+                const role = sessionStorage.getItem('user_role');
+                if (role !== 'admin') {
+                    const userMenu = document.getElementById('menu-users');
+                    if(userMenu) userMenu.style.display = 'none';
+                }
+                document.getElementById('admin-name-display').innerText = sessionStorage.getItem('user_name') || 'Instructor';
+
+                await App.fetchData();
+                App.router('activities');
+                
+                document.getElementById('file-uploader').addEventListener('change', async (e) => {
+                    const file = e.target.files[0];
+                    if(!file) return;
+                    
+                    const fd = new FormData();
+                    fd.append('file', file);
+                    
+                    try {
+                        const res = await fetch('/api/upload', { method: 'POST', body: fd });
+                        const data = await res.json();
+                        if(data.success) {
+                            const { unitIdx, blockIdx } = App.pendingUpload;
+                            App.builder.updateBlock(unitIdx, blockIdx, 'url', data.url);
+                            App.builder.updateBlock(unitIdx, blockIdx, 'filename', data.name);
+                            App.builder.render();
+                        } else { alert('Upload failed'); }
+                    } catch(e) { alert('Upload error'); }
+                    e.target.value = ''; 
+                });
+            },
+
+            fetchData: async () => {
+                let actUrl = '/api/activities';
+                const role = sessionStorage.getItem('user_role');
+                const userId = sessionStorage.getItem('user_id');
+                
+                // If teacher, only fetch own courses
+                if (role === 'teacher') {
+                    actUrl += `?instructorId=${userId}`;
+                }
+
+                const [u, a] = await Promise.all([ fetch('/api/users').then(r=>r.json()), fetch(actUrl).then(r=>r.json()) ]);
+                App.data.users = u; App.data.acts = a;
+                App.render.users(); App.render.acts();
+            },
+
+            router: (p) => {
+                document.querySelectorAll('.view-content').forEach(el => el.classList.add('hidden'));
+                document.getElementById('view-'+p).classList.remove('hidden');
+            },
+
+            modals: {
+                user: {
+                    open: (d=null) => {
+                        document.getElementById('inp-user-id').value = d?d.id:'';
+                        document.getElementById('inp-user-name').value = d?d.name:'';
+                        document.getElementById('inp-user-role').value = d?d.role:'student';
+                        
+                        // New fields
+                        document.getElementById('inp-user-username').value = d?d.username || '':'';
+                        document.getElementById('inp-user-password').value = ''; // Reset password field
+                        document.getElementById('inp-user-email').value = d?d.email || '':'';
+                        document.getElementById('inp-user-phone').value = d?d.phone || '':'';
+                        document.getElementById('inp-user-school').value = d?d.school || '':'';
+                        document.getElementById('inp-user-birthdate').value = d?d.birthdate || '':'';
+                        document.getElementById('inp-user-address').value = d?d.address || '':'';
+                        document.getElementById('inp-user-bio').value = d?d.bio || '':'';
+                        document.getElementById('inp-user-social').value = d?d.social_links || '':'';
+
+                        document.getElementById('userModalTitle').innerText = d ? '✏️ แก้ไขข้อมูลสมาชิก' : '➕ เพิ่มสมาชิกใหม่';
+                        document.getElementById('modal-user').classList.remove('hidden');
+                    },
+                    close: () => document.getElementById('modal-user').classList.add('hidden')
+                },
+                act: {
+                    open: (d=null) => {
+                        let content = d && d.content ? JSON.parse(d.content) : [];
+                        // Migration: convert old content to blocks
+                        if(content.length > 0 && !content[0].blocks) {
+                            content = content.map(u => ({
+                                title: u.title || 'Lesson',
+                                blocks: [ { type: u.type, ...u } ] 
+                            }));
+                        }
+                        App.builderContent = content;
+
+                        document.getElementById('inp-act-id').value = d?d.id:'';
+                        document.getElementById('inp-act-code').value = d?d.course_code:'';
+                        document.getElementById('inp-act-category').value = d?d.category:'General';
+                        document.getElementById('inp-act-title').value = d?d.title:'';
+                        document.getElementById('inp-act-diff').value = d?d.difficulty:'ปานกลาง';
+                        document.getElementById('inp-act-dur').value = d?d.duration:'';
+                        App.builder.render();
+                        document.getElementById('modal-act').classList.remove('hidden');
+                    },
+                    close: () => document.getElementById('modal-act').classList.add('hidden')
+                }
+            },
+
+            builder: {
+                addUnit: () => {
+                    App.builderContent.push({ title: 'หัวข้อใหม่', blocks: [] });
+                    App.builder.render();
+                },
+                removeUnit: (idx) => { App.builderContent.splice(idx, 1); App.builder.render(); },
+                updateUnitTitle: (idx, val) => { App.builderContent[idx].title = val; },
+                
+                addBlock: (unitIdx, type) => {
+                    const block = { type };
+                    if(type === 'text') block.content = '';
+                    if(type === 'video') block.url = '';
+                    if(type === 'image' || type === 'file' || type === 'audio') { block.url = ''; block.filename = ''; }
+                    if(type === 'quiz') { block.question = ''; block.options = ['','','','']; block.correct = 0; }
+                    
+                    App.builderContent[unitIdx].blocks.push(block);
+                    App.builder.render();
+                },
+                removeBlock: (unitIdx, blockIdx) => {
+                    App.builderContent[unitIdx].blocks.splice(blockIdx, 1);
+                    App.builder.render();
+                },
+                updateBlock: (unitIdx, blockIdx, field, val) => {
+                    if(field.includes('options')) App.builderContent[unitIdx].blocks[blockIdx].options[parseInt(field.split('-')[1])] = val;
+                    else App.builderContent[unitIdx].blocks[blockIdx][field] = val;
+                },
+                triggerUpload: (unitIdx, blockIdx) => {
+                    App.pendingUpload = { unitIdx, blockIdx };
+                    document.getElementById('file-uploader').click();
+                },
+                
+                render: () => {
+                    const list = document.getElementById('course-content-list');
+                    if(App.builderContent.length === 0) document.getElementById('empty-state').classList.remove('hidden');
+                    else document.getElementById('empty-state').classList.add('hidden');
+
+                    list.innerHTML = App.builderContent.map((unit, uIdx) => `
+                        <div class="bg-white border rounded-xl shadow-sm overflow-hidden">
+                            <div class="bg-slate-100 p-3 flex items-center justify-between border-b">
+                                <div class="flex items-center gap-2 flex-1">
+                                    <span class="bg-indigo-600 text-white w-6 h-6 rounded flex items-center justify-center text-xs font-bold">${uIdx+1}</span>
+                                    <input type="text" value="${unit.title}" oninput="App.builder.updateUnitTitle(${uIdx}, this.value)" class="bg-transparent font-bold text-slate-700 outline-none w-full placeholder-slate-400" placeholder="ชื่อหัวข้อบทเรียน...">
+                                </div>
+                                <button onclick="App.builder.removeUnit(${uIdx})" class="text-red-400 hover:text-red-600 font-bold px-2">&times;</button>
+                            </div>
+
+                            <div class="p-4 space-y-3 bg-white">
+                                ${unit.blocks.map((b, bIdx) => `
+                                    <div class="relative group border border-dashed border-slate-200 rounded-lg p-3 hover:border-indigo-300 transition bg-slate-50/50">
+                                        <div class="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition">
+                                            <button onclick="App.builder.removeBlock(${uIdx}, ${bIdx})" class="text-red-500 bg-white rounded-full w-6 h-6 shadow flex items-center justify-center hover:bg-red-50">🗑️</button>
+                                        </div>
+                                        ${App.builder.renderBlockInput(uIdx, bIdx, b)}
+                                    </div>
+                                `).join('')}
+
+                                <div class="flex flex-wrap gap-2 pt-2 border-t mt-2">
+                                    <span class="text-xs font-bold text-slate-400 uppercase self-center mr-2">เพิ่มเนื้อหา:</span>
+                                    <button onclick="App.builder.addBlock(${uIdx}, 'text')" class="px-3 py-1 bg-white border hover:bg-slate-50 text-slate-600 rounded text-xs font-bold flex items-center gap-1">📝 ข้อความ</button>
+                                    <button onclick="App.builder.addBlock(${uIdx}, 'image')" class="px-3 py-1 bg-white border hover:bg-slate-50 text-pink-600 rounded text-xs font-bold flex items-center gap-1">🖼️ รูปภาพ</button>
+                                    <button onclick="App.builder.addBlock(${uIdx}, 'video')" class="px-3 py-1 bg-white border hover:bg-slate-50 text-red-600 rounded text-xs font-bold flex items-center gap-1">📹 วิดีโอ</button>
+                                    <button onclick="App.builder.addBlock(${uIdx}, 'audio')" class="px-3 py-1 bg-white border hover:bg-slate-50 text-purple-600 rounded text-xs font-bold flex items-center gap-1">🔊 เสียง</button>
+                                    <button onclick="App.builder.addBlock(${uIdx}, 'file')" class="px-3 py-1 bg-white border hover:bg-slate-50 text-blue-600 rounded text-xs font-bold flex items-center gap-1">📎 ไฟล์</button>
+                                    <button onclick="App.builder.addBlock(${uIdx}, 'quiz')" class="px-3 py-1 bg-white border hover:bg-slate-50 text-orange-600 rounded text-xs font-bold flex items-center gap-1">❓ ข้อสอบ</button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                },
+
+                renderBlockInput: (uIdx, bIdx, b) => {
+                    if(b.type === 'text') return `<textarea oninput="App.builder.updateBlock(${uIdx}, ${bIdx}, 'content', this.value)" class="w-full border-none bg-transparent outline-none p-1 min-h-[60px]" placeholder="พิมพ์เนื้อหาบทความที่นี่...">${b.content||''}</textarea>`;
+                    
+                    if(b.type === 'video') return `
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-2 text-sm text-red-600 font-bold">📹 Video Content</div>
+                            
+                            <!-- Tabs for Link vs Upload -->
+                            <div class="flex gap-4 text-sm border-b pb-2">
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="vid-type-${uIdx}-${bIdx}" checked onclick="document.getElementById('vid-link-${uIdx}-${bIdx}').classList.remove('hidden');document.getElementById('vid-file-${uIdx}-${bIdx}').classList.add('hidden')"> YouTube Link</label>
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="vid-type-${uIdx}-${bIdx}" onclick="document.getElementById('vid-link-${uIdx}-${bIdx}').classList.add('hidden');document.getElementById('vid-file-${uIdx}-${bIdx}').classList.remove('hidden')"> Upload MP4</label>
+                            </div>
+
+                            <!-- YouTube Input -->
+                            <div id="vid-link-${uIdx}-${bIdx}" class="flex gap-2">
+                                <input type="text" value="${b.url&&b.url.includes('http')?b.url:''}" oninput="App.builder.updateBlock(${uIdx}, ${bIdx}, 'url', this.value)" class="flex-1 border rounded p-2 text-sm" placeholder="วางลิงก์ YouTube (เช่น https://youtu.be/...)">
+                                <a href="${b.url}" target="_blank" class="px-3 py-2 bg-slate-100 text-slate-600 rounded text-sm font-bold hover:bg-slate-200">ตรวจสอบลิงก์</a>
+                            </div>
+
+                            <!-- File Upload Input -->
+                            <div id="vid-file-${uIdx}-${bIdx}" class="hidden flex items-center gap-3">
+                                <button onclick="App.builder.triggerUpload(${uIdx}, ${bIdx})" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded text-sm font-bold flex items-center gap-2">⬆️ อัปโหลดวิดีโอ (MP4)</button>
+                                <span class="text-sm text-slate-500 truncate flex-1">${b.filename || 'ยังไม่ได้เลือกไฟล์'}</span>
+                            </div>
+
+                            <!-- Preview -->
+                            ${b.url ? (b.url.includes('youtube') || b.url.includes('youtu.be') ? 
+                                `<div class="aspect-video bg-black rounded-lg overflow-hidden relative"><iframe src="https://www.youtube.com/embed/${b.url.split('v=')[1]?.split('&')[0]||b.url.split('/').pop()}" class="absolute inset-0 w-full h-full" frameborder="0"></iframe></div>` : 
+                                `<video src="${b.url}" controls class="w-full rounded-lg bg-black max-h-60"></video>`) 
+                            : ''}
+                        </div>`;
+                    
+                    if(['image', 'file', 'audio'].includes(b.type)) {
+                        return `
+                            <div class="flex items-center gap-3">
+                                <button onclick="App.builder.triggerUpload(${uIdx}, ${bIdx})" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-sm font-bold flex items-center gap-2">⬆️ อัปโหลด ${b.type}</button>
+                                <span class="text-sm text-slate-500 truncate flex-1">${b.filename || 'ยังไม่ได้เลือกไฟล์'}</span>
+                            </div>
+                            ${b.type==='image' && b.url ? `<img src="${b.url}" class="mt-2 max-h-40 rounded shadow-sm">` : ''}
+                            ${b.type==='audio' && b.url ? `<audio controls src="${b.url}" class="mt-2 w-full h-8"></audio>` : ''}
+                        `;
+                    }
+
+                    if(b.type === 'quiz') return `
+                        <div class="text-sm font-bold text-orange-600 mb-2">❓ คำถามท้ายบท</div>
+                        <input type="text" value="${b.question}" oninput="App.builder.updateBlock(${uIdx}, ${bIdx}, 'question', this.value)" class="w-full border rounded p-2 mb-2 text-sm font-bold" placeholder="ตั้งคำถาม...">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            ${[0,1,2,3].map(i => `
+                                <div class="flex items-center gap-2 bg-white border rounded px-2 py-1">
+                                    <input type="radio" name="q-${uIdx}-${bIdx}" ${b.correct==i?'checked':''} onchange="App.builder.updateBlock(${uIdx},${bIdx},'correct',${i})">
+                                    <input value="${b.options[i]}" oninput="App.builder.updateBlock(${uIdx},${bIdx},'options-${i}',this.value)" class="w-full outline-none text-sm" placeholder="ตัวเลือกที่ ${i+1}">
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                    return '';
+                }
+            },
+
+            api: {
+                saveAct: async () => {
+                    const id = document.getElementById('inp-act-id').value;
+                    const userId = sessionStorage.getItem('user_id');
+                    const userRole = sessionStorage.getItem('user_role');
+                    
+                    const body = {
+                        id, 
+                        title: document.getElementById('inp-act-title').value,
+                        course_code: document.getElementById('inp-act-code').value,
+                        category: document.getElementById('inp-act-category').value,
+                        type: document.getElementById('inp-act-type').value,
+                        difficulty: document.getElementById('inp-act-diff').value,
+                        duration: document.getElementById('inp-act-dur').value,
+                        content: App.builderContent,
+                        creator_id: userId, // Set creator for new, ignored by server if update (unless admin)
+                        requester_id: userId,
+                        requester_role: userRole
+                    };
+                    const res = await fetch('/api/activities', { method: id?'PUT':'POST', body: JSON.stringify(body) });
+                    if(res.ok) {
+                        App.modals.act.close(); App.fetchData();
+                    } else {
+                        alert('Permission Denied: You cannot edit this course.');
+                    }
+                },
+                deleteAct: async (id) => { 
+                    if(confirm('ลบ?')) { 
+                        const userId = sessionStorage.getItem('user_id');
+                        const userRole = sessionStorage.getItem('user_role');
+                        const res = await fetch(`/api/activities?id=${id}&requester_id=${userId}&requester_role=${userRole}`, {method:'DELETE'}); 
+                        if(res.ok) App.fetchData();
+                        else alert('Permission Denied');
+                    } 
+                },
+                saveUser: async () => {
+                    const id = document.getElementById('inp-user-id').value;
+                    const body = {
+                        id, 
+                        name: document.getElementById('inp-user-name').value, 
+                        role: document.getElementById('inp-user-role').value,
+                        username: document.getElementById('inp-user-username').value,
+                        email: document.getElementById('inp-user-email').value,
+                        phone: document.getElementById('inp-user-phone').value,
+                        school: document.getElementById('inp-user-school').value,
+                        birthdate: document.getElementById('inp-user-birthdate').value,
+                        address: document.getElementById('inp-user-address').value,
+                        bio: document.getElementById('inp-user-bio').value,
+                        social_links: document.getElementById('inp-user-social').value
+                    };
+                    const pass = document.getElementById('inp-user-password').value;
+                    if(pass) body.password = pass;
+
+                    await fetch('/api/users', { method: id?'PUT':'POST', body: JSON.stringify(body)});
+                    App.modals.user.close(); App.fetchData();
+                },
+                deleteUser: async (id) => { if(confirm('ลบ?')) { await fetch('/api/users?id='+id, {method:'DELETE'}); App.fetchData(); } }
+            },
+
+            render: {
+                users: () => {
+                    document.getElementById('table-users').innerHTML = App.data.users.map(u => `
+                        <tr class="border-b hover:bg-slate-50 transition">
+                            <td class="p-4">
+                                <div class="font-bold text-slate-800">${u.name}</div>
+                                <div class="text-xs text-slate-400">ID: ${u.id}</div>
+                            </td>
+                            <td class="p-4">
+                                <div class="text-slate-600 font-medium">${u.email || '-'}</div>
+                                <div class="text-[10px] text-slate-400 font-bold uppercase">${u.school || u.phone || '-'}</div>
+                            </td>
+                            <td class="p-4">
+                                <span class="px-2 py-1 rounded-md text-[10px] font-bold uppercase ${u.role==='admin'?'bg-red-100 text-red-600':u.role==='teacher'?'bg-amber-100 text-amber-600':'bg-indigo-100 text-indigo-600'}">
+                                    ${u.role}
+                                </span>
+                            </td>
+                            <td class="p-4">
+                                <div class="text-xs font-bold text-slate-700">Lv.${u.level}</div>
+                                <div class="text-[10px] text-slate-400">${u.xp} XP</div>
+                            </td>
+                            <td class="p-4 text-right">
+                                <button onclick='App.modals.user.open(${JSON.stringify(u).replace(/'/g, "&#39;")})' class="text-indigo-600 hover:bg-indigo-50 p-2 rounded-lg transition" title="Edit">✏️</button>
+                                <button onclick="App.api.deleteUser(${u.id})" class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition" title="Delete">🗑️</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                },
+                acts: () => {
+                    document.getElementById('grid-activities').innerHTML = App.data.acts.map(a => `
+                        <div class="bg-white p-5 rounded-xl shadow-sm border relative">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="bg-slate-100 text-slate-500 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">${a.course_code || 'NO CODE'}</span>
+                                <div class="flex gap-1"><button onclick='App.modals.act.open(${JSON.stringify(a).replace(/'/g, "&#39;")})' class="bg-orange-100 text-orange-600 p-1 rounded text-xs">✏️</button><button onclick="App.api.deleteAct(${a.id})" class="bg-red-100 text-red-600 p-1 rounded text-xs">🗑️</button></div>
+                            </div>
+                            <h4 class="font-bold text-slate-800">${a.title}</h4>
+                            <div class="text-xs text-indigo-600 font-bold mb-2">${a.category || 'General'}</div>
+                            <div class="flex items-center gap-2 text-xs text-gray-500">
+                                <span>${a.type==='video'?'📹':a.type==='game'?'🎮':'🔬'} ${a.type}</span>
+                                <span>•</span>
+                                <span>${a.difficulty}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+        };
+        App.init();
+    </script>
+</body>
+</html>

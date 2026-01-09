@@ -1,0 +1,17 @@
+{
+  "users": [
+    { "id": 1, "name": "อารยา สมใจ", "role": "student", "level": 15, "xp": 2450, "avatar": "👩‍🎓", "status": "active" },
+    { "id": 2, "name": "สมชาย รักเรียน", "role": "student", "level": 12, "xp": 1800, "avatar": "👨‍🎓", "status": "active" },
+    { "id": 3, "name": "Admin Master", "role": "admin", "level": 99, "xp": 99999, "avatar": "👑", "status": "active" }
+  ],
+  "activities": [
+    { "id": 1, "title": "เกมแก้สมการ", "type": "game", "difficulty": "ง่าย", "duration": "15m" },
+    { "id": 2, "title": "วิดีโอเรขาคณิต", "type": "video", "difficulty": "ปานกลาง", "duration": "25m" },
+    { "id": 3, "title": "แล็บฟิสิกส์", "type": "simulation", "difficulty": "ยาก", "duration": "40m" }
+  ],
+  "settings": {
+    "maintenanceMode": false,
+    "allowRegistration": true,
+    "announcement": "ยินดีต้อนรับสู่ระบบการเรียนรู้ใหม่!"
+  }
+}
