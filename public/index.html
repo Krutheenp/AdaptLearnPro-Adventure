@@ -324,7 +324,7 @@
             },
 
             render: {
-                hud: () => {
+                nav: () => {
                     const u = App.data.user;
                     if(!u) return;
                     // Desktop HUD
@@ -365,7 +365,12 @@
                     container.innerHTML = ''; svg.innerHTML = '';
                     
                     const acts = App.data.activities;
-                    
+                    // Group by category if needed or just render all
+                    const icons = { 
+                        'Mathematics': '📐', 'Science': '🧪', 'English': '📚', 'Technology': '💻', 'General': '🌍',
+                        'Social Studies': '🏛️', 'Arts': '🎨', 'Health': '❤️', 'Business': '💼'
+                    };
+
                     acts.forEach((act, i) => {
                         const top = 50 + (i * 120);
                         const left = (i % 2 === 0) ? '20%' : '60%';
@@ -374,7 +379,10 @@
                         node.className = `absolute w-16 h-16 bg-slate-800 border-4 border-indigo-500 rounded-2xl flex items-center justify-center text-2xl shadow-lg hover:scale-110 transition cursor-pointer z-10`;
                         node.style.top = `${top}px`;
                         node.style.left = left;
-                        node.innerText = act.type === 'video' ? '📺' : '🎮';
+                        
+                        // Use category icon
+                        const catIcon = icons[act.category] || (act.type === 'video' ? '📺' : '🎮');
+                        node.innerText = catIcon;
                         node.onclick = () => alert(`Starting: ${act.title}`);
                         
                         // Label
@@ -384,13 +392,6 @@
                         node.appendChild(label);
 
                         container.appendChild(node);
-
-                        // Line
-                        if (i > 0) {
-                            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-                            // Simple line logic (needs exact pixels in real app, approximation here)
-                            // This is just visual demo logic
-                        }
                     });
                     
                     container.style.height = `${acts.length * 120 + 200}px`;
