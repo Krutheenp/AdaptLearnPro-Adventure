@@ -347,14 +347,44 @@
 
         async function fetchProfile(userId) {
             try {
-                // Fetch user analytics AND leaderboard info
+                // Try Fetching Full Analytics
                 const res = await fetch(`/api/analytics?userId=${userId}&includeRank=true`);
+                if (!res.ok) throw new Error('Analytics failed');
                 const data = await res.json();
-                userData = data.user;
-                renderProfile(data);
+                
+                // Ensure data structure integrity
+                userData = data.user || {};
+                const safeData = {
+                    user: userData,
+                    rank: data.rank || '-',
+                    total_users: data.total_users || 0,
+                    certificates: data.certificates || [],
+                    activities: data.activities || [],
+                    portfolios: data.portfolios || [],
+                    skills: data.skills || []
+                };
+                renderProfile(safeData);
             } catch (err) {
-                console.error(err);
-                alert('โหลดข้อมูลล้มเหลว');
+                console.warn('Analytics API failed, falling back to basic user data:', err);
+                try {
+                    // Fallback: Fetch Basic User Data if Analytics fails
+                    const userListRes = await fetch('/api/users');
+                    const users = await userListRes.json();
+                    const foundUser = users.find(u => String(u.id) === String(userId));
+                    
+                    if(foundUser) {
+                        userData = foundUser;
+                        renderProfile({
+                            user: foundUser,
+                            rank: '-', total_users: 0,
+                            certificates: [], activities: [], portfolios: [], skills: []
+                        });
+                    } else {
+                        alert('ไม่พบข้อมูลผู้ใช้');
+                    }
+                } catch(e) {
+                    alert('โหลดข้อมูลล้มเหลว กรุณาลองใหม่ภายหลัง');
+                }
             }
         }
 
