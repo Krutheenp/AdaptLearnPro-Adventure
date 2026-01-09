@@ -75,6 +75,26 @@ module.exports = async (req, res) => {
             return res.status(200).json(rows);
         }
 
+        // --- 5. SEED DATA (For Demo) ---
+        if (pathname === '/api/seed') {
+            // Users
+            await sql`INSERT INTO users (username, password, role, name, level, coins) VALUES 
+                ('admin', 'password123', 'admin', 'Super Admin', 99, 9999) ON CONFLICT DO NOTHING`;
+            await sql`INSERT INTO users (username, password, role, name, level, coins) VALUES 
+                ('teacher', '1234', 'teacher', 'Teacher Demo', 50, 5000) ON CONFLICT DO NOTHING`;
+            await sql`INSERT INTO users (username, password, role, name, level, coins) VALUES 
+                ('student', '1234', 'student', 'Student Demo', 1, 100) ON CONFLICT DO NOTHING`;
+
+            // Activities
+            const content = JSON.stringify([{ type: 'text', content: 'Welcome to the demo course!' }]);
+            await sql`INSERT INTO activities (title, type, difficulty, duration, content, category, credits) VALUES 
+                ('Math 101: Algebra', 'game', 'Easy', '30m', ${content}, 'Mathematics', 3)`;
+            await sql`INSERT INTO activities (title, type, difficulty, duration, content, category, credits) VALUES 
+                ('Science: Solar System', 'video', 'Medium', '45m', ${content}, 'Science', 3)`;
+            
+            return res.status(200).json({ success: true, message: "Data seeded!" });
+        }
+
         // Fallback
         res.status(404).json({ error: "Route not found" });
 
