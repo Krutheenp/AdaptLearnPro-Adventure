@@ -38,6 +38,13 @@ module.exports = async (req, res) => {
             });
         }
 
+        if (pathname === '/api/users' && method === 'GET') {
+            return res.status(200).json([
+                { id: 99, username: 'demo', name: 'Demo Hero', role: 'student', level: 5, coins: 500, streak: 7, avatar: '🧙‍♂️' },
+                { id: 1, username: 'admin', name: 'Super Admin', role: 'admin', level: 99, coins: 9999, avatar: '👑' }
+            ]);
+        }
+
         return res.status(200).json({ message: "Running in Demo Mode (No DB Connected)" });
     }
 
