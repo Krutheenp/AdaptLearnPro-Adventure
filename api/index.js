@@ -80,6 +80,32 @@ module.exports = async (req, res) => {
             return res.status(200).json({ success: true, message: "Tables initialized" });
         }
 
+        // --- SEED DATA (FULL POPULATE) ---
+        if (pathname === '/api/seed') {
+            // 1. Users
+            await sql`INSERT INTO users (username, password, role, name, level, coins, xp, streak, avatar) VALUES 
+                ('admin', 'password123', 'admin', 'Gamemaster', 99, 99999, 50000, 100, '👑') ON CONFLICT (username) DO NOTHING`;
+            await sql`INSERT INTO users (username, password, role, name, level, coins, xp, streak, avatar) VALUES 
+                ('teacher', '1234', 'teacher', 'Prof. Albus', 50, 5000, 25000, 30, '🧙‍♂️') ON CONFLICT (username) DO NOTHING`;
+            await sql`INSERT INTO users (username, password, role, name, level, coins, xp, streak, avatar) VALUES 
+                ('student', '1234', 'student', 'Novice Hero', 5, 500, 1200, 3, '🙂') ON CONFLICT (username) DO NOTHING`;
+            
+            // 2. Shop Items
+            await sql`INSERT INTO items (name, description, price, type, icon) VALUES 
+                ('Streak Freeze', 'Freeze your streak for 1 day', 50, 'consumable', '🧊'),
+                ('XP Potion (x2)', 'Double XP for next mission', 100, 'consumable', '🧪'),
+                ('Golden Frame', 'Exclusive golden avatar border', 500, 'cosmetic', '🖼️'),
+                ('Wizard Hat', 'Unlock the Wizard avatar', 300, 'cosmetic', '🧙'),
+                ('Knight Helmet', 'Unlock the Knight avatar', 300, 'cosmetic', '⛑️')`;
+
+            // 3. Activities
+            const content = JSON.stringify([{ type: 'text', content: 'Welcome to the world of numbers!' }]);
+            await sql`INSERT INTO activities (title, type, difficulty, duration, content, category, credits, course_code) VALUES 
+                ('Math: The Beginning', 'game', 'Easy', '10m', ${content}, 'Mathematics', 1, 'MAT101')`;
+            
+            return res.status(200).json({ success: true, message: "Database seeded with Users, Items, and Activities!" });
+        }
+
         // --- 2. AUTH ---
         if (pathname === '/api/login' && method === 'POST') {
             const { username, password } = req.body;
@@ -117,6 +143,35 @@ module.exports = async (req, res) => {
         // --- 7. USERS ---
         if (pathname === '/api/users' && method === 'GET') {
             const { rows } = await sql`SELECT * FROM users`;
+            return res.status(200).json(rows);
+        }
+
+        // --- 8. BUY ITEM ---
+        if (pathname === '/api/shop/buy' && method === 'POST') {
+            const { userId, itemId } = req.body;
+            // 1. Check User Coins
+            const userRes = await sql`SELECT coins FROM users WHERE id = ${userId}`;
+            if (userRes.rows.length === 0) return res.status(404).json({ error: "User not found" });
+            const userCoins = userRes.rows[0].coins;
+
+            // 2. Check Item Price
+            const itemRes = await sql`SELECT price FROM items WHERE id = ${itemId}`;
+            if (itemRes.rows.length === 0) return res.status(404).json({ error: "Item not found" });
+            const price = itemRes.rows[0].price;
+
+            // 3. Transaction
+            if (userCoins < price) return res.status(400).json({ error: "Not enough coins!" });
+
+            await sql`UPDATE users SET coins = coins - ${price} WHERE id = ${userId}`;
+            await sql`INSERT INTO user_items (user_id, item_id, acquired_at) VALUES (${userId}, ${itemId}, ${new Date().toISOString()})`;
+
+            return res.status(200).json({ success: true, new_balance: userCoins - price });
+        }
+
+        // --- 9. INVENTORY ---
+        if (pathname === '/api/inventory' && method === 'GET') {
+            const userId = url.searchParams.get('userId');
+            const { rows } = await sql`SELECT i.*, ui.acquired_at FROM user_items ui JOIN items i ON ui.item_id = i.id WHERE ui.user_id = ${userId}`;
             return res.status(200).json(rows);
         }
 
