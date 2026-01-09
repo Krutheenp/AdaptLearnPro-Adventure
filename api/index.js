@@ -67,10 +67,15 @@ module.exports = async (req, res) => {
             await sql`CREATE TABLE IF NOT EXISTS activities (id SERIAL PRIMARY KEY, title TEXT, type TEXT, difficulty TEXT, duration TEXT, content TEXT, category TEXT, credits INT, course_code TEXT, creator_id INT)`;
             await sql`CREATE TABLE IF NOT EXISTS user_progress (id SERIAL PRIMARY KEY, user_id INT, activity_id INT, score INT, status TEXT, completed_at TEXT)`;
             await sql`CREATE TABLE IF NOT EXISTS reviews (id SERIAL PRIMARY KEY, user_id INT, activity_id INT, rating INT, comment TEXT, created_at TEXT)`;
+            
+            // New: Shop Tables
+            await sql`CREATE TABLE IF NOT EXISTS items (id SERIAL PRIMARY KEY, name TEXT, description TEXT, price INT, type TEXT, icon TEXT)`;
+            await sql`CREATE TABLE IF NOT EXISTS user_items (id SERIAL PRIMARY KEY, user_id INT, item_id INT, acquired_at TEXT)`;
+
             return res.status(200).json({ success: true, message: "Tables initialized" });
         }
 
-        // --- SEED ---
+        // --- 5. SEED DATA ---
         if (pathname === '/api/seed') {
             await sql`INSERT INTO users (username, password, role, name, level, coins) VALUES ('admin', 'password123', 'admin', 'Super Admin', 99, 9999) ON CONFLICT DO NOTHING`;
             await sql`INSERT INTO users (username, password, role, name, level, coins) VALUES ('teacher', '1234', 'teacher', 'Teacher Demo', 50, 5000) ON CONFLICT DO NOTHING`;
@@ -79,7 +84,61 @@ module.exports = async (req, res) => {
             const content = JSON.stringify([{ type: 'text', content: 'Welcome to the demo course!' }]);
             await sql`INSERT INTO activities (title, type, difficulty, duration, content, category, credits) VALUES ('Math 101: Algebra', 'game', 'Easy', '30m', ${content}, 'Mathematics', 3)`;
             
+            // Seed Items
+            await sql`INSERT INTO items (name, description, price, type, icon) VALUES 
+                ('Streak Freeze', 'Protect your streak for 1 day', 50, 'consumable', '🧊'),
+                ('Double XP Potion', 'Gain 2x XP for 1 hour', 100, 'consumable', '🧪'),
+                ('Golden Frame', 'Shiny profile avatar frame', 500, 'cosmetic', '🖼️'),
+                ('Wizard Hat', 'Unlock Wizard role title', 300, 'cosmetic', '🧙)')`;
+
             return res.status(200).json({ success: true, message: "Data seeded!" });
+        }
+
+        // --- 7. SHOP & INVENTORY ---
+        if (pathname === '/api/shop' && method === 'GET') {
+            try {
+                const { rows } = await sql`SELECT * FROM items ORDER BY price ASC`;
+                return res.status(200).json(rows);
+            } catch (e) {
+                // Mock Items
+                return res.status(200).json([
+                    { id: 1, name: 'Streak Freeze', description: 'Prevent streak loss', price: 50, icon: '🧊' },
+                    { id: 2, name: 'Golden Frame', description: 'Show off your wealth', price: 500, icon: '🖼️' }
+                ]);
+            }
+        }
+
+        if (pathname === '/api/shop/buy' && method === 'POST') {
+            const { userId, itemId } = req.body;
+            try {
+                // 1. Check User Coins
+                const userRes = await sql`SELECT coins FROM users WHERE id = ${userId}`;
+                if (userRes.rows.length === 0) return res.status(404).json({ error: "User not found" });
+                const userCoins = userRes.rows[0].coins;
+
+                // 2. Check Item Price
+                const itemRes = await sql`SELECT price FROM items WHERE id = ${itemId}`;
+                if (itemRes.rows.length === 0) return res.status(404).json({ error: "Item not found" });
+                const price = itemRes.rows[0].price;
+
+                // 3. Transaction
+                if (userCoins < price) return res.status(400).json({ error: "Not enough coins!" });
+
+                await sql`UPDATE users SET coins = coins - ${price} WHERE id = ${userId}`;
+                await sql`INSERT INTO user_items (user_id, item_id, acquired_at) VALUES (${userId}, ${itemId}, ${new Date().toISOString()})`;
+
+                return res.status(200).json({ success: true, new_balance: userCoins - price });
+            } catch (e) {
+                return res.status(500).json({ error: e.message });
+            }
+        }
+
+        if (pathname === '/api/inventory' && method === 'GET') {
+            const userId = url.searchParams.get('userId');
+            try {
+                const { rows } = await sql`SELECT i.*, ui.acquired_at FROM user_items ui JOIN items i ON ui.item_id = i.id WHERE ui.user_id = ${userId}`;
+                return res.status(200).json(rows);
+            } catch(e) { return res.status(200).json([]); }
         }
 
         // --- ACTIVITIES ---
@@ -96,6 +155,31 @@ module.exports = async (req, res) => {
             return res.status(200).json({ user: userRes.rows[0], activities: progRes.rows, total_score: 0 });
         }
 
+        // --- 6. LEADERBOARD ---
+        if (pathname === '/api/leaderboard' && method === 'GET') {
+            try {
+                // Real DB Query
+                const { rows } = await sql`SELECT id, name, avatar, level, xp, role FROM users ORDER BY xp DESC LIMIT 20`;
+                return res.status(200).json(rows);
+            } catch (dbErr) {
+                // Mock Data for Demo
+                const mockUsers = [
+                    { id: 1, name: 'DragonSlayer', avatar: '🐉', level: 15, xp: 15400, role: 'student' },
+                    { id: 2, name: 'PixelWizard', avatar: '🧙‍♂️', level: 12, xp: 12300, role: 'student' },
+                    { id: 3, name: 'CodeNinja', avatar: '🥷', level: 10, xp: 10500, role: 'student' },
+                    { id: 4, name: 'StarGazer', avatar: '👩‍🚀', level: 8, xp: 8200, role: 'student' },
+                    { id: 99, name: 'Demo Hero', avatar: '🧙‍♂️', level: 5, xp: 5000, role: 'student' } // Current User
+                ];
+                // Generate more filler users
+                for(let i=5; i<=15; i++) {
+                    mockUsers.push({ id: i, name: `Player ${i}`, avatar: '👤', level: Math.floor(Math.random()*8)+1, xp: Math.floor(Math.random()*5000), role: 'student' });
+                }
+                mockUsers.sort((a,b) => b.xp - a.xp);
+                return res.status(200).json(mockUsers);
+            }
+        }
+
+        // Fallback
         res.status(404).json({ error: "Route not found" });
 
     } catch (error) {
