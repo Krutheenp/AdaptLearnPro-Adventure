@@ -72,14 +72,93 @@ module.exports = async (req, res) => {
         // For safety, let's catch-all to mock if specific DB query fails or route missing in DB logic but exists in mock.
         
         // (Short-circuit for brevity: if we reached here and didn't return, it means either route is missing or I should add more DB logic)
+        // --- UPDATE PROGRESS & REWARDS ---
+        if (pathname === '/api/progress' && method === 'POST') {
+            const { userId, activityId, score, status } = req.body;
+            
+            try {
+                // 1. Record Progress
+                await sql`INSERT INTO user_progress (user_id, activity_id, score, status, completed_at) 
+                          VALUES (${userId}, ${activityId}, ${score}, ${status}, ${new Date().toISOString()})`;
+
+                // 2. Calculate Rewards (Only if completed)
+                if (status === 'completed') {
+                    // Fetch Activity Credits
+                    const actRes = await sql`SELECT title, credits, category FROM activities WHERE id = ${activityId}`;
+                    const act = actRes.rows[0];
+                    const xpGain = (act.credits || 1) * 50; // 50 XP per credit
+                    const coinGain = (act.credits || 1) * 20; // 20 Coins per credit
+
+                    // Update User Stats
+                    await sql`UPDATE users SET xp = xp + ${xpGain}, coins = coins + ${coinGain} WHERE id = ${userId}`;
+                    
+                    // Check Level Up (Every 1000 XP = 1 Level for simplicity)
+                    await sql`UPDATE users SET level = FLOOR(xp / 1000) + 1 WHERE id = ${userId}`;
+
+                    // 3. Issue Certificate
+                    const code = "CERT-" + Math.random().toString(36).substr(2, 9).toUpperCase();
+                    const date = new Date().toLocaleDateString('en-GB');
+                    
+                    // Check if cert already exists
+                    const certCheck = await sql`SELECT id FROM certificates WHERE user_id = ${userId} AND course_title = ${act.title}`;
+                    if (certCheck.rows.length === 0) {
+                        const userRes = await sql`SELECT name FROM users WHERE id = ${userId}`;
+                        const userName = userRes.rows[0].name;
+                        await sql`INSERT INTO certificates (user_id, user_name, course_title, issue_date, code) 
+                                  VALUES (${userId}, ${userName}, ${act.title}, ${date}, ${code})`;
+                    }
+                }
+
+                return res.status(200).json({ success: true });
+            } catch (e) {
+                return res.status(500).json({ error: e.message });
+            }
+        }
         // I will add the rest of DB logic here quickly.
         
-        if (pathname === '/api/analytics') {
+        // --- 3. ANALYTICS ---
+        if (pathname === '/api/analytics' && method === 'GET') {
             const userId = url.searchParams.get('userId');
-            const u = await sql`SELECT * FROM users WHERE id = ${userId}`;
-            return res.status(200).json({ user: u.rows[0], activities: [], total_score: 0 });
+            const userRes = await sql`SELECT * FROM users WHERE id = ${userId}`;
+            const progRes = await sql`SELECT p.*, a.title, a.category, a.credits FROM user_progress p JOIN activities a ON p.activity_id = a.id WHERE p.user_id = ${userId}`;
+            const certRes = await sql`SELECT * FROM certificates WHERE user_id = ${userId} ORDER BY id DESC`;
+            
+            // Calc Rank
+            const rankRes = await sql`SELECT id FROM users ORDER BY xp DESC`;
+            const rank = rankRes.rows.findIndex(r => String(r.id) === String(userId)) + 1;
+
+            return res.status(200).json({ 
+                user: userRes.rows[0], 
+                activities: progRes.rows, 
+                certificates: certRes.rows,
+                total_score: progRes.rows.reduce((s, p) => s + (p.score || 0), 0),
+                rank: rank,
+                total_users: rankRes.rows.length
+            });
         }
 
+        // --- 8. BUY ITEM ---
+        if (pathname === '/api/shop/buy' && method === 'POST') {
+            const { userId, itemId } = req.body;
+            try {
+                const userRes = await sql`SELECT coins FROM users WHERE id = ${userId}`;
+                if (userRes.rows.length === 0) return res.status(404).json({ error: "User not found" });
+                const userCoins = userRes.rows[0].coins;
+
+                const itemRes = await sql`SELECT price FROM items WHERE id = ${itemId}`;
+                if (itemRes.rows.length === 0) return res.status(404).json({ error: "Item not found" });
+                const price = itemRes.rows[0].price;
+
+                if (userCoins < price) return res.status(400).json({ error: "Not enough coins!" });
+
+                await sql`UPDATE users SET coins = coins - ${price} WHERE id = ${userId}`;
+                await sql`INSERT INTO user_items (user_id, item_id, acquired_at) VALUES (${userId}, ${itemId}, ${new Date().toISOString()})`;
+
+                return res.status(200).json({ success: true, new_balance: userCoins - price });
+            } catch (e) { return res.status(500).json({ error: e.message }); }
+        }
+
+        // --- 9. INVENTORY ---
         // --- SEED DATA (FULL POPULATE) ---
         if (pathname === '/api/seed') {
             // 1. Users
