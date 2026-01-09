@@ -4,46 +4,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AdaptLearn Adventure</title>
+    <title>AdaptLearn Adventure - The Knowledge Quest</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #0f172a; color: #e2e8f0; overflow-x: hidden; }
-        
-        /* Glassmorphism */
+        body { font-family: 'Sarabun', sans-serif; background-color: #1a1a2e; color: #e2e8f0; overflow-x: hidden; }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
         .glass-strong { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(16px); border-right: 1px solid rgba(255,255,255,0.05); }
-        
-        /* Animations */
         .hover-bounce:hover { transform: translateY(-3px); }
-        .active-scale:active { transform: scale(0.95); }
+        .btn-game { background: linear-gradient(to bottom, #f59e0b, #d97706); border: 2px solid #78350f; box-shadow: 0 4px 0 #78350f; color: white; text-shadow: 1px 1px 0 #78350f; transition: all 0.1s; }
+        .btn-game:active { transform: translateY(4px); box-shadow: 0 0 0 #78350f; }
         .fade-in { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
         /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
-
-        /* Map Styles */
-        .map-path { stroke: #6366f1; stroke-width: 3; stroke-dasharray: 8; animation: dash 30s linear infinite; opacity: 0.6; }
-        @keyframes dash { to { stroke-dashoffset: 1000; } }
-        
-        /* Nav Item Styles */
-        .nav-item { @apply flex items-center gap-4 p-3 rounded-xl transition-all duration-200 text-slate-400 hover:bg-slate-800 hover:text-white cursor-pointer; }
-        .nav-item.active { @apply bg-indigo-600/20 text-indigo-400 border border-indigo-600/30; }
-        .nav-icon { @apply w-10 h-10 flex items-center justify-center rounded-lg bg-slate-800 text-xl transition-colors; }
-        .nav-item:hover .nav-icon { @apply bg-indigo-600 text-white; }
-        .nav-item.active .nav-icon { @apply bg-indigo-600 text-white shadow-lg shadow-indigo-500/30; }
     </style>
 </head>
 
 <body class="bg-slate-900 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
 
-    <!-- LOGIN / GUEST SCREEN -->
+    <!-- LOGIN SCREEN (If not logged in) -->
     <div id="guest-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] hidden">
         <div class="text-center p-8 max-w-md w-full glass rounded-3xl shadow-2xl border border-slate-700 fade-in">
             <div class="text-6xl mb-6">🛡️</div>
@@ -52,7 +37,7 @@
             <a href="/login.html" class="block w-full py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold rounded-xl shadow-lg transition transform hover:scale-105 active:scale-95 mb-4">
                 Login / Register
             </a>
-            <div class="text-xs text-slate-500">v2.0.0 • Connected to Server</div>
+            <div class="text-xs text-slate-500">v2.1.0 • Ready</div>
         </div>
     </div>
 
@@ -69,34 +54,34 @@
 
             <!-- Nav Menu -->
             <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
-                <div onclick="App.ui.tab('dashboard')" class="nav-item active" id="nav-dashboard">
-                    <div class="nav-icon"><i class="fa-solid fa-map"></i></div>
+                <div onclick="Game.ui.tab('dashboard')" class="flex items-center gap-4 p-3 rounded-xl transition-all duration-200 text-slate-400 hover:bg-slate-800 hover:text-white cursor-pointer active nav-item" id="nav-dashboard">
+                    <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-800 text-xl"><i class="fa-solid fa-map"></i></div>
                     <span class="hidden lg:block font-medium">Adventure</span>
                 </div>
-                <div onclick="App.ui.tab('leaderboard')" class="nav-item" id="nav-leaderboard">
-                    <div class="nav-icon"><i class="fa-solid fa-trophy"></i></div>
+                <div onclick="Game.ui.tab('leaderboard')" class="flex items-center gap-4 p-3 rounded-xl transition-all duration-200 text-slate-400 hover:bg-slate-800 hover:text-white cursor-pointer nav-item" id="nav-leaderboard">
+                    <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-800 text-xl"><i class="fa-solid fa-trophy"></i></div>
                     <span class="hidden lg:block font-medium">Leaderboard</span>
                 </div>
-                <div onclick="App.ui.tab('shop')" class="nav-item" id="nav-shop">
-                    <div class="nav-icon"><i class="fa-solid fa-store"></i></div>
+                <div onclick="Game.ui.tab('shop')" class="flex items-center gap-4 p-3 rounded-xl transition-all duration-200 text-slate-400 hover:bg-slate-800 hover:text-white cursor-pointer nav-item" id="nav-shop">
+                    <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-800 text-xl"><i class="fa-solid fa-store"></i></div>
                     <span class="hidden lg:block font-medium">Item Shop</span>
                 </div>
-                <div onclick="window.location.href='/profile.html'" class="nav-item">
-                    <div class="nav-icon"><i class="fa-solid fa-user-astronaut"></i></div>
+                <div onclick="window.location.href='/profile.html'" class="flex items-center gap-4 p-3 rounded-xl transition-all duration-200 text-slate-400 hover:bg-slate-800 hover:text-white cursor-pointer nav-item">
+                    <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-800 text-xl"><i class="fa-solid fa-user-astronaut"></i></div>
                     <span class="hidden lg:block font-medium">My Profile</span>
                 </div>
                 
                 <!-- Admin Only -->
-                <a href="/admin.html" id="menu-admin" class="nav-item hidden">
-                    <div class="nav-icon bg-slate-800 text-yellow-500"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
-                    <span class="hidden lg:block font-medium text-yellow-500">Instructor</span>
+                <a href="/admin.html" id="menu-admin" class="flex items-center gap-4 p-3 rounded-xl transition-all duration-200 text-yellow-500 hover:bg-slate-800 cursor-pointer hidden">
+                    <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-800 text-xl"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                    <span class="hidden lg:block font-medium">Instructor</span>
                 </a>
             </nav>
 
             <!-- Bottom Action (Logout) -->
             <div class="p-4 border-t border-slate-800">
-                <button onclick="App.auth.logout()" class="nav-item w-full hover:bg-red-500/10 hover:text-red-400 group">
-                    <div class="nav-icon group-hover:bg-red-500 group-hover:text-white"><i class="fa-solid fa-right-from-bracket"></i></div>
+                <button onclick="Game.auth.logout()" class="w-full flex items-center gap-4 p-3 rounded-xl transition-all duration-200 text-red-400 hover:bg-red-500/10 group">
+                    <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-800 text-xl group-hover:bg-red-500 group-hover:text-white"><i class="fa-solid fa-right-from-bracket"></i></div>
                     <span class="hidden lg:block font-medium">Logout</span>
                 </button>
             </div>
@@ -115,7 +100,8 @@
                     <div class="flex items-center gap-1 bg-slate-800 px-2 py-1 rounded-full border border-slate-700">
                         <span>🪙</span><span class="text-xs font-bold text-yellow-400" id="mob-coins">0</span>
                     </div>
-                    <img src="" id="mob-avatar" class="w-8 h-8 rounded-full bg-slate-700 border border-slate-500" onclick="window.location.href='/profile.html'">
+                    <img src="" id="mob-avatar" class="w-8 h-8 rounded-full bg-slate-700 border border-slate-500 object-cover" onclick="window.location.href='/profile.html'" style="display:none">
+                    <div id="mob-avatar-txt" class="w-8 h-8 rounded-full bg-slate-700 border border-slate-500 flex items-center justify-center" onclick="window.location.href='/profile.html'">🙂</div>
                 </div>
             </header>
 
@@ -153,7 +139,10 @@
                         <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 blur-[80px] rounded-full"></div>
                         
                         <div class="relative z-10">
-                            <div class="w-32 h-32 md:w-40 md:h-40 bg-slate-800 rounded-full border-4 border-indigo-500 flex items-center justify-center text-6xl shadow-2xl avatar-bob" id="dash-avatar">🙂</div>
+                            <div class="w-32 h-32 md:w-40 md:h-40 bg-slate-800 rounded-full border-4 border-indigo-500 flex items-center justify-center text-6xl shadow-2xl avatar-bob overflow-hidden">
+                                <span id="dash-avatar-txt">🙂</span>
+                                <img id="dash-avatar-img" class="w-full h-full object-cover hidden">
+                            </div>
                             <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap shadow-lg" id="dash-role">Student</div>
                         </div>
                         
@@ -177,7 +166,8 @@
                     <!-- Adventure Map Container -->
                     <div class="relative min-h-[600px] bg-slate-900 rounded-3xl border border-slate-700 shadow-inner overflow-hidden" id="map-wrapper">
                         <div class="absolute top-4 left-4 z-20 flex gap-2">
-                            <span class="bg-slate-800/80 backdrop-blur text-white px-4 py-2 rounded-lg text-sm font-bold border border-slate-600">🗺️ World 1</span>
+                            <span class="bg-slate-800/80 backdrop-blur text-white px-4 py-2 rounded-lg text-sm font-bold border border-slate-600" id="map-title-badge">🗺️ All Worlds</span>
+                            <button onclick="Game.render.map(null)" class="bg-slate-700 text-white px-3 py-2 rounded-lg text-xs hover:bg-slate-600 hidden" id="map-back-btn">⬅️ Back</button>
                         </div>
                         <svg class="absolute inset-0 w-full h-full z-0" id="map-svg"></svg>
                         <div id="map-nodes" class="relative z-10 w-full h-full"></div>
@@ -214,21 +204,21 @@
 
             <!-- Mobile Bottom Nav -->
             <nav class="md:hidden h-16 glass-strong flex justify-around items-center px-2 z-50 fixed bottom-0 w-full border-t border-slate-800">
-                <button onclick="App.ui.tab('dashboard')" class="p-2 text-slate-400 hover:text-indigo-400 active:text-indigo-500 flex flex-col items-center">
+                <button onclick="Game.ui.tab('dashboard')" class="p-2 text-slate-400 hover:text-indigo-400 active:text-indigo-500 flex flex-col items-center">
                     <i class="fa-solid fa-map text-lg"></i><span class="text-[10px]">Map</span>
                 </button>
-                <button onclick="App.ui.tab('leaderboard')" class="p-2 text-slate-400 hover:text-yellow-400 flex flex-col items-center">
+                <button onclick="Game.ui.tab('leaderboard')" class="p-2 text-slate-400 hover:text-yellow-400 flex flex-col items-center">
                     <i class="fa-solid fa-trophy text-lg"></i><span class="text-[10px]">Rank</span>
                 </button>
                 <div class="relative -top-5">
-                    <button onclick="App.ai.toggle()" class="w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center text-white shadow-lg border-4 border-slate-900 hover:scale-110 transition">
+                    <button onclick="Game.ai.toggle()" class="w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center text-white shadow-lg border-4 border-slate-900 hover:scale-110 transition">
                         <i class="fa-solid fa-robot text-xl"></i>
                     </button>
                 </div>
-                <button onclick="App.ui.tab('shop')" class="p-2 text-slate-400 hover:text-blue-400 flex flex-col items-center">
+                <button onclick="Game.ui.tab('shop')" class="p-2 text-slate-400 hover:text-blue-400 flex flex-col items-center">
                     <i class="fa-solid fa-store text-lg"></i><span class="text-[10px]">Shop</span>
                 </button>
-                <button onclick="App.auth.logout()" class="p-2 text-slate-400 hover:text-red-400 flex flex-col items-center">
+                <button onclick="Game.auth.logout()" class="p-2 text-slate-400 hover:text-red-400 flex flex-col items-center">
                     <i class="fa-solid fa-door-open text-lg"></i><span class="text-[10px]">Exit</span>
                 </button>
             </nav>
@@ -238,17 +228,17 @@
                 <div id="ai-window" class="w-80 h-96 bg-slate-800 rounded-2xl shadow-2xl border border-slate-600 flex flex-col hidden overflow-hidden animate-zoom-in">
                     <div class="bg-slate-900 p-3 flex justify-between items-center border-b border-slate-700">
                         <span class="font-bold text-indigo-400 text-sm">🤖 AI Game Master</span>
-                        <button onclick="App.ai.toggle()" class="text-slate-500 hover:text-white">✕</button>
+                        <button onclick="Game.ai.toggle()" class="text-slate-500 hover:text-white">✕</button>
                     </div>
                     <div id="ai-chat-box" class="flex-1 p-3 overflow-y-auto space-y-3 bg-slate-800/50 text-sm">
                         <div class="text-slate-400 text-center text-xs mt-4">Ask me anything about your quest!</div>
                     </div>
                     <div class="p-2 bg-slate-900 border-t border-slate-700 flex gap-2">
                         <input id="ai-input" class="flex-1 bg-slate-800 border border-slate-600 rounded-lg px-3 py-1 text-sm text-white outline-none focus:border-indigo-500" placeholder="Type...">
-                        <button onclick="App.ai.send()" class="bg-indigo-600 text-white px-3 py-1 rounded-lg text-xs font-bold">Send</button>
+                        <button onclick="Game.ai.send()" class="bg-indigo-600 text-white px-3 py-1 rounded-lg text-xs font-bold">Send</button>
                     </div>
                 </div>
-                <button onclick="App.ai.toggle()" class="w-14 h-14 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full shadow-xl flex items-center justify-center text-2xl transition hover:scale-110 active:scale-95">
+                <button onclick="Game.ai.toggle()" class="w-14 h-14 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full shadow-xl flex items-center justify-center text-2xl transition hover:scale-110 active:scale-95">
                     <i class="fa-solid fa-robot"></i>
                 </button>
             </div>
@@ -258,167 +248,190 @@
 
     <!-- JAVASCRIPT LOGIC -->
     <script>
-        const App = {
-            data: { user: null, activities: [], items: [], inventory: [] },
+        const Game = {
+            data: { user: null, activities: [], items: [], inventory: [], currentWorld: null },
             
             init: async () => {
-                // 1. Check Auth
                 const uid = sessionStorage.getItem('user_id');
+                console.log("Checking Auth for ID:", uid);
+
                 if (!uid) {
                     document.getElementById('guest-screen').classList.remove('hidden');
                     return;
                 }
 
-                // 2. Load UI
+                // Show Layout
                 document.getElementById('app-layout').classList.remove('hidden');
                 
-                // 3. Fetch Data
-                await App.api.loadAll();
+                // Fetch Data
+                await Game.api.loadAll(uid);
                 
-                // 4. Render Initial State
-                App.render.hud();
-                App.render.dashboard();
+                // Render
+                Game.render.hud();
+                Game.render.dashboard();
                 
-                // 5. Setup Listeners
-                document.getElementById('ai-input').addEventListener('keypress', (e) => e.key === 'Enter' && App.ai.send());
+                // Listeners
+                const aiInput = document.getElementById('ai-input');
+                if(aiInput) aiInput.addEventListener('keypress', (e) => e.key === 'Enter' && Game.ai.send());
             },
 
             ui: {
                 tab: (name) => {
                     document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
-                    document.getElementById(`view-${name}`).classList.remove('hidden');
+                    const target = document.getElementById(`view-${name}`);
+                    if(target) target.classList.remove('hidden');
                     
-                    // Update Active Nav
                     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
                     const navBtn = document.getElementById(`nav-${name}`);
                     if(navBtn) navBtn.classList.add('active');
 
-                    // Trigger specific renders
-                    if (name === 'leaderboard') App.render.leaderboard();
-                    if (name === 'shop') App.render.shop();
-                    if (name === 'dashboard') App.render.map();
+                    if (name === 'leaderboard') Game.render.leaderboard();
+                    if (name === 'shop') Game.render.shop();
+                    if (name === 'dashboard') Game.render.map(Game.data.currentWorld);
                 }
             },
 
             auth: {
-                logout: () => { sessionStorage.clear(); window.location.reload(); }
+                logout: () => { sessionStorage.clear(); window.location.href = '/login.html'; }
             },
 
             api: {
-                fetchAll: async () => {
+                loadAll: async (uid) => {
                     try {
-                        const uid = sessionStorage.getItem('user_id');
-                        if(!uid) return;
-
                         const [uRes, aRes] = await Promise.all([
-                            fetch(`/api/analytics?userId=${uid}`), // Get User + Progress + Rank
+                            fetch(`/api/analytics?userId=${uid}`), 
                             fetch('/api/activities')
                         ]);
                         
+                        if(!uRes.ok) throw new Error("User API Failed");
                         const userData = await uRes.json();
                         const actData = await aRes.json();
 
-                        // Strict Sync: Use DB data over session data
-                        if (userData.user && userData.user.id) {
-                            App.data.user = {
-                                ...userData.user,
-                                rank: userData.rank || '-', // Add rank to global user state
-                                xp: userData.user.xp || 0,
-                                coins: userData.user.coins || 0,
-                                level: userData.user.level || 1
-                            };
-                            // Update session storage to match
-                            sessionStorage.setItem('user_xp', App.data.user.xp);
-                            sessionStorage.setItem('user_level', App.data.user.level);
-                        } else {
-                            // Fallback if analytics returns empty user
-                            console.warn("User data mismatch, forcing re-login");
-                            App.auth.logout();
-                        }
-
-                        App.data.activities = actData || [];
-                        App.data.progress = userData || {}; // Save full progress object
-                        
-                    } catch (e) { console.error("Load Error", e); }
-                },
-                saveProgress: async (actId, score, status) => {
-
-            render: {
-                nav: () => {
-                    const u = App.data.user;
-                    if(!u) return;
-                    // Desktop HUD
-                    document.getElementById('hud-coins').innerText = (u.coins || 0).toLocaleString();
-                    document.getElementById('hud-streak').innerText = u.streak || 0;
-                    
-                    // Mobile Header
-                    document.getElementById('mob-coins').innerText = (u.coins || 0);
-                    const avatarUrl = (u.avatar && u.avatar.length > 2) ? u.avatar : null;
-                    if (avatarUrl) document.getElementById('mob-avatar').src = avatarUrl;
-                    else document.getElementById('mob-avatar').style.display = 'none';
-
-                    // Admin Menu Toggle
-                    if (u.role === 'admin' || u.role === 'teacher') {
-                        document.getElementById('menu-admin').classList.remove('hidden');
+                        Game.data.user = userData.user || { name: 'Unknown Hero', level: 1, coins: 0, streak: 0 }; // Fallback
+                        Game.data.activities = actData || [];
+                        console.log("Data Loaded:", Game.data.user);
+                    } catch (e) { 
+                        console.error("Load Error", e); 
+                        alert("Connection unstable. Some features may be offline.");
+                        Game.data.user = { name: 'Offline Hero', level: 1, coins: 0, streak: 0, role: 'student' };
                     }
                 },
-                dashboard: () => {
-                    const u = App.data.user;
-                    if(!u) return;
+                buy: async (id) => {
+                    if(!confirm('Confirm buy?')) return;
+                    try {
+                        const res = await fetch('/api/shop/buy', { 
+                            method: 'POST', 
+                            headers: {'Content-Type':'application/json'},
+                            body: JSON.stringify({ userId: sessionStorage.getItem('user_id'), itemId: id }) 
+                        });
+                        const d = await res.json();
+                        if(d.success) { 
+                            alert('Purchased!'); 
+                            Game.data.user.coins = d.new_balance; 
+                            Game.render.hud(); 
+                            Game.render.shop(); 
+                        } else { alert(d.error || 'Failed'); }
+                    } catch(e) { alert('Transaction Error'); }
+                }
+            },
 
-                    document.getElementById('dash-name').innerText = u.name || 'Hero';
-                    document.getElementById('dash-role').innerText = (u.role || 'Student').toUpperCase();
-                    document.getElementById('dash-lvl').innerText = u.level || 1;
+            render: {
+                hud: () => {
+                    const u = Game.data.user;
+                    if(!u) return;
+                    document.getElementById('hud-coins').innerText = (u.coins || 0).toLocaleString();
+                    document.getElementById('hud-streak').innerText = u.streak || 0;
+                    document.getElementById('mob-coins').innerText = (u.coins || 0);
                     
-                    // XP Bar
-                    const nextXP = (u.level || 1) * 100;
+                    const avatarImg = document.getElementById('mob-avatar');
+                    const avatarTxt = document.getElementById('mob-avatar-txt');
+                    if(u.avatar && u.avatar.includes('/')) {
+                        avatarImg.src = u.avatar; avatarImg.style.display = 'block'; avatarTxt.style.display = 'none';
+                    } else {
+                        avatarTxt.innerText = u.avatar || '🙂'; avatarTxt.style.display = 'flex'; avatarImg.style.display = 'none';
+                    }
+
+                    if (u.role === 'admin' || u.role === 'teacher') document.getElementById('menu-admin').classList.remove('hidden');
+                },
+                dashboard: () => {
+                    const u = Game.data.user;
+                    document.getElementById('dash-name').innerText = u.name;
+                    document.getElementById('dash-role').innerText = (u.role || 'Student').toUpperCase();
+                    document.getElementById('dash-lvl').innerText = u.level;
+                    
+                    const nextXP = u.level * 100;
                     const pct = Math.min(((u.xp || 0) / nextXP) * 100, 100);
                     document.getElementById('dash-xp-bar').style.width = `${pct}%`;
                     document.getElementById('dash-xp-text').innerText = `${u.xp || 0} / ${nextXP} XP`;
 
-                    // Avatar
-                    if (u.avatar && u.avatar.length < 5) document.getElementById('dash-avatar').innerText = u.avatar; 
-                    else if (u.avatar) document.getElementById('dash-avatar').innerHTML = `<img src="${u.avatar}" class="w-full h-full object-cover rounded-full">`;
+                    const avImg = document.getElementById('dash-avatar-img');
+                    const avTxt = document.getElementById('dash-avatar-txt');
+                    if(u.avatar && u.avatar.includes('/')) {
+                        avImg.src = u.avatar; avImg.classList.remove('hidden'); avTxt.classList.add('hidden');
+                    } else {
+                        avTxt.innerText = u.avatar || '🙂'; avTxt.classList.remove('hidden'); avImg.classList.add('hidden');
+                    }
                     
-                    App.render.map();
+                    Game.render.map(null);
                 },
-                map: () => {
-                    // Simple Vertical Map Render Logic
+                map: (category) => {
                     const container = document.getElementById('map-nodes');
                     const svg = document.getElementById('map-svg');
                     container.innerHTML = ''; svg.innerHTML = '';
                     
-                    const acts = App.data.activities;
-                    // Group by category if needed or just render all
-                    const icons = { 
-                        'Mathematics': '📐', 'Science': '🧪', 'English': '📚', 'Technology': '💻', 'General': '🌍',
-                        'Social Studies': '🏛️', 'Arts': '🎨', 'Health': '❤️', 'Business': '💼'
-                    };
+                    let acts = Game.data.activities;
+                    
+                    // Filter Mode
+                    if(category) {
+                        acts = acts.filter(a => (a.category || 'General') === category);
+                        document.getElementById('map-title-badge').innerText = `🗺️ ${category}`;
+                        document.getElementById('map-back-btn').classList.remove('hidden');
+                    } else {
+                        // World Mode
+                        document.getElementById('map-title-badge').innerText = `🌌 Galactic Map`;
+                        document.getElementById('map-back-btn').classList.add('hidden');
+                        
+                        // Show Categories as Planets
+                        const categories = [...new Set(acts.map(a => a.category || 'General'))];
+                        const icons = { 'Mathematics': '📐', 'Science': '🧪', 'English': '📚', 'Technology': '💻', 'General': '🌍', 'Social Studies': '🏛️', 'Arts': '🎨', 'Health': '❤️', 'Business': '💼' };
+                        
+                        categories.forEach((cat, i) => {
+                            const top = 50 + (Math.floor(i/2) * 200);
+                            const left = i%2===0 ? '25%' : '65%';
+                            
+                            const planet = document.createElement('div');
+                            planet.className = "absolute w-40 h-40 bg-slate-800 border-4 border-slate-600 rounded-full flex flex-col items-center justify-center cursor-pointer hover:scale-110 hover:border-indigo-500 transition shadow-2xl z-20";
+                            planet.style.top = `${top}px`;
+                            planet.style.left = left;
+                            planet.innerHTML = `<div class="text-5xl mb-2">${icons[cat]||'🪐'}</div><div class="font-bold text-white">${cat}</div>`;
+                            planet.onclick = () => { Game.data.currentWorld = cat; Game.render.map(cat); };
+                            container.appendChild(planet);
+                        });
+                        return; // Done rendering worlds
+                    }
 
+                    // Render Activities Nodes (Inside Category)
                     acts.forEach((act, i) => {
-                        const top = 50 + (i * 120);
+                        const top = 50 + (i * 150);
                         const left = (i % 2 === 0) ? '20%' : '60%';
                         
                         const node = document.createElement('div');
-                        node.className = `absolute w-16 h-16 bg-slate-800 border-4 border-indigo-500 rounded-2xl flex items-center justify-center text-2xl shadow-lg hover:scale-110 transition cursor-pointer z-10`;
+                        node.className = `absolute w-20 h-20 bg-slate-800 border-4 border-indigo-500 rounded-2xl flex flex-col items-center justify-center text-2xl shadow-lg hover:scale-110 transition cursor-pointer z-10`;
                         node.style.top = `${top}px`;
                         node.style.left = left;
+                        node.innerHTML = `<span class="filter drop-shadow-md">${act.type==='video'?'📜':'🎮'}</span>`;
+                        node.onclick = () => alert(`Starting Mission: ${act.title}`); // Placeholder player launch
                         
-                        // Use category icon
-                        const catIcon = icons[act.category] || (act.type === 'video' ? '📺' : '🎮');
-                        node.innerText = catIcon;
-                        node.onclick = () => alert(`Starting: ${act.title}`);
-                        
-                        // Label
                         const label = document.createElement('div');
-                        label.className = "absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs font-bold text-white bg-slate-900 px-2 py-1 rounded whitespace-nowrap";
+                        label.className = "absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] font-bold text-white bg-slate-900 px-2 py-1 rounded whitespace-nowrap border border-slate-700";
                         label.innerText = act.title;
                         node.appendChild(label);
 
                         container.appendChild(node);
                     });
                     
-                    container.style.height = `${acts.length * 120 + 200}px`;
+                    // Background
+                    document.getElementById('map-wrapper').style.background = `radial-gradient(circle at center, #0f172a 0%, #020617 100%), url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')`;
                 },
                 leaderboard: async () => {
                     const box = document.getElementById('lb-container');
@@ -442,21 +455,21 @@
                         const res = await fetch('/api/shop');
                         const data = await res.json();
                         box.innerHTML = data.map(item => `
-                            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col items-center text-center gap-2 hover:border-indigo-500 transition">
-                                <div class="text-4xl mb-2">${item.icon}</div>
-                                <h4 class="font-bold text-white">${item.name}</h4>
-                                <div class="text-yellow-400 font-bold">🪙 ${item.price}</div>
-                                <button onclick="App.api.buy(${item.id})" class="w-full py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg mt-2">Buy</button>
+                            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col items-center text-center gap-2 hover:border-indigo-500 transition shadow-lg relative overflow-hidden group">
+                                <div class="absolute inset-0 bg-blue-500/5 group-hover:bg-blue-500/10 transition"></div>
+                                <div class="text-4xl mb-2 bg-slate-900 p-2 rounded-lg">${item.icon}</div>
+                                <h4 class="font-bold text-white relative z-10">${item.name}</h4>
+                                <div class="text-yellow-400 font-bold relative z-10">🪙 ${item.price}</div>
+                                <button onclick="Game.api.buy(${item.id})" class="w-full py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg mt-2 shadow-md active:scale-95 transition relative z-10">Buy Now</button>
                             </div>
                         `).join('');
                     } catch(e) {}
                     
-                    // Inventory
                     const invRes = await fetch(`/api/inventory?userId=${sessionStorage.getItem('user_id')}`);
                     const invData = await invRes.json();
                     const invBox = document.getElementById('user-inventory');
                     if (invData.length) {
-                        invBox.innerHTML = invData.map(i => `<div class="flex gap-2 items-center p-2 bg-slate-700/50 rounded mb-2"><span class="text-lg">${i.icon}</span> <span class="text-slate-300">${i.name}</span></div>`).join('');
+                        invBox.innerHTML = invData.map(i => `<div class="flex gap-2 items-center p-2 bg-slate-700/50 rounded mb-2 border border-slate-600"><span class="text-lg">${i.icon}</span> <span class="text-slate-300 text-xs">${i.name}</span></div>`).join('');
                     } else {
                         invBox.innerText = "No items yet.";
                     }
@@ -474,46 +487,28 @@
                     if(!msg) return;
                     
                     const box = document.getElementById('ai-chat-box');
-                    box.innerHTML += `<div class="text-right mb-2"><span class="bg-indigo-600 text-white px-3 py-2 rounded-lg inline-block rounded-tr-none">${msg}</span></div>`;
+                    box.innerHTML += `<div class="text-right mb-2"><span class="bg-indigo-600 text-white px-3 py-2 rounded-lg inline-block rounded-tr-none text-xs">${msg}</span></div>`;
                     inp.value = ''; box.scrollTop = box.scrollHeight;
 
                     try {
-                        // Mock AI for UI demo
-                        setTimeout(() => {
-                            box.innerHTML += `<div class="text-left mb-2"><span class="bg-slate-700 text-slate-200 px-3 py-2 rounded-lg inline-block rounded-tl-none">🤖 That's interesting! Let me help you with that. (AI is in Demo Mode)</span></div>`;
-                            box.scrollTop = box.scrollHeight;
-                        }, 800);
-                        
-                        // Real Fetch
-                        /*
-                        const res = await fetch('/api/chat', { method: 'POST', body: JSON.stringify({ message: msg }) });
+                        const res = await fetch('/api/chat', { 
+                            method: 'POST', 
+                            headers: {'Content-Type':'application/json'},
+                            body: JSON.stringify({ message: msg, userContext: Game.data.user }) 
+                        });
                         const data = await res.json();
-                        ...
-                        */
-                    } catch(e) {}
+                        const reply = data.success ? data.reply : (data.error || "AI Offline");
+                        
+                        box.innerHTML += `<div class="text-left mb-2"><span class="bg-slate-700 text-slate-200 px-3 py-2 rounded-lg inline-block rounded-tl-none text-xs">🤖 ${reply}</span></div>`;
+                        box.scrollTop = box.scrollHeight;
+                    } catch(e) {
+                        box.innerHTML += `<div class="text-left mb-2"><span class="text-red-400 text-xs">Connection Failed</span></div>`;
+                    }
                 }
             }
         };
 
-        // Buy Action
-        App.api.buy = async (id) => {
-            if(!confirm('Confirm buy?')) return;
-            const res = await fetch('/api/shop/buy', { 
-                method: 'POST', 
-                headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({ userId: sessionStorage.getItem('user_id'), itemId: id }) 
-            });
-            const d = await res.json();
-            if(d.success) { 
-                alert('Purchased!'); 
-                App.data.user.coins = d.new_balance; 
-                App.render.hud(); 
-                App.render.shop(); 
-            } else { alert(d.error); }
-        };
-
-        // Start
-        document.addEventListener('DOMContentLoaded', App.init);
+        document.addEventListener('DOMContentLoaded', Game.init);
     </script>
 </body>
 </html>
