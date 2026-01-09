@@ -305,23 +305,43 @@
             },
 
             api: {
-                loadAll: async () => {
+                fetchAll: async () => {
                     try {
                         const uid = sessionStorage.getItem('user_id');
+                        if(!uid) return;
+
                         const [uRes, aRes] = await Promise.all([
-                            fetch(`/api/analytics?userId=${uid}`), // Get User + Progress
+                            fetch(`/api/analytics?userId=${uid}`), // Get User + Progress + Rank
                             fetch('/api/activities')
                         ]);
                         
                         const userData = await uRes.json();
                         const actData = await aRes.json();
 
-                        App.data.user = userData.user || {};
+                        // Strict Sync: Use DB data over session data
+                        if (userData.user && userData.user.id) {
+                            App.data.user = {
+                                ...userData.user,
+                                rank: userData.rank || '-', // Add rank to global user state
+                                xp: userData.user.xp || 0,
+                                coins: userData.user.coins || 0,
+                                level: userData.user.level || 1
+                            };
+                            // Update session storage to match
+                            sessionStorage.setItem('user_xp', App.data.user.xp);
+                            sessionStorage.setItem('user_level', App.data.user.level);
+                        } else {
+                            // Fallback if analytics returns empty user
+                            console.warn("User data mismatch, forcing re-login");
+                            App.auth.logout();
+                        }
+
                         App.data.activities = actData || [];
-                        // Save progress if needed
+                        App.data.progress = userData || {}; // Save full progress object
+                        
                     } catch (e) { console.error("Load Error", e); }
-                }
-            },
+                },
+                saveProgress: async (actId, score, status) => {
 
             render: {
                 nav: () => {
@@ -344,17 +364,21 @@
                 },
                 dashboard: () => {
                     const u = App.data.user;
-                    document.getElementById('dash-name').innerText = u.name;
-                    document.getElementById('dash-role').innerText = u.role.toUpperCase();
-                    document.getElementById('dash-lvl').innerText = u.level;
+                    if(!u) return;
+
+                    document.getElementById('dash-name').innerText = u.name || 'Hero';
+                    document.getElementById('dash-role').innerText = (u.role || 'Student').toUpperCase();
+                    document.getElementById('dash-lvl').innerText = u.level || 1;
                     
                     // XP Bar
-                    const nextXP = u.level * 100;
+                    const nextXP = (u.level || 1) * 100;
                     const pct = Math.min(((u.xp || 0) / nextXP) * 100, 100);
                     document.getElementById('dash-xp-bar').style.width = `${pct}%`;
                     document.getElementById('dash-xp-text').innerText = `${u.xp || 0} / ${nextXP} XP`;
 
-                    if (u.avatar && u.avatar.length < 5) document.getElementById('dash-avatar').innerText = u.avatar; // Emoji
+                    // Avatar
+                    if (u.avatar && u.avatar.length < 5) document.getElementById('dash-avatar').innerText = u.avatar; 
+                    else if (u.avatar) document.getElementById('dash-avatar').innerHTML = `<img src="${u.avatar}" class="w-full h-full object-cover rounded-full">`;
                     
                     App.render.map();
                 },
