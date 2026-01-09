@@ -74,7 +74,15 @@
     <!-- Side Buttons (Desktop) -->
     <div class="fixed left-6 top-32 z-40 hidden sm:flex flex-col gap-4">
         <button onclick="AdaptLearnPro.leaderboard.open()" class="w-14 h-14 bg-yellow-500 hover:bg-yellow-400 text-slate-900 rounded-full shadow-xl border-4 border-yellow-700 flex items-center justify-center text-3xl transition transform hover:scale-110 active:scale-95" title="Leaderboard">🏆</button>
-        <button onclick="AdaptLearnPro.shop.open()" class="w-14 h-14 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-xl border-4 border-blue-800 flex items-center justify-center text-3xl transition transform hover:scale-110 active:scale-95" title="Item Shop">🛒</button>
+    <!-- Shop Button (Left Side Fixed - Below Leaderboard) -->
+    <button onclick="AdaptLearnPro.shop.open()" class="fixed left-6 top-44 w-14 h-14 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-xl border-4 border-blue-800 flex items-center justify-center text-3xl z-40 transition transform hover:scale-110 active:scale-95" title="Item Shop">
+        🛒
+    </button>
+
+    <!-- Logout Button (Left Side Fixed - Below Shop) -->
+    <button onclick="AdaptLearnPro.auth.logout()" class="fixed left-6 top-64 w-14 h-14 bg-red-600 hover:bg-red-500 text-white rounded-full shadow-xl border-4 border-red-800 flex items-center justify-center text-3xl z-40 transition transform hover:scale-110 active:scale-95" title="Logout">
+        🚪
+    </button>
     </div>
 
     <!-- Mobile Menu Overlay -->
