@@ -70,10 +70,15 @@
                     <span class="hidden lg:block font-medium">My Profile</span>
                 </div>
                 
-                <!-- Admin Only -->
-                <a href="/instructor.html" id="menu-admin" class="flex items-center gap-4 p-3 rounded-xl transition-all duration-200 text-yellow-500 hover:bg-slate-800 cursor-pointer hidden">
+                <!-- Admin / Teacher Menu -->
+                <a href="/instructor.html" id="menu-instructor" class="flex items-center gap-4 p-3 rounded-xl transition-all duration-200 text-yellow-500 hover:bg-slate-800 cursor-pointer hidden">
                     <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-800 text-xl"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
                     <span class="hidden lg:block font-medium">Instructor Studio</span>
+                </a>
+                
+                <a href="/admin.html" id="menu-admin" class="flex items-center gap-4 p-3 rounded-xl transition-all duration-200 text-red-400 hover:bg-slate-800 cursor-pointer hidden">
+                    <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-800 text-xl"><i class="fa-solid fa-shield-halved"></i></div>
+                    <span class="hidden lg:block font-medium">Admin Panel</span>
                 </a>
             </nav>
 
@@ -324,7 +329,13 @@
                     document.getElementById('mob-coins').innerText = (u.coins || 0);
                     document.getElementById('mob-avatar-txt').innerText = u.avatar || '🙂';
 
-                    if (u.role === 'admin' || u.role === 'teacher') document.getElementById('menu-admin').classList.remove('hidden');
+                    // Role-based Menu Access
+                    if (u.role === 'teacher' || u.role === 'admin') {
+                        document.getElementById('menu-instructor').classList.remove('hidden');
+                    }
+                    if (u.role === 'admin') {
+                        document.getElementById('menu-admin').classList.remove('hidden');
+                    }
                 },
                 dashboard: () => {
                     const u = Game.data.user;
