@@ -127,19 +127,21 @@
                     sessionStorage.setItem('auth', 'true');
                     sessionStorage.setItem('user_id', data.id);
                     sessionStorage.setItem('user_name', data.name);
+                    
+                    // SAVE ROLE FOR FAST TRACK
                     sessionStorage.setItem('user_role', data.role);
+                    
                     sessionStorage.setItem('user_level', data.level);
                     sessionStorage.setItem('user_xp', data.xp);
                     
-                    // Allow both Admin and Teacher to access backend features
+                    // Redirect Logic
                     if (data.role === 'admin') {
-                        sessionStorage.setItem('admin_auth', 'true');
+                        sessionStorage.setItem('admin_auth', 'true'); // Legacy support
                         window.location.href = '/admin.html';
                     } else if (data.role === 'teacher') {
-                        // Teachers go to index first, but can access dashboard
-                        window.location.href = '/'; 
+                        window.location.href = '/instructor.html'; // Teachers go straight to studio? Or index.
                     } else {
-                        window.location.href = '/';
+                        window.location.href = '/index.html';
                     }
                 } else {
                     ui.toast(data.message || 'เข้าสู่ระบบไม่สำเร็จ');

@@ -210,37 +210,47 @@
 
             init: async () => {
                 const uid = sessionStorage.getItem('user_id');
+                const cachedRole = sessionStorage.getItem('user_role'); // Check local cache
                 const status = document.getElementById('auth-status');
                 
                 if (!uid) { 
-                    status.innerText = "No session found. Redirecting...";
+                    status.innerText = "No session. Redirecting...";
                     setTimeout(() => location.href = '/login.html', 1000); 
                     return; 
                 }
 
+                // 1. Fast Track (If already logged in as Admin locally)
+                if (cachedRole === 'admin') {
+                    console.log("Fast Track Auth: Admin");
+                    document.getElementById('auth-guard').classList.add('hidden');
+                    Admin.loadData();
+                    return;
+                }
+
                 try {
-                    status.innerText = "Checking permissions...";
+                    status.innerText = "Verifying with server...";
                     const res = await fetch(`/api/analytics?userId=${uid}`);
                     
                     if (!res.ok) throw new Error("API Error " + res.status);
                     
                     const data = await res.json();
-                    console.log("Admin Check:", data.user); // Debug
-
+                    
                     if (data.user && data.user.role === 'admin') {
+                        // Cache for next time
+                        sessionStorage.setItem('user_role', 'admin');
                         document.getElementById('auth-guard').classList.add('hidden');
                         Admin.loadData();
                     } else {
-                        status.innerText = "Access Denied: Admin role required.";
-                        alert('⛔ Access Denied: You are not an Admin.');
+                        status.innerText = "Access Denied.";
+                        alert('⛔ Not an Admin Account');
                         location.href = '/index.html';
                     }
 
                 } catch(e) {
                     console.error(e);
-                    status.innerText = "Connection Failed. Retrying...";
-                    alert('Authentication Error: ' + e.message);
-                    location.href = '/login.html';
+                    // Fallback: If API fails but we are debugging, maybe let it slide? 
+                    // No, security first. But we show a retry button.
+                    status.innerHTML = `Connection Error. <button onclick="location.reload()" class="underline text-white">Retry</button>`;
                 }
             },
 
