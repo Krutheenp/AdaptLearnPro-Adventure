@@ -222,28 +222,60 @@
             },
 
             save: async () => {
+                // 1. Fetch User Role first to ensure accuracy
+                let role = 'teacher';
+                try {
+                    const uid = sessionStorage.getItem('user_id');
+                    const uRes = await fetch(`/api/analytics?userId=${uid}`);
+                    const uData = await uRes.json();
+                    if(uData.user && uData.user.role) role = uData.user.role;
+                } catch(e) {}
+
                 const body = {
                     title: document.getElementById('c-title').value,
                     category: document.getElementById('c-category').value,
                     type: document.getElementById('c-type').value,
                     duration: document.getElementById('c-duration').value,
                     difficulty: document.getElementById('c-difficulty').value,
-                    credits: parseInt(document.getElementById('c-credits').value),
+                    credits: parseInt(document.getElementById('c-credits').value) || 0,
                     course_code: document.getElementById('c-code').value,
-                    content: CourseEditor.curriculum, // Save hierarchical structure
+                    content: CourseEditor.modules, // Flat for now, logic handles structure
                     creator_id: sessionStorage.getItem('user_id'),
                     requester_id: sessionStorage.getItem('user_id'), 
-                    requester_role: 'teacher' 
+                    requester_role: role 
                 };
 
+                // Handle nested curriculum if present
+                if (CourseEditor.curriculum && CourseEditor.curriculum.length > 0) {
+                    body.content = CourseEditor.curriculum;
+                }
+
                 if(!body.title) return alert('Title is required');
+
                 const method = CourseEditor.currentId ? 'PUT' : 'POST';
                 if(CourseEditor.currentId) body.id = CourseEditor.currentId;
 
+                console.log("Saving Course Payload:", body); // Debug
+
                 try {
-                    const res = await fetch('/api/activities', { method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
-                    if(res.ok) { alert('Course saved!'); location.reload(); } else { alert('Failed to save'); }
-                } catch(e) { alert('Error saving'); }
+                    const res = await fetch('/api/activities', {
+                        method: method,
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(body)
+                    });
+                    const result = await res.json();
+                    
+                    if(res.ok && result.success) {
+                        alert('Course saved successfully!');
+                        location.reload();
+                    } else {
+                        alert(`Failed to save: ${result.error || 'Unknown Error'}`);
+                        console.error('Save Error:', result);
+                    }
+                } catch(e) { 
+                    alert('Network Error saving course'); 
+                    console.error(e);
+                }
             },
 
             delete: async (id) => { if(!confirm('Delete?')) return; await fetch(`/api/activities?id=${id}&requester_id=${sessionStorage.getItem('user_id')}`, { method: 'DELETE' }); location.reload(); },

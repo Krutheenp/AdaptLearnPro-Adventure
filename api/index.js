@@ -439,22 +439,27 @@ module.exports = async (req, res) => {
                 const body = req.body;
                 if (!db) return res.json({ success: true, id: Date.now(), message: "Mock Create OK" });
 
-                const contentJson = JSON.stringify(body.content || []);
-                await runQuery(`
-                    INSERT INTO activities (title, type, difficulty, duration, content, category, credits, course_code, creator_id) 
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-                `, [
-                    body.title, 
-                    body.type || 'mixed', 
-                    body.difficulty, 
-                    body.duration, 
-                    contentJson, 
-                    body.category || 'General', 
-                    body.credits || 1, 
-                    body.course_code || '', 
-                    body.creator_id
-                ]);
-                return res.json({ success: true });
+                try {
+                    const contentJson = JSON.stringify(body.content || []);
+                    await runQuery(`
+                        INSERT INTO activities (title, type, difficulty, duration, content, category, credits, course_code, creator_id) 
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                    `, [
+                        body.title || 'Untitled Course', 
+                        body.type || 'mixed', 
+                        body.difficulty || 'Easy', 
+                        body.duration || '1h', 
+                        contentJson, 
+                        body.category || 'General', 
+                        body.credits || 1, 
+                        body.course_code || '', 
+                        body.creator_id
+                    ]);
+                    return res.json({ success: true });
+                } catch(e) {
+                    console.error("Create Course Error:", e);
+                    return res.status(500).json({ error: "Database Insert Failed", details: e.message });
+                }
             }
 
             // PUT: Update Course
@@ -462,31 +467,39 @@ module.exports = async (req, res) => {
                 const body = req.body;
                 if (!db) return res.json({ success: true, message: "Mock Update OK" });
 
-                // Permission Check
-                const existing = await runQuery("SELECT creator_id FROM activities WHERE id = $1", [body.id]);
-                if (!existing?.[0]) return res.status(404).json({ error: "Course not found" });
-                
-                // Allow if Admin or Owner
-                const isOwner = String(existing[0].creator_id) === String(body.requester_id);
-                const isAdmin = body.requester_role === 'admin';
-                if (!isOwner && !isAdmin) return res.status(403).json({ error: "Permission Denied" });
+                try {
+                    // Permission Check
+                    const existing = await runQuery("SELECT creator_id FROM activities WHERE id = $1", [body.id]);
+                    if (!existing?.[0]) return res.status(404).json({ error: "Course not found" });
+                    
+                    // Allow if Admin or Owner
+                    const isOwner = String(existing[0].creator_id) === String(body.requester_id);
+                    const isAdmin = body.requester_role === 'admin';
+                    
+                    if (!isOwner && !isAdmin) {
+                        return res.status(403).json({ error: `Permission Denied. Owner: ${existing[0].creator_id}, You: ${body.requester_id}` });
+                    }
 
-                const contentJson = JSON.stringify(body.content || []);
-                await runQuery(`
-                    UPDATE activities SET title=$1, type=$2, difficulty=$3, duration=$4, content=$5, category=$6, credits=$7, course_code=$8 
-                    WHERE id=$9
-                `, [
-                    body.title, 
-                    body.type, 
-                    body.difficulty, 
-                    body.duration, 
-                    contentJson, 
-                    body.category, 
-                    body.credits, 
-                    body.course_code,
-                    body.id
-                ]);
-                return res.json({ success: true });
+                    const contentJson = JSON.stringify(body.content || []);
+                    await runQuery(`
+                        UPDATE activities SET title=$1, type=$2, difficulty=$3, duration=$4, content=$5, category=$6, credits=$7, course_code=$8 
+                        WHERE id=$9
+                    `, [
+                        body.title, 
+                        body.type, 
+                        body.difficulty, 
+                        body.duration, 
+                        contentJson, 
+                        body.category, 
+                        body.credits, 
+                        body.course_code,
+                        body.id
+                    ]);
+                    return res.json({ success: true });
+                } catch(e) {
+                    console.error("Update Course Error:", e);
+                    return res.status(500).json({ error: "Database Update Failed", details: e.message });
+                }
             }
 
             // DELETE: Remove Course
