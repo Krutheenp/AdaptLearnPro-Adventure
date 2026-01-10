@@ -413,6 +413,16 @@ module.exports = async (req, res) => {
             // GET: List All (Filtered by Instructor optional)
             if (method === 'GET') {
                 const instructorId = url.searchParams.get("instructorId");
+                
+                // DEBUG: Force fetch all rows if requested
+                if (instructorId === 'debug') {
+                    if (db) {
+                        const all = await runQuery("SELECT * FROM activities");
+                        return res.json(all || []);
+                    }
+                    return res.json([]);
+                }
+
                 let query = `
                     SELECT a.*, 
                     COALESCE(AVG(r.rating), 0) as rating, 
@@ -423,7 +433,7 @@ module.exports = async (req, res) => {
                 const params = [];
                 
                 // Flexible Filter: Allow string/int comparison
-                if (instructorId) {
+                if (instructorId && instructorId !== 'undefined' && instructorId !== 'null') {
                     // Cast creator_id to TEXT for reliable comparison with URL param
                     query += " WHERE CAST(a.creator_id AS TEXT) = $1 ";
                     params.push(String(instructorId));
