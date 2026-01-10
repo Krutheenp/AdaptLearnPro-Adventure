@@ -314,6 +314,8 @@
                 if(CourseEditor.currentId) body.id = CourseEditor.currentId;
 
                 console.log("Submitting Course:", body);
+                // DEBUG: Alert payload to verify structure
+                // alert("DEBUG PAYLOAD:\n" + JSON.stringify(body, null, 2));
 
                 try {
                     const res = await fetch('/api/activities', {
