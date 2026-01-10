@@ -311,9 +311,8 @@
                         Game.data.activities = actData || [];
                         console.log("Data Loaded:", Game.data.user);
                     } catch (e) { 
-                        console.error("Load Error:", e);
+                        console.warn("Load Error (Switching to Offline Mode):", e);
                         // CLIENT-SIDE MOCK FALLBACK
-                        // Use this if Server is completely dead/unreachable
                         Game.data.user = { 
                             id: uid, name: 'Offline Hero', role: 'student', 
                             level: 5, coins: 999, streak: 10, xp: 2500, avatar: '🧙‍♂️' 
@@ -322,7 +321,6 @@
                             { id: 1, title: 'Math Quest (Offline)', type: 'game', category: 'Mathematics', credits: 3 },
                             { id: 2, title: 'Science Lab (Offline)', type: 'video', category: 'Science', credits: 2 }
                         ];
-                        // alert("Network Error: " + e.message + "\nLoading Offline Mode...");
                     }
                 },
                 buy: async (id) => {
