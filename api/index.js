@@ -132,16 +132,27 @@ module.exports = async (req, res) => {
         if (pathname === '/api/config') {
             if (method === 'GET') {
                 if(db) {
-                    const rows = await runQuery("SELECT * FROM system_config");
-                    const config = {};
-                    rows.forEach(r => config[r.key] = r.value);
-                    return res.json(config);
+                    try {
+                        const rows = await runQuery("SELECT * FROM system_config");
+                        const config = {};
+                        if(rows) rows.forEach(r => config[r.key] = r.value);
+                        return res.json(config);
+                    } catch(e) {
+                        return res.json({}); // Return empty if table missing
+                    }
                 }
                 return res.json({});
             }
             if (method === 'POST') {
                 const { key, value } = req.body;
-                if(db) await runQuery("INSERT INTO system_config (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2", [key, JSON.stringify(value)]);
+                if(db) {
+                    try {
+                        await runQuery("INSERT INTO system_config (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2", [key, JSON.stringify(value)]);
+                        return res.json({ success: true });
+                    } catch(e) {
+                        return res.status(500).json({ error: "Config Save Error", details: e.message });
+                    }
+                }
                 return res.json({ success: true });
             }
         }

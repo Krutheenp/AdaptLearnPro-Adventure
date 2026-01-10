@@ -226,34 +226,41 @@
             },
 
             loadData: async () => {
-                try {
-                    const [uRes, aRes, vRes, cRes, sRes, confRes] = await Promise.all([
-                        fetch('/api/users'),
-                        fetch('/api/activities'),
-                        fetch('/api/visit'),
-                        fetch('/api/certificate?all=true'),
-                        fetch('/api/shop'),
-                        fetch('/api/config')
-                    ]);
+                // Helper to safe fetch
+                const get = async (url) => { try { const r = await fetch(url); return await r.json(); } catch(e) { return []; } };
 
-                    Admin.data.users = await uRes.json();
-                    Admin.data.activities = await aRes.json();
-                    const visits = await vRes.json();
-                    Admin.data.certs = await cRes.json();
-                    Admin.data.shop = await sRes.json();
-                    Admin.data.config = await confRes.json();
+                // 1. Fetch Core Data (Parallel)
+                const [users, activities, visits, certs] = await Promise.all([
+                    get('/api/users'),
+                    get('/api/activities'),
+                    get('/api/visit'),
+                    get('/api/certificate?all=true')
+                ]);
 
-                    document.getElementById('stat-users').innerText = Admin.data.users.length;
-                    document.getElementById('stat-courses').innerText = Admin.data.activities.length;
-                    document.getElementById('stat-visits').innerText = (visits.total_visits || 0).toLocaleString();
-                    document.getElementById('stat-certs').innerText = Admin.data.certs.length;
-                    document.getElementById('stat-items').innerText = Admin.data.shop.length;
+                // 2. Fetch Optional Data (Independently)
+                const shop = await get('/api/shop');
+                const config = await get('/api/config'); // This failed before
 
-                    Admin.renderUsers();
-                    Admin.renderCerts();
-                    Admin.renderShop();
-                    Admin.renderCharts();
-                } catch(e) { console.error("Load Data Error", e); }
+                // Assign Data
+                Admin.data.users = Array.isArray(users) ? users : [];
+                Admin.data.activities = Array.isArray(activities) ? activities : [];
+                Admin.data.certs = Array.isArray(certs) ? certs : [];
+                Admin.data.shop = Array.isArray(shop) ? shop : [];
+                Admin.data.config = config || {};
+
+                // Safe UI Updates
+                const setTxt = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
+                
+                setTxt('stat-users', Admin.data.users.length);
+                setTxt('stat-courses', Admin.data.activities.length);
+                setTxt('stat-visits', (visits.total_visits || 0).toLocaleString());
+                setTxt('stat-certs', Admin.data.certs.length);
+                setTxt('stat-items', Admin.data.shop.length);
+
+                Admin.renderUsers();
+                Admin.renderCerts();
+                Admin.renderShop();
+                Admin.renderCharts();
             },
 
             // --- TAB MANAGEMENT ---
