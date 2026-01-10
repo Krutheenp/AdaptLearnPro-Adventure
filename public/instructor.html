@@ -379,14 +379,31 @@
             },
 
             // Updated Render Logic inside renderCurriculum...
-            // Note: We need to replace the inner mapping logic to handle new types
             renderLessonContent: (l, uIdx, lIdx) => {
-                if(l.type === 'video') return `
-                    <div class="flex gap-2 items-center mb-1">
-                        <input onchange="CourseEditor.updateLesson(${uIdx},${lIdx},'url',this.value)" value="${l.url}" class="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white" placeholder="YouTube URL or Upload Video">
-                        <button onclick="document.getElementById('vid-up-${uIdx}-${lIdx}').click()" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-[10px]">⬆ Upload</button>
-                        <input type="file" id="vid-up-${uIdx}-${lIdx}" class="hidden" accept="video/*" onchange="CourseEditor.uploadMedia(this, (url)=> { document.querySelector('input[onchange*=\\'${uIdx},${lIdx},\\'url\\']').value = url; CourseEditor.updateLesson(${uIdx},${lIdx},'url',url); })">
+                if(l.type === 'video') {
+                    // Preview Logic
+                    let previewHtml = '';
+                    if (l.url) {
+                        if (l.url.includes('youtube') || l.url.includes('youtu.be')) {
+                            let vidId = '';
+                            try { const u = new URL(l.url); vidId = u.searchParams.get('v') || u.pathname.slice(1); } catch(e){}
+                            if(vidId) previewHtml = `<iframe src="https://www.youtube.com/embed/${vidId}" class="w-full h-40 rounded-lg mt-2" frameborder="0"></iframe>`;
+                        } else {
+                            previewHtml = `<video src="${l.url}" controls class="w-full h-40 rounded-lg mt-2 bg-black"></video>`;
+                        }
+                    }
+
+                    return `
+                    <div class="space-y-2">
+                        <div class="flex gap-2 items-center">
+                            <input id="vid-input-${uIdx}-${lIdx}" onchange="CourseEditor.updateLesson(${uIdx},${lIdx},'url',this.value)" value="${l.url}" class="flex-1 bg-slate-800 border border-slate-700 rounded px-3 py-2 text-xs text-white" placeholder="Paste YouTube URL here">
+                            <button onclick="CourseEditor.updateLesson(${uIdx},${lIdx},'url', document.getElementById('vid-input-${uIdx}-${lIdx}').value); CourseEditor.renderCurriculum();" class="bg-indigo-600 hover:bg-indigo-500 px-3 py-2 rounded text-xs text-white font-bold">Embed</button>
+                            <button onclick="document.getElementById('vid-up-${uIdx}-${lIdx}').click()" class="bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded text-xs text-white">⬆ Upload</button>
+                            <input type="file" id="vid-up-${uIdx}-${lIdx}" class="hidden" accept="video/*" onchange="CourseEditor.uploadMedia(this, (url)=> { document.getElementById('vid-input-${uIdx}-${lIdx}').value = url; CourseEditor.updateLesson(${uIdx},${lIdx},'url',url); CourseEditor.renderCurriculum(); })">
+                        </div>
+                        ${previewHtml ? `<div class="bg-black/20 p-2 rounded">${previewHtml}</div>` : ''}
                     </div>`;
+                }
                 
                 if(l.type === 'article') return `
                     <div class="flex gap-2 mb-2">
