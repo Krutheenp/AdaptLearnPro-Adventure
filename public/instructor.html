@@ -152,11 +152,19 @@
                 if(!uid) { location.href = '/login.html'; return; }
                 
                 try {
-                    // Fetch courses created by THIS user
-                    const res = await fetch(`/api/activities?instructorId=${uid}`);
+                    // Check Role first
+                    const uRes = await fetch(`/api/analytics?userId=${uid}`);
+                    const uData = await uRes.json();
+                    const role = uData.user?.role || 'teacher';
+
+                    // If Admin, fetch ALL courses. If Teacher, fetch only theirs.
+                    let url = `/api/activities?instructorId=${uid}`;
+                    if (role === 'admin') url = `/api/activities`; // No filter = All
+
+                    const res = await fetch(url);
                     const data = await res.json();
                     
-                    console.log("Fetched Courses:", data); // Debug
+                    console.log(`Fetched Courses (${role}):`, data); 
                     CourseEditor.courses = data;
                     CourseEditor.renderList();
                 } catch(e) { 

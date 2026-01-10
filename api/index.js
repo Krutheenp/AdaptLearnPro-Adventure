@@ -450,6 +450,9 @@ module.exports = async (req, res) => {
 
                 try {
                     const contentJson = JSON.stringify(body.content || []);
+                    // Ensure creator_id is stored as Integer
+                    const creatorId = parseInt(body.creator_id) || null;
+
                     await runQuery(`
                         INSERT INTO activities (title, type, difficulty, duration, content, category, credits, course_code, creator_id) 
                         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -462,7 +465,7 @@ module.exports = async (req, res) => {
                         body.category || 'General', 
                         body.credits || 1, 
                         body.course_code || '', 
-                        body.creator_id
+                        creatorId
                     ]);
                     return res.json({ success: true });
                 } catch(e) {
