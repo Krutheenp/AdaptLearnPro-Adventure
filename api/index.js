@@ -481,8 +481,8 @@ module.exports = async (req, res) => {
                     const creatorId = parseInt(body.creator_id) || null;
 
                     await runQuery(`
-                        INSERT INTO activities (title, type, difficulty, duration, content, category, credits, course_code, creator_id) 
-                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                        INSERT INTO activities (title, type, difficulty, duration, content, category, credits, course_code, certificate_theme, creator_id) 
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                     `, [
                         body.title || 'Untitled Course', 
                         body.type || 'mixed', 
@@ -492,6 +492,7 @@ module.exports = async (req, res) => {
                         body.category || 'General', 
                         body.credits || 1, 
                         body.course_code || '', 
+                        body.certificate_theme || 'classic',
                         creatorId
                     ]);
                     return res.json({ success: true });
@@ -521,8 +522,8 @@ module.exports = async (req, res) => {
 
                     const contentJson = JSON.stringify(body.content || []);
                     await runQuery(`
-                        UPDATE activities SET title=$1, type=$2, difficulty=$3, duration=$4, content=$5, category=$6, credits=$7, course_code=$8 
-                        WHERE id=$9
+                        UPDATE activities SET title=$1, type=$2, difficulty=$3, duration=$4, content=$5, category=$6, credits=$7, course_code=$8, certificate_theme=$9 
+                        WHERE id=$10
                     `, [
                         body.title, 
                         body.type, 
@@ -532,6 +533,7 @@ module.exports = async (req, res) => {
                         body.category, 
                         body.credits, 
                         body.course_code,
+                        body.certificate_theme || 'classic',
                         body.id
                     ]);
                     return res.json({ success: true });

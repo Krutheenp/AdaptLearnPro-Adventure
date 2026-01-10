@@ -54,57 +54,48 @@
 
     </main>
 
-    <!-- Certificate Modal (Professional Design) -->
+    <!-- Certificate Modal (Dynamic Theme) -->
     <div id="cert-modal" class="fixed inset-0 bg-black/95 z-50 hidden flex items-center justify-center p-4">
-        <div class="relative bg-white text-slate-900 w-full max-w-4xl aspect-[1.414/1] shadow-2xl overflow-hidden flex flex-col items-center justify-center p-12 border-[16px] border-double border-slate-200 outline outline-[2px] outline-yellow-600 outline-offset-[-10px]">
+        <div id="cert-container" class="relative bg-white text-slate-900 w-full max-w-4xl aspect-[1.414/1] shadow-2xl overflow-hidden flex flex-col items-center justify-center p-12 transition-all duration-500">
             
-            <!-- Decorative Corners -->
-            <div class="absolute top-4 left-4 w-16 h-16 border-t-4 border-l-4 border-yellow-600 rounded-tl-3xl"></div>
-            <div class="absolute top-4 right-4 w-16 h-16 border-t-4 border-r-4 border-yellow-600 rounded-tr-3xl"></div>
-            <div class="absolute bottom-4 left-4 w-16 h-16 border-b-4 border-l-4 border-yellow-600 rounded-bl-3xl"></div>
-            <div class="absolute bottom-4 right-4 w-16 h-16 border-b-4 border-r-4 border-yellow-600 rounded-br-3xl"></div>
-
-            <!-- Background Pattern -->
-            <div class="absolute inset-0 opacity-5 bg-[url('https://www.transparenttextures.com/patterns/bank-note.png')]"></div>
-
-            <!-- Header -->
-            <div class="text-center relative z-10">
-                <div class="w-20 h-20 bg-yellow-500 rounded-full flex items-center justify-center text-4xl text-white mx-auto mb-6 shadow-lg border-4 border-yellow-300">🎓</div>
-                <h1 class="text-5xl font-serif font-bold text-slate-800 tracking-widest uppercase mb-2">Certificate</h1>
-                <p class="text-xl text-yellow-600 font-serif tracking-widest uppercase">of Achievement</p>
-            </div>
+            <!-- Dynamic Background & Borders -->
+            <div id="cert-bg" class="absolute inset-0 z-0"></div>
+            <div id="cert-border" class="absolute inset-4 z-10 pointer-events-none"></div>
 
             <!-- Content -->
-            <div class="text-center mt-8 relative z-10 w-full">
-                <p class="text-slate-500 italic font-serif">This certifies that</p>
-                <h2 class="text-4xl font-bold text-slate-900 my-4 font-serif border-b border-slate-300 inline-block px-12 pb-2" id="cert-user-name">Student Name</h2>
-                <p class="text-slate-500 italic font-serif mb-2">has successfully completed the course</p>
-                <h3 class="text-2xl font-bold text-indigo-900 mb-8" id="cert-course-name">Course Title</h3>
+            <div class="text-center relative z-20 w-full">
+                <div id="cert-icon" class="text-6xl mb-4">🎓</div>
+                <h1 id="cert-title" class="text-5xl font-bold mb-2">Certificate</h1>
+                <p id="cert-subtitle" class="text-xl uppercase tracking-widest mb-8">of Achievement</p>
+
+                <p id="cert-text-1" class="italic text-lg">This certifies that</p>
+                <h2 class="text-4xl font-bold my-4 border-b-2 inline-block px-12 pb-2" id="cert-user-name">Student Name</h2>
+                <p id="cert-text-2" class="italic text-lg mb-2">has successfully completed</p>
+                <h3 class="text-3xl font-bold text-indigo-900 mb-8" id="cert-course-name">Course Title</h3>
                 
-                <div class="flex justify-between items-end w-3/4 mx-auto mt-12 px-8">
+                <div class="flex justify-between items-end w-3/4 mx-auto mt-8">
                     <div class="text-center">
-                        <div class="text-lg font-bold text-slate-800 border-t border-slate-400 pt-2 px-8" id="cert-date">Date</div>
-                        <div class="text-xs text-slate-500 uppercase tracking-wider mt-1">Date Issued</div>
+                        <div class="font-bold border-t border-slate-400 pt-2 px-8" id="cert-date">Date</div>
+                        <div class="text-xs uppercase mt-1">Date Issued</div>
                     </div>
                     <div class="text-center">
-                        <!-- Badge/Seal -->
-                        <div class="w-24 h-24 bg-yellow-500/20 rounded-full flex items-center justify-center border-2 border-yellow-500 border-dashed">
-                            <span class="text-yellow-700 font-bold text-xs uppercase text-center rotate-[-15deg]">AdaptLearn<br>Verified</span>
+                        <div id="cert-seal" class="w-24 h-24 rounded-full flex items-center justify-center border-4">
+                            <span class="font-bold text-xs uppercase text-center rotate-[-15deg]">AdaptLearn<br>Verified</span>
                         </div>
                     </div>
                     <div class="text-center">
-                        <div class="text-lg font-bold text-slate-800 border-t border-slate-400 pt-2 px-8 font-cursive" style="font-family: cursive;">Director Sign</div>
-                        <div class="text-xs text-slate-500 uppercase tracking-wider mt-1">Director</div>
+                        <div class="font-bold border-t border-slate-400 pt-2 px-8 font-cursive" style="font-family: cursive;">Director Sign</div>
+                        <div class="text-xs uppercase mt-1">Director</div>
                     </div>
                 </div>
             </div>
 
             <!-- Footer -->
-            <div class="absolute bottom-6 w-full text-center text-[10px] text-slate-400 font-mono">
-                Certificate ID: <span id="cert-code" class="text-slate-600 font-bold">LOADING...</span> • Verify at adaptlearn.com/verify
+            <div class="absolute bottom-4 w-full text-center text-[10px] opacity-60 font-mono">
+                ID: <span id="cert-code">LOADING...</span>
             </div>
 
-            <!-- Close/Print Actions (Floating) -->
+            <!-- Actions -->
             <div class="absolute top-4 right-4 z-50 flex gap-2 no-print">
                 <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-white p-2 rounded-full shadow-lg">🖨️</button>
                 <button onclick="document.getElementById('cert-modal').classList.add('hidden')" class="bg-red-600 hover:bg-red-500 text-white p-2 rounded-full shadow-lg">✕</button>
@@ -382,14 +373,63 @@
                 });
                 const certData = await certRes.json();
 
-                // 3. Show Modal
+                // 3. Show Modal with Theme
                 document.getElementById('cert-course-name').innerText = Learn.course.title;
                 document.getElementById('cert-user-name').innerText = sessionStorage.getItem('user_name') || 'Student Name';
                 document.getElementById('cert-date').innerText = certData.date || new Date().toLocaleDateString();
                 document.getElementById('cert-code').innerText = certData.code || 'CERT-ERROR';
-                document.getElementById('cert-modal').classList.remove('hidden');
                 
-                // Fire fireworks effect (CSS/JS) if possible
+                Learn.applyTheme(Learn.course.certificate_theme || 'classic');
+                document.getElementById('cert-modal').classList.remove('hidden');
+            },
+
+            applyTheme: (theme) => {
+                const container = document.getElementById('cert-container');
+                const bg = document.getElementById('cert-bg');
+                const border = document.getElementById('cert-border');
+                const title = document.getElementById('cert-title');
+                const icon = document.getElementById('cert-icon');
+                const seal = document.getElementById('cert-seal');
+
+                // Reset Defaults
+                container.className = "relative bg-white text-slate-900 w-full max-w-4xl aspect-[1.414/1] shadow-2xl overflow-hidden flex flex-col items-center justify-center p-12 transition-all duration-500 font-serif";
+                bg.className = "absolute inset-0 z-0 opacity-10";
+                border.className = "absolute inset-4 z-10 pointer-events-none border-8 border-double";
+                icon.className = "text-6xl mb-4";
+                seal.className = "w-24 h-24 rounded-full flex items-center justify-center border-4";
+
+                if (theme === 'modern') {
+                    // Modern Tech Theme
+                    container.classList.replace('font-serif', 'font-sans');
+                    container.classList.add('bg-slate-900', 'text-white');
+                    bg.classList.add('bg-[url("https://www.transparenttextures.com/patterns/circuit-board.png")]', 'opacity-20');
+                    border.classList.add('border-cyan-500', 'rounded-xl');
+                    title.className = "text-5xl font-black mb-2 text-cyan-400 uppercase tracking-widest";
+                    icon.innerHTML = "🚀";
+                    seal.classList.add('border-cyan-500', 'text-cyan-400', 'bg-cyan-900/50');
+                    document.getElementById('cert-course-name').className = "text-3xl font-bold text-cyan-300 mb-8";
+                } 
+                else if (theme === 'fun') {
+                    // Creative Fun Theme
+                    container.classList.replace('font-serif', 'font-mono');
+                    container.classList.add('bg-yellow-50');
+                    bg.classList.add('bg-[url("https://www.transparenttextures.com/patterns/confetti.png")]');
+                    border.classList.add('border-pink-500', 'border-dashed', 'rounded-[2rem]');
+                    title.className = "text-6xl font-black mb-2 text-pink-500 tracking-tighter transform -rotate-2";
+                    icon.innerHTML = "🎨";
+                    seal.classList.add('border-purple-500', 'text-purple-600', 'bg-white');
+                    document.getElementById('cert-course-name').className = "text-4xl font-black text-purple-600 mb-8";
+                } 
+                else {
+                    // Classic Gold (Default)
+                    container.classList.add('border-[16px]', 'border-double', 'border-slate-200', 'outline', 'outline-[2px]', 'outline-yellow-600', 'outline-offset-[-10px]');
+                    bg.classList.add('bg-[url("https://www.transparenttextures.com/patterns/bank-note.png")]');
+                    border.classList.add('border-transparent'); // Border handled by container outline
+                    title.className = "text-5xl font-serif font-bold text-slate-800 tracking-widest uppercase mb-2";
+                    icon.innerHTML = "🎓";
+                    seal.classList.add('border-yellow-500', 'text-yellow-700', 'bg-yellow-500/20');
+                    document.getElementById('cert-course-name').className = "text-3xl font-bold text-indigo-900 mb-8";
+                }
             }
         };
 

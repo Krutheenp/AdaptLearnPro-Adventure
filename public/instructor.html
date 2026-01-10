@@ -110,7 +110,7 @@
                     </div>
                 </div>
 
-                <!-- Credits & Code -->
+                <!-- Credits, Code, and Certificate -->
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Credits (XP)</label>
@@ -121,9 +121,18 @@
                         <input id="c-code" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white" placeholder="e.g. MATH101">
                     </div>
                 </div>
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Certificate Template</label>
+                    <select id="c-cert-theme" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white">
+                        <option value="classic">🏆 Classic Gold (Formal)</option>
+                        <option value="modern">🚀 Modern Tech (Clean)</option>
+                        <option value="fun">🎨 Creative Fun (Playful)</option>
+                    </select>
+                </div>
             </div>
 
-            <!-- Right: Content Builder (Multi-Unit) -->
+            <!-- Right: Content Builder -->
             <div class="w-2/3 bg-slate-800/50 rounded-2xl border border-slate-700 p-6 flex flex-col">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="font-bold text-slate-300">Course Curriculum</h3>
@@ -228,6 +237,7 @@
             edit: async (id) => {
                 const c = CourseEditor.courses.find(x => x.id === id);
                 if(!c) return;
+
                 CourseEditor.currentId = c.id;
                 document.getElementById('c-title').value = c.title;
                 document.getElementById('c-category').value = c.category;
@@ -236,9 +246,9 @@
                 document.getElementById('c-credits').value = c.credits;
                 document.getElementById('c-difficulty').value = c.difficulty;
                 document.getElementById('c-code').value = c.course_code || '';
+                document.getElementById('c-cert-theme').value = c.certificate_theme || 'classic';
 
                 try {
-                    // Backwards compatibility: If flat array, wrap in Unit 1
                     const raw = typeof c.content === 'string' ? JSON.parse(c.content) : c.content;
                     if (Array.isArray(raw) && raw.length > 0 && !raw[0].lessons) {
                         CourseEditor.curriculum = [{ title: "Unit 1: Introduction", lessons: raw }];
@@ -269,6 +279,7 @@
                     difficulty: document.getElementById('c-difficulty').value,
                     credits: parseInt(document.getElementById('c-credits').value) || 0,
                     course_code: document.getElementById('c-code').value,
+                    certificate_theme: document.getElementById('c-cert-theme').value,
                     content: CourseEditor.modules, // Flat for now, logic handles structure
                     creator_id: sessionStorage.getItem('user_id'),
                     requester_id: sessionStorage.getItem('user_id'), 
@@ -307,6 +318,7 @@
                     console.error(e);
                 }
             },
+
 
             delete: async (id) => { if(!confirm('Delete?')) return; await fetch(`/api/activities?id=${id}&requester_id=${sessionStorage.getItem('user_id')}`, { method: 'DELETE' }); location.reload(); },
             close: () => document.getElementById('editor-modal').classList.add('hidden'),
