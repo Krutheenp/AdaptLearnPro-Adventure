@@ -104,6 +104,34 @@ db.run(`CREATE TABLE IF NOT EXISTS user_progress (
     completed_at TEXT
 );`);
 
+// New: Shop Items & Inventory
+db.run(`CREATE TABLE IF NOT EXISTS items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    description TEXT,
+    price INTEGER,
+    type TEXT,
+    icon TEXT
+);`);
+
+db.run(`CREATE TABLE IF NOT EXISTS user_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    item_id INTEGER,
+    acquired_at TEXT
+);`);
+
+// Seed Items if empty
+if (!db.query("SELECT * FROM items").get()) {
+    const items = [
+        { name: 'Streak Freeze', price: 50, icon: '🧊', type: 'consumable', desc: 'Prevent streak reset' },
+        { name: 'Golden Frame', price: 500, icon: '🖼️', type: 'cosmetic', desc: 'Shiny profile frame' },
+        { name: 'XP Boost (1h)', price: 100, icon: '⚡', type: 'consumable', desc: 'Double XP for 1 hour' }
+    ];
+    const insertItem = db.prepare("INSERT INTO items (name, price, icon, type, description) VALUES (?, ?, ?, ?, ?)");
+    items.forEach(i => insertItem.run(i.name, i.price, i.icon, i.type, i.desc));
+}
+
 // Default Admin
 if (!db.query("SELECT * FROM users WHERE role = 'admin'").get()) {
     db.run("INSERT INTO users (username, password, role, name, level, xp, avatar) VALUES (?, ?, ?, ?, ?, ?, ?)", ["admin", "password123", "admin", "Super Admin", 99, 99999, "👑"]);
@@ -114,6 +142,49 @@ const server = Bun.serve({
   async fetch(req) {
     const url = new URL(req.url);
     const method = req.method;
+
+    // --- API: SHOP & LEADERBOARD (New) ---
+    if (url.pathname === "/api/shop") {
+        if (method === "GET") {
+            return Response.json(db.query("SELECT * FROM items ORDER BY price ASC").all());
+        }
+    }
+
+    if (url.pathname === "/api/shop/buy" && method === "POST") {
+        const body = await req.json();
+        const { userId, itemId } = body;
+        
+        const user = db.query("SELECT coins FROM users WHERE id = ?").get(userId);
+        const item = db.query("SELECT price FROM items WHERE id = ?").get(itemId);
+
+        if (user && item) {
+            if (user.coins >= item.price) {
+                db.run("UPDATE users SET coins = coins - ? WHERE id = ?", [item.price, userId]);
+                db.run("INSERT INTO user_items (user_id, item_id, acquired_at) VALUES (?, ?, ?)", [userId, itemId, new Date().toISOString()]);
+                return Response.json({ success: true, new_balance: user.coins - item.price });
+            } else {
+                return Response.json({ error: "Not enough coins" }, { status: 400 });
+            }
+        }
+        return Response.json({ error: "User or Item not found" }, { status: 404 });
+    }
+
+    if (url.pathname === "/api/inventory" && method === "GET") {
+        const userId = url.searchParams.get("userId");
+        const items = db.query(`
+            SELECT i.*, ui.acquired_at 
+            FROM user_items ui 
+            JOIN items i ON ui.item_id = i.id 
+            WHERE ui.user_id = ? 
+            ORDER BY ui.acquired_at DESC
+        `).all(userId);
+        return Response.json(items);
+    }
+
+    if (url.pathname === "/api/leaderboard" && method === "GET") {
+        const leaders = db.query("SELECT id, name, avatar, level, xp FROM users ORDER BY xp DESC LIMIT 10").all();
+        return Response.json(leaders);
+    }
 
     // --- API: PROGRESS & ANALYTICS (New) ---
     
@@ -490,18 +561,26 @@ const server = Bun.serve({
     }
 
     let path = url.pathname;
+    
+    // Serve Uploads
     if (path.startsWith("/uploads/")) {
         const file = Bun.file(join(BASE_DIR, path));
         return (await file.exists()) ? new Response(file) : new Response("Not Found", { status: 404 });
     }
+
+    // Serve Static Files from 'public'
     if (path === "/") path = "/index.html";
     if (path === "/admin") path = "/admin.html";
     if (path === "/login") path = "/login.html";
     if (path === "/register") path = "/register.html";
     if (path === "/profile") path = "/profile.html";
 
-    const file = Bun.file(join(BASE_DIR, path));
-    return (await file.exists()) ? new Response(file) : new Response("Not Found", { status: 404 });
+    const publicFile = Bun.file(join(BASE_DIR, "public", path));
+    if (await publicFile.exists()) return new Response(publicFile);
+    
+    // Fallback to root (for backward compatibility if any)
+    const rootFile = Bun.file(join(BASE_DIR, path));
+    return (await rootFile.exists()) ? new Response(rootFile) : new Response("Not Found", { status: 404 });
   },
 });
 

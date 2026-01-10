@@ -98,7 +98,13 @@ module.exports = async (req, res) => {
         await runQuery(`CREATE TABLE IF NOT EXISTS reviews (id SERIAL PRIMARY KEY, user_id INT, activity_id INT, rating INT, comment TEXT, created_at TEXT)`);
         await runQuery(`CREATE TABLE IF NOT EXISTS items (id SERIAL PRIMARY KEY, name TEXT, description TEXT, price INT, type TEXT, icon TEXT)`);
         await runQuery(`CREATE TABLE IF NOT EXISTS user_items (id SERIAL PRIMARY KEY, user_id INT, item_id INT, acquired_at TEXT)`);
-        return res.json({ success: true, message: "Tables Created" });
+        
+        // New Tables
+        await runQuery(`CREATE TABLE IF NOT EXISTS portfolios (id SERIAL PRIMARY KEY, user_id INT, title TEXT, description TEXT, media_url TEXT, type TEXT, created_at TEXT)`);
+        await runQuery(`CREATE TABLE IF NOT EXISTS certificates (id SERIAL PRIMARY KEY, user_id INT, user_name TEXT, course_title TEXT, issue_date TEXT, code TEXT)`);
+        await runQuery(`CREATE TABLE IF NOT EXISTS teacher_skills (id SERIAL PRIMARY KEY, user_id INT, skill_name TEXT, proficiency INT)`);
+        
+        return res.json({ success: true, message: "Tables Created (Full Schema)" });
     }
 
     // SEED
@@ -114,6 +120,73 @@ module.exports = async (req, res) => {
             await runQuery(`INSERT INTO activities (title, type, difficulty, duration, content, category, credits, course_code) VALUES ('Math: Algebra', 'game', 'Easy', '15m', $1, 'Mathematics', 3, 'MAT101')`, [content]);
         }
         return res.json({ success: true, message: "Seeded" });
+    }
+
+    // --- API: AI TUTOR (Gemini) ---
+    if (pathname === '/api/chat' && method === 'POST') {
+        const { message, history, userContext, learningContext } = req.body;
+        const apiKey = process.env.GEMINI_API_KEY;
+
+        if (!apiKey) {
+            return res.json({ 
+                success: true, 
+                reply: "ระบบจำลอง (Vercel): กรุณาใส่ GEMINI_API_KEY ใน Environment Variables",
+                isSimulated: true
+            });
+        }
+
+        try {
+            // Build Context
+            let contextPrompt = `You are an intelligent AI Tutor for "${userContext?.name || 'Student'}". `;
+            contextPrompt += `Role: ${userContext?.role || 'student'}. `;
+            
+            const fetch = require('node-fetch'); // Ensure node-fetch is available or use native global fetch in Node 18+
+            
+            const apiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [
+                        { role: "user", parts: [{ text: contextPrompt }] },
+                        ...(history || []),
+                        { role: "user", parts: [{ text: message }] }
+                    ]
+                })
+            });
+            const data = await apiRes.json();
+            const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "ขออภัย ระบบขัดข้อง";
+            return res.json({ success: true, reply });
+
+        } catch (e) {
+            console.error("Gemini Error:", e);
+            return res.json({ success: false, error: e.message });
+        }
+    }
+
+    // --- EXISTING APIs ---
+    if (pathname === '/api/register' && method === 'POST') {
+        const { username, password, name, email, role } = req.body;
+        if (!username || !password || !name) return res.status(400).json({ error: "Missing fields" });
+
+        // 1. Try DB
+        const existing = await runQuery('SELECT id FROM users WHERE username = $1', [username]);
+        if (existing && existing.length > 0) return res.status(400).json({ error: "Username taken" });
+
+        if (dbConnected) {
+            await runQuery(
+                `INSERT INTO users (username, password, name, email, role, level, xp, coins, streak, avatar) 
+                 VALUES ($1, $2, $3, $4, $5, 1, 0, 0, 0, '🙂')`,
+                [username, password, name, email || '', role || 'student']
+            );
+            return res.json({ success: true });
+        }
+
+        // 2. Mock (Ephemeral)
+        MOCK_DB.users.push({ 
+            id: MOCK_DB.users.length + 1, 
+            username, password, name, role: role || 'student', level: 1, xp: 0, coins: 0, avatar: '🙂' 
+        });
+        return res.json({ success: true, message: "Registered (Mock)" });
     }
 
     // LOGIN
@@ -183,7 +256,20 @@ module.exports = async (req, res) => {
         return res.json({ success: true, new_balance: 9999 });
     }
 
-    if (pathname === '/api/inventory') return res.json([]);
+    if (pathname === '/api/inventory') {
+        const userId = url.searchParams.get("userId");
+        if (dbConnected && userId) {
+            const items = await runQuery(`
+                SELECT i.*, ui.acquired_at 
+                FROM user_items ui 
+                JOIN items i ON ui.item_id = i.id 
+                WHERE ui.user_id = $1 
+                ORDER BY ui.acquired_at DESC
+            `, [userId]);
+            return res.json(items || []);
+        }
+        return res.json([]);
+    }
 
     return res.status(404).json({ error: "Not found" });
 };
