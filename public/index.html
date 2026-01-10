@@ -296,49 +296,60 @@
             },
 
             api: {
-                loadAll: async (uid) => {
+                fetchAll: async () => {
+                    const uid = sessionStorage.getItem('user_id');
+                    if(!uid) return;
+
                     try {
                         const [uRes, aRes] = await Promise.all([
                             fetch(`/api/analytics?userId=${uid}`), 
                             fetch('/api/activities')
                         ]);
                         
-                        if(!uRes.ok) throw new Error(`User API Error: ${uRes.status}`);
                         const userData = await uRes.json();
                         const actData = await aRes.json();
 
-                        Game.data.user = userData.user || { name: 'Unknown Hero', level: 1, coins: 0, streak: 0 };
+                        // --- PERSISTENCE LOGIC (LOCAL SAVE) ---
+                        // If we get mock data or DB is down, try loading from LocalStorage
+                        const localSave = localStorage.getItem(`save_user_${uid}`);
+                        let finalUser = userData.user;
+
+                        if (localSave && (!finalUser || finalUser.id === 99)) {
+                            finalUser = JSON.parse(localSave);
+                            console.log("🎮 Loaded from Local Save");
+                        }
+
+                        Game.data.user = finalUser || { id: uid, name: 'Guest Hero', level: 1, xp: 0, coins: 0 };
                         Game.data.activities = actData || [];
-                        console.log("Data Loaded:", Game.data.user);
-                    } catch (e) { 
-                        console.warn("Load Error (Switching to Offline Mode):", e);
-                        // CLIENT-SIDE MOCK FALLBACK
-                        Game.data.user = { 
-                            id: uid, name: 'Offline Hero', role: 'student', 
-                            level: 5, coins: 999, streak: 10, xp: 2500, avatar: '🧙‍♂️' 
-                        };
-                        Game.data.activities = [
-                            { id: 1, title: 'Math Quest (Offline)', type: 'game', category: 'Mathematics', credits: 3 },
-                            { id: 2, title: 'Science Lab (Offline)', type: 'video', category: 'Science', credits: 2 }
-                        ];
-                    }
+                        
+                        Game.render.hud();
+                        Game.render.dashboard();
+                    } catch (e) { console.error("API Error", e); }
                 },
-                buy: async (id) => {
-                    if(!confirm('Confirm buy?')) return;
+                saveProgress: async (actId, score, status) => {
+                    const u = Game.data.user;
+                    if(!u) return;
+
+                    // 1. Update UI / Local State immediately
+                    if(status === 'completed') {
+                        u.xp += 100;
+                        u.coins += 50;
+                        u.level = Math.floor(u.xp / 1000) + 1;
+                        // Save to Browser
+                        localStorage.setItem(`save_user_${u.id}`, JSON.stringify(u));
+                    }
+
+                    // 2. Try to sync with Server
                     try {
-                        const res = await fetch('/api/shop/buy', { 
-                            method: 'POST', 
+                        await fetch('/api/progress', {
+                            method: 'POST',
                             headers: {'Content-Type':'application/json'},
-                            body: JSON.stringify({ userId: sessionStorage.getItem('user_id'), itemId: id }) 
+                            body: JSON.stringify({ userId: u.id, activityId: actId, score, status })
                         });
-                        const d = await res.json();
-                        if(d.success) { 
-                            alert('Purchased!'); 
-                            Game.data.user.coins = d.new_balance; 
-                            Game.render.hud(); 
-                            Game.render.shop(); 
-                        } else { alert(d.error || 'Failed'); }
-                    } catch(e) { alert('Transaction Error'); }
+                    } catch(e) { console.warn("Server sync failed, saved locally."); }
+                    
+                    Game.render.hud();
+                    Game.render.dashboard();
                 }
             },
 
