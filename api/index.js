@@ -89,22 +89,158 @@ module.exports = async (req, res) => {
         }
     }
 
-    // INIT
+    // VISITOR COUNT
+    if (pathname === '/api/visit') {
+        if (dbConnected) {
+            const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+            const ua = req.headers['user-agent'];
+            await runQuery('INSERT INTO site_visits (ip_address, user_agent, visit_time) VALUES ($1, $2, $3)', [ip, ua, new Date().toISOString()]);
+            const rows = await runQuery('SELECT COUNT(*) as total FROM site_visits');
+            return res.json({ total_visits: rows[0]?.total || 0 });
+        }
+        return res.json({ total_visits: 999 }); // Mock
+    }
+
+    // LOGIN HISTORY
+    if (pathname === '/api/history') {
+        const userId = url.searchParams.get("userId");
+        if (dbConnected && userId) {
+            const history = await runQuery('SELECT * FROM login_history WHERE user_id = $1 ORDER BY login_time DESC LIMIT 20', [userId]);
+            return res.json(history || []);
+        }
+        return res.json([]);
+    }
+
+    // INIT (Robust Schema)
     if (pathname === '/api/init') {
         if (!dbConnected) return res.json({ success: true, message: "Mock Init OK" });
-        await runQuery(`CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username TEXT UNIQUE, password TEXT, role TEXT, name TEXT, level INT DEFAULT 1, coins INT DEFAULT 0, streak INT DEFAULT 0, xp INT DEFAULT 0, avatar TEXT, cover_image TEXT, address TEXT, birthdate TEXT, social_links TEXT, email TEXT, phone TEXT, bio TEXT, school TEXT, last_login TEXT)`);
-        await runQuery(`CREATE TABLE IF NOT EXISTS activities (id SERIAL PRIMARY KEY, title TEXT, type TEXT, difficulty TEXT, duration TEXT, content TEXT, category TEXT, credits INT, course_code TEXT, creator_id INT)`);
-        await runQuery(`CREATE TABLE IF NOT EXISTS user_progress (id SERIAL PRIMARY KEY, user_id INT, activity_id INT, score INT, status TEXT, completed_at TEXT)`);
-        await runQuery(`CREATE TABLE IF NOT EXISTS reviews (id SERIAL PRIMARY KEY, user_id INT, activity_id INT, rating INT, comment TEXT, created_at TEXT)`);
-        await runQuery(`CREATE TABLE IF NOT EXISTS items (id SERIAL PRIMARY KEY, name TEXT, description TEXT, price INT, type TEXT, icon TEXT)`);
-        await runQuery(`CREATE TABLE IF NOT EXISTS user_items (id SERIAL PRIMARY KEY, user_id INT, item_id INT, acquired_at TEXT)`);
-        
-        // New Tables
-        await runQuery(`CREATE TABLE IF NOT EXISTS portfolios (id SERIAL PRIMARY KEY, user_id INT, title TEXT, description TEXT, media_url TEXT, type TEXT, created_at TEXT)`);
-        await runQuery(`CREATE TABLE IF NOT EXISTS certificates (id SERIAL PRIMARY KEY, user_id INT, user_name TEXT, course_title TEXT, issue_date TEXT, code TEXT)`);
-        await runQuery(`CREATE TABLE IF NOT EXISTS teacher_skills (id SERIAL PRIMARY KEY, user_id INT, skill_name TEXT, proficiency INT)`);
-        
-        return res.json({ success: true, message: "Tables Created (Full Schema)" });
+
+        const schema = [
+            // 1. Users
+            `CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY, 
+                username TEXT UNIQUE NOT NULL, 
+                password TEXT NOT NULL, 
+                role TEXT DEFAULT 'student', 
+                name TEXT, 
+                level INT DEFAULT 1, 
+                xp INT DEFAULT 0, 
+                coins INT DEFAULT 0, 
+                streak INT DEFAULT 0, 
+                avatar TEXT DEFAULT '🙂', 
+                cover_image TEXT, 
+                email TEXT, 
+                phone TEXT, 
+                bio TEXT, 
+                school TEXT, 
+                address TEXT, 
+                birthdate TEXT, 
+                social_links TEXT, 
+                last_login TEXT
+            )`,
+            `CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)`,
+
+            // 2. Activities (Courses)
+            `CREATE TABLE IF NOT EXISTS activities (
+                id SERIAL PRIMARY KEY, 
+                title TEXT, 
+                type TEXT, 
+                difficulty TEXT, 
+                duration TEXT, 
+                content TEXT, 
+                category TEXT DEFAULT 'General', 
+                credits INT DEFAULT 1, 
+                course_code TEXT, 
+                creator_id INT REFERENCES users(id) ON DELETE SET NULL
+            )`,
+            `CREATE INDEX IF NOT EXISTS idx_activities_category ON activities(category)`,
+
+            // 3. Progress
+            `CREATE TABLE IF NOT EXISTS user_progress (
+                id SERIAL PRIMARY KEY, 
+                user_id INT REFERENCES users(id) ON DELETE CASCADE, 
+                activity_id INT REFERENCES activities(id) ON DELETE CASCADE, 
+                score INT DEFAULT 0, 
+                status TEXT, 
+                completed_at TEXT
+            )`,
+            `CREATE INDEX IF NOT EXISTS idx_progress_user ON user_progress(user_id)`,
+
+            // 4. Reviews
+            `CREATE TABLE IF NOT EXISTS reviews (
+                id SERIAL PRIMARY KEY, 
+                user_id INT REFERENCES users(id) ON DELETE CASCADE, 
+                activity_id INT REFERENCES activities(id) ON DELETE CASCADE, 
+                rating INT, 
+                comment TEXT, 
+                created_at TEXT
+            )`,
+
+            // 5. Shop
+            `CREATE TABLE IF NOT EXISTS items (
+                id SERIAL PRIMARY KEY, 
+                name TEXT, 
+                description TEXT, 
+                price INT, 
+                type TEXT, 
+                icon TEXT
+            )`,
+            `CREATE TABLE IF NOT EXISTS user_items (
+                id SERIAL PRIMARY KEY, 
+                user_id INT REFERENCES users(id) ON DELETE CASCADE, 
+                item_id INT REFERENCES items(id) ON DELETE CASCADE, 
+                acquired_at TEXT
+            )`,
+
+            // 6. Profile Extras
+            `CREATE TABLE IF NOT EXISTS portfolios (
+                id SERIAL PRIMARY KEY, 
+                user_id INT REFERENCES users(id) ON DELETE CASCADE, 
+                title TEXT, 
+                description TEXT, 
+                media_url TEXT, 
+                type TEXT, 
+                created_at TEXT
+            )`,
+            `CREATE TABLE IF NOT EXISTS certificates (
+                id SERIAL PRIMARY KEY, 
+                user_id INT REFERENCES users(id) ON DELETE CASCADE, 
+                user_name TEXT, 
+                course_title TEXT, 
+                issue_date TEXT, 
+                code TEXT
+            )`,
+            `CREATE TABLE IF NOT EXISTS teacher_skills (
+                id SERIAL PRIMARY KEY, 
+                user_id INT REFERENCES users(id) ON DELETE CASCADE, 
+                skill_name TEXT, 
+                proficiency INT
+            )`,
+
+            // 7. Analytics
+            `CREATE TABLE IF NOT EXISTS site_visits (
+                id SERIAL PRIMARY KEY, 
+                ip_address TEXT, 
+                user_agent TEXT, 
+                visit_time TEXT
+            )`,
+            `CREATE TABLE IF NOT EXISTS login_history (
+                id SERIAL PRIMARY KEY, 
+                user_id INT REFERENCES users(id) ON DELETE CASCADE, 
+                login_time TEXT, 
+                ip_address TEXT, 
+                device_info TEXT
+            )`
+        ];
+
+        try {
+            for (const query of schema) {
+                await runQuery(query);
+            }
+            return res.json({ success: true, message: "Database Schema Optimized & Synced" });
+        } catch (e) {
+            return res.status(500).json({ error: e.message });
+        }
     }
 
     // SEED
@@ -195,7 +331,17 @@ module.exports = async (req, res) => {
         
         // 1. Try DB
         const rows = await runQuery('SELECT * FROM users WHERE username = $1 AND password = $2', [username, password]);
-        if (rows && rows.length > 0) return res.json({ success: true, ...rows[0] });
+        if (rows && rows.length > 0) {
+            const user = rows[0];
+            // Log History
+            if (dbConnected) {
+                const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+                const ua = req.headers['user-agent'];
+                await runQuery('INSERT INTO login_history (user_id, login_time, ip_address, device_info) VALUES ($1, $2, $3, $4)', 
+                    [user.id, new Date().toISOString(), ip, ua]);
+            }
+            return res.json({ success: true, ...user });
+        }
 
         // 2. Try Mock (Fallback)
         const mockUser = MOCK_DB.users.find(u => u.username === username && u.password === password);

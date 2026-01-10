@@ -119,6 +119,25 @@
                         <div class="text-slate-500 text-sm italic col-span-2 text-center py-4">No certificates earned yet.</div>
                     </div>
                 </div>
+
+                <!-- Login History -->
+                <div class="glass p-6 rounded-2xl">
+                    <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><span>🕒</span> Login History</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-slate-400">
+                            <thead class="text-xs text-slate-500 uppercase bg-slate-800">
+                                <tr>
+                                    <th class="px-4 py-2 rounded-l-lg">Time</th>
+                                    <th class="px-4 py-2">Device</th>
+                                    <th class="px-4 py-2 rounded-r-lg">IP</th>
+                                </tr>
+                            </thead>
+                            <tbody id="login-history-body">
+                                <tr><td colspan="3" class="text-center py-4">Loading history...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -174,6 +193,7 @@
 
                     if(App.user) {
                         App.render(data);
+                        App.loadHistory(); // New
                     } else {
                         alert('User not found. Please login again.');
                         location.href = '/login.html';
@@ -182,6 +202,24 @@
                     console.error(e);
                     alert('Connection Error. Showing cached/demo data.');
                 }
+            },
+            loadHistory: async () => {
+                const tbody = document.getElementById('login-history-body');
+                try {
+                    const res = await fetch(`/api/history?userId=${App.user.id}`);
+                    const data = await res.json();
+                    if(data.length > 0) {
+                        tbody.innerHTML = data.map(log => `
+                            <tr class="border-b border-slate-700 hover:bg-slate-800/50">
+                                <td class="px-4 py-3">${new Date(log.login_time).toLocaleString('th-TH')}</td>
+                                <td class="px-4 py-3 truncate max-w-[150px]" title="${log.device_info}">${log.device_info.split('(')[0]}</td>
+                                <td class="px-4 py-3 font-mono text-xs">${log.ip_address}</td>
+                            </tr>
+                        `).join('');
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4">No login history found.</td></tr>';
+                    }
+                } catch(e) { tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-red-400">Failed to load history.</td></tr>'; }
             },
             render: (data) => {
                 const u = App.user;

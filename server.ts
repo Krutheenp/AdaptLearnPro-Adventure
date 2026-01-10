@@ -11,12 +11,14 @@ const UPLOAD_DIR = join(BASE_DIR, "uploads");
 const DB_PATH = join(BASE_DIR, "production.sqlite");
 
 const db = new Database(DB_PATH);
+// Enable Foreign Keys for SQLite
+db.run("PRAGMA foreign_keys = ON;");
 
-// Database Schema
+// --- 1. USERS & AUTH ---
 db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT, 
-    username TEXT UNIQUE, 
-    password TEXT, 
+    username TEXT UNIQUE NOT NULL, 
+    password TEXT NOT NULL, 
     role TEXT DEFAULT 'student', 
     name TEXT, 
     email TEXT,
@@ -33,78 +35,61 @@ db.run(`CREATE TABLE IF NOT EXISTS users (
     coins INTEGER DEFAULT 0,
     streak INTEGER DEFAULT 0,
     last_login TEXT
-);`);
+);
+`);
+db.run("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);");
 
 // Migrations for existing DB (ensure columns exist)
-try { db.run("ALTER TABLE users ADD COLUMN email TEXT;"); } catch(e) {}
-try { db.run("ALTER TABLE users ADD COLUMN phone TEXT;"); } catch(e) {}
-try { db.run("ALTER TABLE users ADD COLUMN bio TEXT;"); } catch(e) {}
-try { db.run("ALTER TABLE users ADD COLUMN school TEXT;"); } catch(e) {}
-try { db.run("ALTER TABLE users ADD COLUMN address TEXT;"); } catch(e) {}
-try { db.run("ALTER TABLE users ADD COLUMN birthdate TEXT;"); } catch(e) {}
-try { db.run("ALTER TABLE users ADD COLUMN social_links TEXT;"); } catch(e) {}
-try { db.run("ALTER TABLE users ADD COLUMN cover_image TEXT;"); } catch(e) {}
-try { db.run("ALTER TABLE users ADD COLUMN coins INTEGER DEFAULT 0;"); } catch(e) {}
-try { db.run("ALTER TABLE users ADD COLUMN streak INTEGER DEFAULT 0;"); } catch(e) {}
-try { db.run("ALTER TABLE users ADD COLUMN last_login TEXT;"); } catch(e) {}
+const userCols = ['email', 'phone', 'bio', 'school', 'address', 'birthdate', 'social_links', 'cover_image', 'coins', 'streak', 'last_login'];
+userCols.forEach(col => { try { db.run(`ALTER TABLE users ADD COLUMN ${col} TEXT;`); } catch(e) {} });
 
-db.run(`CREATE TABLE IF NOT EXISTS activities (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, type TEXT, difficulty TEXT, duration TEXT, content TEXT, category TEXT DEFAULT 'General', credits INTEGER DEFAULT 1, course_code TEXT);`);
+// --- 2. LEARNING CONTENT ---
+db.run(`CREATE TABLE IF NOT EXISTS activities (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+    title TEXT, 
+    type TEXT, 
+    difficulty TEXT, 
+    duration TEXT, 
+    content TEXT, 
+    category TEXT DEFAULT 'General', 
+    credits INTEGER DEFAULT 1, 
+    course_code TEXT,
+    creator_id INTEGER REFERENCES users(id) ON DELETE SET NULL
+);
+`);
+db.run("CREATE INDEX IF NOT EXISTS idx_activities_category ON activities(category);");
+db.run("CREATE INDEX IF NOT EXISTS idx_activities_creator ON activities(creator_id);");
+
 try { db.run("ALTER TABLE activities ADD COLUMN category TEXT DEFAULT 'General';"); } catch(e) {}
 try { db.run("ALTER TABLE activities ADD COLUMN credits INTEGER DEFAULT 1;"); } catch(e) {}
 try { db.run("ALTER TABLE activities ADD COLUMN course_code TEXT;"); } catch(e) {}
 try { db.run("ALTER TABLE activities ADD COLUMN creator_id INTEGER DEFAULT 1;"); } catch(e) {}
 
-// New: Reviews Table
-db.run(`CREATE TABLE IF NOT EXISTS reviews (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    activity_id INTEGER,
-    rating INTEGER,
-    comment TEXT,
-    created_at TEXT
-);`);
-
-// Categorize Demo Data (Migration)
-db.run("UPDATE activities SET category = 'Mathematics', credits = 3 WHERE title LIKE '%คณิต%' OR title LIKE '%Math%' OR title LIKE '%สมการ%'");
-db.run("UPDATE activities SET category = 'Science', credits = 3 WHERE title LIKE '%วิทย์%' OR title LIKE '%Science%' OR title LIKE '%ระบบสุริยะ%'");
-db.run("UPDATE activities SET category = 'English', credits = 2 WHERE title LIKE '%อังกฤษ%' OR title LIKE '%English%' OR title LIKE '%Grammar%'");
-db.run("UPDATE activities SET category = 'Technology', credits = 4 WHERE title LIKE '%Python%' OR title LIKE '%Progr%' OR title LIKE '%Com%'");
-
-db.run(`CREATE TABLE IF NOT EXISTS certificates (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, user_name TEXT, course_title TEXT, issue_date TEXT, code TEXT);`);
-
-db.run(`CREATE TABLE IF NOT EXISTS certificates (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, user_name TEXT, course_title TEXT, issue_date TEXT, code TEXT);`);
-try { db.run("ALTER TABLE certificates ADD COLUMN user_id INTEGER;"); } catch(e) {}
-
-// New: Portfolio Table
-db.run(`CREATE TABLE IF NOT EXISTS portfolios (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    title TEXT,
-    description TEXT,
-    media_url TEXT,
-    type TEXT, -- 'project', 'research', 'artwork', 'other'
-    created_at TEXT
-);`);
-
-// New: Teacher Skills Table
-db.run(`CREATE TABLE IF NOT EXISTS teacher_skills (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    skill_name TEXT,
-    proficiency INTEGER -- 1-100 or 1-5
-);`);
-
-// New: Tracking & Progress Table
+// --- 3. PROGRESS & REVIEWS ---
 db.run(`CREATE TABLE IF NOT EXISTS user_progress (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    activity_id INTEGER,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    activity_id INTEGER REFERENCES activities(id) ON DELETE CASCADE,
     score INTEGER DEFAULT 0,
     status TEXT, -- 'completed', 'failed'
     completed_at TEXT
-);`);
+);
+`);
+db.run("CREATE INDEX IF NOT EXISTS idx_progress_user ON user_progress(user_id);");
+db.run("CREATE INDEX IF NOT EXISTS idx_progress_activity ON user_progress(activity_id);");
 
-// New: Shop Items & Inventory
+db.run(`CREATE TABLE IF NOT EXISTS reviews (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    activity_id INTEGER REFERENCES activities(id) ON DELETE CASCADE,
+    rating INTEGER,
+    comment TEXT,
+    created_at TEXT
+);
+`);
+db.run("CREATE INDEX IF NOT EXISTS idx_reviews_activity ON reviews(activity_id);");
+
+// --- 4. SHOP & INVENTORY ---
 db.run(`CREATE TABLE IF NOT EXISTS items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT,
@@ -112,25 +97,75 @@ db.run(`CREATE TABLE IF NOT EXISTS items (
     price INTEGER,
     type TEXT,
     icon TEXT
-);`);
+);
+`);
 
 db.run(`CREATE TABLE IF NOT EXISTS user_items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    item_id INTEGER,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    item_id INTEGER REFERENCES items(id) ON DELETE CASCADE,
     acquired_at TEXT
-);`);
+);
+`);
+db.run("CREATE INDEX IF NOT EXISTS idx_user_items_user ON user_items(user_id);");
+
+// --- 5. SOCIAL & PROFILE ---
+db.run(`CREATE TABLE IF NOT EXISTS portfolios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    title TEXT,
+    description TEXT,
+    media_url TEXT,
+    type TEXT, -- 'project', 'research', 'artwork', 'other'
+    created_at TEXT
+);
+`);
+
+db.run(`CREATE TABLE IF NOT EXISTS certificates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE, 
+    user_name TEXT, 
+    course_title TEXT, 
+    issue_date TEXT, 
+    code TEXT
+);
+`);
+
+db.run(`CREATE TABLE IF NOT EXISTS teacher_skills (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    skill_name TEXT,
+    proficiency INTEGER -- 1-100 or 1-5
+);
+`);
+
+// --- 6. ANALYTICS ---
+db.run(`CREATE TABLE IF NOT EXISTS site_visits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ip_address TEXT,
+    user_agent TEXT,
+    visit_time TEXT
+);
+`);
+
+db.run(`CREATE TABLE IF NOT EXISTS login_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    login_time TEXT,
+    ip_address TEXT,
+    device_info TEXT
+);
+`);
+db.run("CREATE INDEX IF NOT EXISTS idx_login_history_user ON login_history(user_id);");
+
+// Categorize Demo Data (Migration)
+db.run("UPDATE activities SET category = 'Mathematics', credits = 3 WHERE title LIKE '%คณิต%' OR title LIKE '%Math%' OR title LIKE '%สมการ%'");
+db.run("UPDATE activities SET category = 'Science', credits = 3 WHERE title LIKE '%วิทย์%' OR title LIKE '%Science%' OR title LIKE '%ระบบสุริยะ%'");
+db.run("UPDATE activities SET category = 'English', credits = 2 WHERE title LIKE '%อังกฤษ%' OR title LIKE '%English%' OR title LIKE '%Grammar%'");
+db.run("UPDATE activities SET category = 'Technology', credits = 4 WHERE title LIKE '%Python%' OR title LIKE '%Progr%' OR title LIKE '%Com%'");
 
 // Seed Items if empty
-if (!db.query("SELECT * FROM items").get()) {
-    const items = [
-        { name: 'Streak Freeze', price: 50, icon: '🧊', type: 'consumable', desc: 'Prevent streak reset' },
-        { name: 'Golden Frame', price: 500, icon: '🖼️', type: 'cosmetic', desc: 'Shiny profile frame' },
-        { name: 'XP Boost (1h)', price: 100, icon: '⚡', type: 'consumable', desc: 'Double XP for 1 hour' }
-    ];
-    const insertItem = db.prepare("INSERT INTO items (name, price, icon, type, description) VALUES (?, ?, ?, ?, ?)");
-    items.forEach(i => insertItem.run(i.name, i.price, i.icon, i.type, i.desc));
-}
+
 
 // Default Admin
 if (!db.query("SELECT * FROM users WHERE role = 'admin'").get()) {
@@ -142,6 +177,29 @@ const server = Bun.serve({
   async fetch(req) {
     const url = new URL(req.url);
     const method = req.method;
+
+    // --- API: VISITOR STATS & HISTORY (New) ---
+
+    // 1. Visitor Counter (Index Page)
+    if (url.pathname === "/api/visit" && method === "GET") {
+        const ip = server.requestIP(req)?.address || "unknown";
+        const ua = req.headers.get("User-Agent") || "";
+        const now = new Date().toISOString();
+
+        db.run("INSERT INTO site_visits (ip_address, user_agent, visit_time) VALUES (?, ?, ?)", [ip, ua, now]);
+        
+        const count = db.query("SELECT COUNT(*) as total FROM site_visits").get().total;
+        return Response.json({ total_visits: count });
+    }
+
+    // 2. User Login History
+    if (url.pathname === "/api/history" && method === "GET") {
+        const userId = url.searchParams.get("userId");
+        if (!userId) return Response.json([]);
+        
+        const history = db.query("SELECT * FROM login_history WHERE user_id = ? ORDER BY login_time DESC LIMIT 20").all(userId);
+        return Response.json(history);
+    }
 
     // --- API: SHOP & LEADERBOARD (New) ---
     if (url.pathname === "/api/shop") {
@@ -367,6 +425,12 @@ const server = Bun.serve({
                 user.streak = newStreak;
                 user.coins = (user.coins || 0) + streakBonus;
             }
+
+            // Log Login History
+            const ip = server.requestIP(req)?.address || "unknown";
+            const ua = req.headers.get("User-Agent") || "unknown";
+            db.run("INSERT INTO login_history (user_id, login_time, ip_address, device_info) VALUES (?, ?, ?, ?)", 
+                [user.id, new Date().toISOString(), ip, ua]);
 
             return Response.json({ 
                 success: true, 

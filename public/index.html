@@ -34,7 +34,9 @@
             <a href="/login.html" class="block w-full py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold rounded-xl shadow-lg transition transform hover:scale-105 active:scale-95 mb-4">
                 Login
             </a>
-            <div class="text-xs text-slate-500">v2.2.0 • Fixed</div>
+            <div class="text-xs text-slate-500">
+                v2.3.0 • Fixed • <span id="visitor-count">Loading visitors...</span>
+            </div>
         </div>
     </div>
 
@@ -219,6 +221,14 @@
             data: { user: null, activities: [], items: [], inventory: [], currentWorld: null },
             
             init: async () => {
+                // Fetch Visitor Count (Always)
+                try {
+                    const res = await fetch('/api/visit');
+                    const data = await res.json();
+                    const el = document.getElementById('visitor-count');
+                    if(el) el.innerText = `Visitors: ${data.total_visits || 0}`;
+                } catch(e) {}
+
                 const uid = sessionStorage.getItem('user_id');
                 console.log("Checking Auth for ID:", uid);
 
