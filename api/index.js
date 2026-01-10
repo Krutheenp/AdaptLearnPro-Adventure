@@ -94,7 +94,45 @@ module.exports = async (req, res) => {
                     logs.push("ERR: " + e.message);
                 }
             }
+            // Explicit Migration for existing DBs
+            try { await db.query("ALTER TABLE activities ADD COLUMN certificate_theme TEXT DEFAULT 'classic'"); } catch(e) {}
+            try { await db.query("ALTER TABLE activities ADD COLUMN price INT DEFAULT 0"); } catch(e) {}
+            try { await db.query("CREATE TABLE IF NOT EXISTS enrollments (id SERIAL PRIMARY KEY, user_id INT REFERENCES users(id) ON DELETE CASCADE, activity_id INT REFERENCES activities(id) ON DELETE CASCADE, enrolled_at TEXT)"); } catch(e) {}
+            try { await db.query("CREATE UNIQUE INDEX IF NOT EXISTS idx_enrollments_unique ON enrollments(user_id, activity_id)"); } catch(e) {}
+
             return res.json({ success: true, logs });
+        }
+
+        // --- ENROLL / UNLOCK COURSE ---
+        if (pathname === '/api/enroll' && method === 'POST') {
+            const { userId, activityId } = req.body;
+            if (!db) return res.json({ success: true, message: "Mock Enroll" });
+
+            try {
+                // 1. Check if already enrolled
+                const check = await runQuery("SELECT id FROM enrollments WHERE user_id=$1 AND activity_id=$2", [userId, activityId]);
+                if (check.length > 0) return res.json({ success: true, message: "Already enrolled" });
+
+                // 2. Get Course Price
+                const course = await runQuery("SELECT price FROM activities WHERE id=$1", [activityId]);
+                if (!course.length) return res.status(404).json({ error: "Course not found" });
+                const price = course[0].price || 0;
+
+                // 3. Check User Balance & Deduct
+                if (price > 0) {
+                    const user = await runQuery("SELECT coins FROM users WHERE id=$1", [userId]);
+                    if ((user[0]?.coins || 0) < price) return res.status(400).json({ error: "Insufficient coins" });
+                    
+                    await runQuery("UPDATE users SET coins = coins - $1 WHERE id=$2", [price, userId]);
+                }
+
+                // 4. Enroll
+                await runQuery("INSERT INTO enrollments (user_id, activity_id, enrolled_at) VALUES ($1, $2, $3)", [userId, activityId, new Date().toISOString()]);
+                
+                return res.json({ success: true });
+            } catch (e) {
+                return res.status(500).json({ error: e.message });
+            }
         }
 
         // --- SEED DATABASE ---

@@ -125,10 +125,10 @@
                     
                     if(!Learn.course) { alert('Course not found'); location.href = '/index.html'; return; }
 
+                    // ... (Fetch Course Data) ...
                     // Parse Content
                     try {
                         const raw = typeof Learn.course.content === 'string' ? JSON.parse(Learn.course.content) : Learn.course.content;
-                        // Normalize structure
                         if (Array.isArray(raw) && raw.length > 0 && !raw[0].lessons) {
                             Learn.course.curriculum = [{ title: "Module 1", lessons: raw }];
                         } else {
@@ -137,6 +137,16 @@
                     } catch(e) { Learn.course.curriculum = []; }
 
                     document.getElementById('course-title').innerText = Learn.course.title;
+
+                    // LOCK CHECK
+                    const price = Learn.course.price || 0;
+                    const isEnrolled = Learn.course.is_enrolled > 0; // Check DB flag
+
+                    if (price > 0 && !isEnrolled) {
+                        Learn.showLockScreen(price);
+                        return; // Stop loading content
+                    }
+
                     Learn.renderSidebar();
                     
                     // Start at first lesson
@@ -145,6 +155,56 @@
                     }
 
                 } catch(e) { console.error(e); }
+            },
+
+            showLockScreen: (price) => {
+                // Hide sidebar content
+                document.getElementById('curriculum-list').innerHTML = '<div class="p-4 text-center text-slate-500 text-sm">Course Locked 🔒</div>';
+                
+                // Show Purchase UI in main stage
+                const stage = document.getElementById('content-stage');
+                stage.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-20">
+                        <div class="text-8xl mb-6">🔒</div>
+                        <h2 class="text-4xl font-bold text-white mb-2">Course Locked</h2>
+                        <p class="text-slate-400 mb-8 text-center max-w-md">
+                            To access this premium content, you need to unlock it using your coins.
+                        </p>
+                        
+                        <div class="bg-slate-800 p-8 rounded-2xl border border-slate-700 text-center shadow-xl">
+                            <div class="text-sm text-slate-400 uppercase font-bold mb-2">Unlock Price</div>
+                            <div class="text-5xl font-black text-yellow-400 mb-6">🪙 ${price}</div>
+                            
+                            <button onclick="Learn.unlockCourse(${price})" class="w-full bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-400 hover:to-orange-500 text-white text-lg font-bold py-4 px-8 rounded-xl shadow-lg transition transform hover:scale-105">
+                                Unlock Now
+                            </button>
+                        </div>
+                        <a href="/index.html" class="mt-8 text-slate-500 hover:text-white underline">Back to Dashboard</a>
+                    </div>
+                `;
+            },
+
+            unlockCourse: async (price) => {
+                if(!confirm(`Unlock this course for ${price} coins?`)) return;
+                
+                try {
+                    const res = await fetch('/api/enroll', {
+                        method: 'POST',
+                        headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({ 
+                            userId: sessionStorage.getItem('user_id'),
+                            activityId: Learn.course.id 
+                        })
+                    });
+                    const data = await res.json();
+                    
+                    if(data.success) {
+                        alert('Course Unlocked! 🎉');
+                        location.reload();
+                    } else {
+                        alert(`Unlock Failed: ${data.error || 'Unknown Error'}`);
+                    }
+                } catch(e) { alert('Transaction Error'); }
             },
 
             renderSidebar: () => {

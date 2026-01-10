@@ -110,11 +110,15 @@
                     </div>
                 </div>
 
-                <!-- Credits, Code, and Certificate -->
-                <div class="grid grid-cols-2 gap-4">
+                <!-- Credits, Price, and Code -->
+                <div class="grid grid-cols-3 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Credits (XP)</label>
                         <input type="number" id="c-credits" value="100" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Price (Coins)</label>
+                        <input type="number" id="c-price" value="0" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white" placeholder="0 = Free">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Course Code</label>
@@ -244,6 +248,7 @@
                 document.getElementById('c-type').value = c.type;
                 document.getElementById('c-duration').value = c.duration;
                 document.getElementById('c-credits').value = c.credits;
+                document.getElementById('c-price').value = c.price || 0; // New
                 document.getElementById('c-difficulty').value = c.difficulty;
                 document.getElementById('c-code').value = c.course_code || '';
                 document.getElementById('c-cert-theme').value = c.certificate_theme || 'classic';
@@ -278,6 +283,7 @@
                     duration: document.getElementById('c-duration').value,
                     difficulty: document.getElementById('c-difficulty').value,
                     credits: parseInt(document.getElementById('c-credits').value) || 0,
+                    price: parseInt(document.getElementById('c-price').value) || 0, // New
                     course_code: document.getElementById('c-code').value,
                     certificate_theme: document.getElementById('c-cert-theme').value,
                     content: CourseEditor.modules, // Flat for now, logic handles structure
