@@ -351,21 +351,41 @@ module.exports = async (req, res) => {
         }
 
         // --- CERTIFICATES & PORTFOLIO ---
-        if (pathname === '/api/certificate' && method === 'POST') {
-            const body = req.body;
-            const code = "CERT-" + Math.random().toString(36).substr(2, 9).toUpperCase();
-            const date = new Date().toLocaleDateString('th-TH');
-            
-            if (db) {
-                let userId = body.userId;
-                if (!userId && body.userName) {
-                    const u = await runQuery("SELECT id FROM users WHERE name = $1", [body.userName]);
-                    if (u?.[0]) userId = u[0].id;
+        if (pathname === '/api/certificate') {
+            // POST: Issue New
+            if (method === 'POST') {
+                const body = req.body;
+                const code = "CERT-" + Math.random().toString(36).substr(2, 9).toUpperCase();
+                const date = new Date().toLocaleDateString('th-TH');
+                
+                if (db) {
+                    let userId = body.userId;
+                    if (!userId && body.userName) {
+                        const u = await runQuery("SELECT id FROM users WHERE name = $1", [body.userName]);
+                        if (u?.[0]) userId = u[0].id;
+                    }
+                    await runQuery("INSERT INTO certificates (user_id, user_name, course_title, issue_date, code) VALUES ($1, $2, $3, $4, $5)", 
+                        [userId, body.userName, body.courseTitle, date, code]);
                 }
-                await runQuery("INSERT INTO certificates (user_id, user_name, course_title, issue_date, code) VALUES ($1, $2, $3, $4, $5)", 
-                    [userId, body.userName, body.courseTitle, date, code]);
+                return res.json({ success: true, code, date });
             }
-            return res.json({ success: true, code, date });
+
+            // GET: List All (Admin) or Search
+            if (method === 'GET') {
+                if (db) {
+                    // Simple logic: If ?all=true -> list all, otherwise maybe filtered
+                    const rows = await runQuery("SELECT * FROM certificates ORDER BY id DESC");
+                    return res.json(rows || []);
+                }
+                return res.json([]);
+            }
+
+            // DELETE: Revoke
+            if (method === 'DELETE') {
+                const id = url.searchParams.get("id");
+                if (db) await runQuery("DELETE FROM certificates WHERE id = $1", [id]);
+                return res.json({ success: true });
+            }
         }
 
         if (pathname === '/api/portfolios') {

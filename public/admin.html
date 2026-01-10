@@ -27,6 +27,9 @@
             <button onclick="Admin.tab('users')" class="w-full text-left px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3" id="btn-users">
                 👥 User Management
             </button>
+            <button onclick="Admin.tab('certs')" class="w-full text-left px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3" id="btn-certs">
+                🏅 Certificates
+            </button>
             <button onclick="Admin.tab('system')" class="w-full text-left px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3" id="btn-system">
                 ⚙️ System Settings
             </button>
@@ -85,20 +88,28 @@
         </div>
 
         <div id="view-users" class="hidden space-y-6">
-            <h1 class="text-3xl font-bold text-white mb-6">User Management</h1>
+            <!-- ... users content ... -->
+        </div>
+
+        <div id="view-certs" class="hidden space-y-6">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-white">Certificate Management</h1>
+                <input type="text" placeholder="Search Student or Code..." onkeyup="Admin.filterCerts(this.value)" class="bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white w-64 focus:border-indigo-500 outline-none">
+            </div>
+            
             <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
                 <table class="w-full text-left text-sm text-slate-400">
                     <thead class="bg-slate-900 text-slate-200 uppercase font-bold text-xs">
                         <tr>
-                            <th class="px-6 py-4">User</th>
-                            <th class="px-6 py-4">Role</th>
-                            <th class="px-6 py-4">Level/XP</th>
-                            <th class="px-6 py-4">Status</th>
+                            <th class="px-6 py-4">Code</th>
+                            <th class="px-6 py-4">Student</th>
+                            <th class="px-6 py-4">Course</th>
+                            <th class="px-6 py-4">Issue Date</th>
                             <th class="px-6 py-4 text-right">Action</th>
                         </tr>
                     </thead>
-                    <tbody id="table-users" class="divide-y divide-slate-700">
-                        <!-- Rows injected here -->
+                    <tbody id="table-certs" class="divide-y divide-slate-700">
+                        <tr><td colspan="5" class="text-center py-8">Loading certificates...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -128,7 +139,7 @@
 
     <script>
         const Admin = {
-            data: { users: [], activities: [] },
+            data: { users: [], activities: [], certs: [] },
 
             init: async () => {
                 // 1. Security Check
@@ -156,29 +167,32 @@
             },
 
             loadData: async () => {
-                // Fetch Overview Data
-                const [uRes, aRes, vRes] = await Promise.all([
+                // Fetch Overview Data + Certs
+                const [uRes, aRes, vRes, cRes] = await Promise.all([
                     fetch('/api/users'),
                     fetch('/api/activities'),
-                    fetch('/api/visit')
+                    fetch('/api/visit'),
+                    fetch('/api/certificate?all=true') // Need to update API for this
                 ]);
 
                 Admin.data.users = await uRes.json();
                 Admin.data.activities = await aRes.json();
                 const visits = await vRes.json();
+                Admin.data.certs = await cRes.json(); // Array of certs
 
                 // Update Stats
                 document.getElementById('stat-users').innerText = Admin.data.users.length;
                 document.getElementById('stat-courses').innerText = Admin.data.activities.length;
                 document.getElementById('stat-visits').innerText = (visits.total_visits || 0).toLocaleString();
-                document.getElementById('stat-certs').innerText = '12'; // Mock for now, need API
+                document.getElementById('stat-certs').innerText = Admin.data.certs.length;
 
                 Admin.renderUsers();
+                Admin.renderCerts();
                 Admin.renderCharts();
             },
 
             tab: (name) => {
-                ['overview', 'users', 'system'].forEach(t => {
+                ['overview', 'users', 'certs', 'system'].forEach(t => {
                     document.getElementById(`view-${t}`).classList.add('hidden');
                     document.getElementById(`btn-${t}`).classList.remove('bg-slate-800', 'font-bold', 'text-white');
                 });
@@ -186,7 +200,41 @@
                 document.getElementById(`btn-${name}`).classList.add('bg-slate-800', 'font-bold', 'text-white');
             },
 
+            renderCerts: (list = Admin.data.certs) => {
+                const tbody = document.getElementById('table-certs');
+                if(list.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-500">No certificates found.</td></tr>'; return; }
+                
+                tbody.innerHTML = list.map(c => `
+                    <tr class="hover:bg-slate-800/50 transition">
+                        <td class="px-6 py-4 font-mono text-yellow-500">${c.code}</td>
+                        <td class="px-6 py-4 font-bold text-white">${c.user_name}</td>
+                        <td class="px-6 py-4 text-slate-300">${c.course_title}</td>
+                        <td class="px-6 py-4 text-slate-400">${c.issue_date}</td>
+                        <td class="px-6 py-4 text-right">
+                            <button onclick="Admin.revokeCert(${c.id})" class="text-red-400 hover:text-red-300 text-xs border border-red-900 bg-red-900/20 px-2 py-1 rounded">Revoke</button>
+                        </td>
+                    </tr>
+                `).join('');
+            },
+
+            filterCerts: (val) => {
+                const term = val.toLowerCase();
+                const filtered = Admin.data.certs.filter(c => 
+                    c.user_name.toLowerCase().includes(term) || 
+                    c.code.toLowerCase().includes(term) ||
+                    c.course_title.toLowerCase().includes(term)
+                );
+                Admin.renderCerts(filtered);
+            },
+
+            revokeCert: async (id) => {
+                if(!confirm('Revoke this certificate? This action cannot be undone.')) return;
+                await fetch(`/api/certificate?id=${id}`, { method: 'DELETE' });
+                location.reload();
+            },
+
             renderUsers: () => {
+
                 const tbody = document.getElementById('table-users');
                 tbody.innerHTML = Admin.data.users.map(u => `
                     <tr class="hover:bg-slate-800/50 transition">
