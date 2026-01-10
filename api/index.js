@@ -41,7 +41,17 @@ module.exports = async (req, res) => {
         if (pathname === '/api/shop') return res.status(200).json(MOCK_DATA.items);
         if (pathname === '/api/leaderboard') return res.status(200).json(MOCK_DATA.users);
         if (pathname === '/api/inventory') return res.status(200).json([]);
-        if (pathname === '/api/analytics') return res.status(200).json({ user: MOCK_DATA.users[0], activities: [], total_score: 0 });
+        if (pathname === '/api/analytics') {
+            const userId = url.searchParams.get('userId');
+            const foundUser = MOCK_DB.users.find(u => String(u.id) === String(userId)) || MOCK_DB.users[0];
+            
+            return res.status(200).json({
+                user: foundUser,
+                activities: [],
+                total_score: 0,
+                rank: 1, total_users: MOCK_DB.users.length
+            });
+        }
         
         // Default success for writes
         return res.status(200).json({ success: true, message: "Mock Action Success" });
