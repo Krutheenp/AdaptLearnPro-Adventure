@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learning Space - AdaptLearn</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #0f172a; color: #e2e8f0; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .active-lesson { background-color: #4f46e5; color: white; border-left: 4px solid #818cf8; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- Sidebar: Curriculum -->
+    <aside class="w-80 bg-slate-900 border-r border-slate-700 flex flex-col">
+        <div class="p-4 border-b border-slate-800">
+            <a href="/index.html" class="text-xs text-slate-400 hover:text-white mb-2 block">⬅ Back to Dashboard</a>
+            <h2 class="font-bold text-lg text-white leading-tight" id="course-title">Loading...</h2>
+            <div class="w-full bg-slate-800 h-2 rounded-full mt-3 overflow-hidden">
+                <div id="overall-progress" class="h-full bg-green-500 w-0 transition-all duration-500"></div>
+            </div>
+            <div class="text-xs text-slate-400 mt-1 flex justify-between">
+                <span>Progress</span>
+                <span id="progress-text">0%</span>
+            </div>
+        </div>
+        
+        <div id="curriculum-list" class="flex-1 overflow-y-auto p-4 space-y-4">
+            <!-- Units injected here -->
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col relative bg-slate-950">
+        
+        <!-- Top Bar -->
+        <header class="h-16 border-b border-slate-800 flex items-center justify-between px-8 bg-slate-900/50 backdrop-blur">
+            <h3 class="font-bold text-lg" id="lesson-title">Welcome</h3>
+            <div class="flex gap-3">
+                <button onclick="Learn.prev()" class="px-4 py-2 rounded-lg border border-slate-600 text-slate-400 hover:text-white hover:bg-slate-800 text-sm">Previous</button>
+                <button onclick="Learn.next()" class="px-4 py-2 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-500 text-sm shadow-lg">Next Lesson ➔</button>
+            </div>
+        </header>
+
+        <!-- Content Stage -->
+        <div class="flex-1 overflow-y-auto p-8 flex justify-center">
+            <div class="w-full max-w-4xl" id="content-stage">
+                <div class="text-center py-20 text-slate-500">Select a lesson to start learning.</div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Certificate Modal -->
+    <div id="cert-modal" class="fixed inset-0 bg-black/90 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white text-slate-900 p-8 rounded-2xl max-w-lg w-full text-center shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500"></div>
+            <div class="text-6xl mb-4">🏆</div>
+            <h2 class="text-3xl font-black mb-2 uppercase tracking-wide text-slate-800">Certificate Earned!</h2>
+            <p class="text-slate-600 mb-6">Congratulations! You have successfully completed <br><b id="cert-course-name">Course Name</b></p>
+            
+            <div class="bg-slate-100 p-4 rounded-xl border border-slate-200 mb-6">
+                <div class="text-xs text-slate-500 uppercase font-bold">Certificate ID</div>
+                <div class="font-mono text-lg font-bold text-indigo-600" id="cert-code">LOADING...</div>
+            </div>
+
+            <button onclick="location.href='/profile.html'" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition transform hover:scale-105">View in Profile</button>
+        </div>
+    </div>
+
+    <script>
+        const Learn = {
+            course: null,
+            currentUnitIdx: 0,
+            currentLessonIdx: -1,
+            progress: {}, // { "u0-l1": true }
+
+            init: async () => {
+                const params = new URLSearchParams(location.search);
+                const courseId = params.get('id');
+                const uid = sessionStorage.getItem('user_id');
+                
+                if(!uid || !courseId) { alert('Invalid access'); location.href = '/index.html'; return; }
+
+                // Fetch Course Data
+                try {
+                    const res = await fetch('/api/activities'); // Ideally fetch single
+                    const all = await res.json();
+                    Learn.course = all.find(c => String(c.id) === String(courseId));
+                    
+                    if(!Learn.course) { alert('Course not found'); location.href = '/index.html'; return; }
+
+                    // Parse Content
+                    try {
+                        const raw = typeof Learn.course.content === 'string' ? JSON.parse(Learn.course.content) : Learn.course.content;
+                        // Normalize structure
+                        if (Array.isArray(raw) && raw.length > 0 && !raw[0].lessons) {
+                            Learn.course.curriculum = [{ title: "Module 1", lessons: raw }];
+                        } else {
+                            Learn.course.curriculum = raw || [];
+                        }
+                    } catch(e) { Learn.course.curriculum = []; }
+
+                    document.getElementById('course-title').innerText = Learn.course.title;
+                    Learn.renderSidebar();
+                    
+                    // Start at first lesson
+                    if(Learn.course.curriculum.length > 0 && Learn.course.curriculum[0].lessons.length > 0) {
+                        Learn.loadLesson(0, 0);
+                    }
+
+                } catch(e) { console.error(e); }
+            },
+
+            renderSidebar: () => {
+                const list = document.getElementById('curriculum-list');
+                let totalLessons = 0;
+                let completedLessons = 0;
+
+                list.innerHTML = Learn.course.curriculum.map((unit, uIdx) => {
+                    const lessonsHtml = unit.lessons.map((l, lIdx) => {
+                        const key = `${uIdx}-${lIdx}`;
+                        const isCompleted = Learn.progress[key];
+                        const isActive = uIdx === Learn.currentUnitIdx && lIdx === Learn.currentLessonIdx;
+                        
+                        totalLessons++;
+                        if(isCompleted) completedLessons++;
+
+                        return `
+                            <div onclick="Learn.loadLesson(${uIdx}, ${lIdx})" 
+                                 class="p-3 rounded-lg cursor-pointer text-sm mb-1 flex items-center gap-3 transition ${isActive ? 'active-lesson' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}">
+                                <div class="w-5 h-5 rounded-full border flex items-center justify-center text-[10px] ${isCompleted ? 'bg-green-500 border-green-500 text-white' : 'border-slate-600'}">
+                                    ${isCompleted ? '✔' : lIdx + 1}
+                                </div>
+                                <span class="truncate">${l.title}</span>
+                            </div>
+                        `;
+                    }).join('');
+
+                    return `
+                        <div class="mb-4">
+                            <h4 class="text-xs font-bold text-slate-500 uppercase mb-2 px-2">${unit.title}</h4>
+                            ${lessonsHtml}
+                        </div>
+                    `;
+                }).join('');
+
+                // Update Progress Bar
+                const pct = totalLessons === 0 ? 0 : Math.round((completedLessons / totalLessons) * 100);
+                document.getElementById('overall-progress').style.width = `${pct}%`;
+                document.getElementById('progress-text').innerText = `${pct}%`;
+
+                if(pct === 100) Learn.finishCourse();
+            },
+
+            loadLesson: (uIdx, lIdx) => {
+                Learn.currentUnitIdx = uIdx;
+                Learn.currentLessonIdx = lIdx;
+                const lesson = Learn.course.curriculum[uIdx].lessons[lIdx];
+                
+                document.getElementById('lesson-title').innerText = lesson.title;
+                const stage = document.getElementById('content-stage');
+                
+                Learn.renderSidebar(); // Update active state
+
+                if(lesson.type === 'video') {
+                    // Extract Video ID
+                    let vidId = '';
+                    try {
+                        const url = new URL(lesson.url);
+                        if(url.hostname.includes('youtube.com')) vidId = url.searchParams.get('v');
+                        else if(url.hostname.includes('youtu.be')) vidId = url.pathname.slice(1);
+                    } catch(e) {}
+
+                    stage.innerHTML = `
+                        <div class="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl mb-6">
+                            ${vidId ? `<iframe class="w-full h-full" src="https://www.youtube.com/embed/${vidId}" frameborder="0" allowfullscreen></iframe>` : '<div class="flex items-center justify-center h-full text-slate-500">Invalid Video URL</div>'}
+                        </div>
+                        <div class="text-center">
+                            <button onclick="Learn.markComplete()" class="bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded-full font-bold shadow-lg transition transform hover:scale-105">
+                                ✅ Mark as Watched
+                            </button>
+                        </div>
+                    `;
+                } else if(lesson.type === 'text') {
+                    stage.innerHTML = `
+                        <div class="prose prose-invert max-w-none bg-slate-900 p-8 rounded-2xl border border-slate-800 shadow-xl">
+                            ${lesson.body.replace(/\n/g, '<br>')}
+                        </div>
+                        <div class="text-center mt-8">
+                            <button onclick="Learn.markComplete()" class="bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded-full font-bold shadow-lg transition transform hover:scale-105">
+                                ✅ I have read this
+                            </button>
+                        </div>
+                    `;
+                } else if(lesson.type === 'quiz') {
+                    stage.innerHTML = `
+                        <div class="max-w-2xl mx-auto bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-2xl">
+                            <h3 class="text-2xl font-bold text-white mb-6 text-center">${lesson.question}</h3>
+                            <div class="space-y-3">
+                                ${lesson.options.map((opt, i) => `
+                                    <button onclick="Learn.checkQuiz(${i}, ${lesson.correct})" class="w-full text-left p-4 rounded-xl bg-slate-700 hover:bg-slate-600 border border-slate-600 transition text-slate-200 font-medium">
+                                        ${opt}
+                                    </button>
+                                `).join('')}
+                            </div>
+                            <div id="quiz-feedback" class="mt-6 text-center font-bold hidden"></div>
+                        </div>
+                    `;
+                }
+            },
+
+            checkQuiz: (selected, correct) => {
+                const feedback = document.getElementById('quiz-feedback');
+                feedback.classList.remove('hidden');
+                if(selected === correct) {
+                    feedback.className = "mt-6 text-center font-bold text-green-400 text-xl animate-bounce";
+                    feedback.innerText = "🎉 Correct! Well done.";
+                    setTimeout(() => Learn.markComplete(), 1000);
+                } else {
+                    feedback.className = "mt-6 text-center font-bold text-red-400";
+                    feedback.innerText = "❌ Incorrect. Try again.";
+                }
+            },
+
+            markComplete: () => {
+                const key = `${Learn.currentUnitIdx}-${Learn.currentLessonIdx}`;
+                if(!Learn.progress[key]) {
+                    Learn.progress[key] = true;
+                    Learn.renderSidebar();
+                    // Save progress to server (Optional: granular saving)
+                }
+                // Auto next
+                setTimeout(() => Learn.next(), 500);
+            },
+
+            next: () => {
+                const curUnit = Learn.course.curriculum[Learn.currentUnitIdx];
+                if(Learn.currentLessonIdx < curUnit.lessons.length - 1) {
+                    Learn.loadLesson(Learn.currentUnitIdx, Learn.currentLessonIdx + 1);
+                } else if(Learn.currentUnitIdx < Learn.course.curriculum.length - 1) {
+                    Learn.loadLesson(Learn.currentUnitIdx + 1, 0);
+                } else {
+                    // End of course
+                    if(document.getElementById('overall-progress').style.width === '100%') {
+                        Learn.finishCourse();
+                    } else {
+                        alert('You have reached the end, but some lessons are not completed yet.');
+                    }
+                }
+            },
+
+            prev: () => {
+                if(Learn.currentLessonIdx > 0) {
+                    Learn.loadLesson(Learn.currentUnitIdx, Learn.currentLessonIdx - 1);
+                } else if(Learn.currentUnitIdx > 0) {
+                    const prevUnit = Learn.course.curriculum[Learn.currentUnitIdx - 1];
+                    Learn.loadLesson(Learn.currentUnitIdx - 1, prevUnit.lessons.length - 1);
+                }
+            },
+
+            finishCourse: async () => {
+                // Prevent duplicate calls
+                if(Learn.finished) return;
+                Learn.finished = true;
+
+                // 1. Save Progress
+                const body = {
+                    userId: sessionStorage.getItem('user_id'),
+                    activityId: Learn.course.id,
+                    score: 100,
+                    status: 'completed'
+                };
+                await fetch('/api/progress', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+
+                // 2. Issue Certificate
+                const certRes = await fetch('/api/certificate', {
+                    method: 'POST',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ 
+                        userId: sessionStorage.getItem('user_id'),
+                        userName: sessionStorage.getItem('user_name') || 'Student', 
+                        courseTitle: Learn.course.title 
+                    })
+                });
+                const certData = await certRes.json();
+
+                // 3. Show Modal
+                document.getElementById('cert-course-name').innerText = Learn.course.title;
+                document.getElementById('cert-code').innerText = certData.code || 'CERT-ERROR';
+                document.getElementById('cert-modal').classList.remove('hidden');
+                
+                // Fire fireworks effect (CSS/JS) if possible
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', Learn.init);
+    </script>
+</body>
+</html>
