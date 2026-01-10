@@ -25,22 +25,30 @@
 
     <main class="max-w-7xl mx-auto px-4 py-8">
         
-        <!-- Header -->
-        <div class="flex justify-between items-end mb-8">
+        <!-- Header & Filters -->
+        <div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
             <div>
                 <h1 class="text-3xl font-bold mb-1">My Courses</h1>
-                <p class="text-slate-400 text-sm">Manage your learning content and view analytics.</p>
+                <p class="text-slate-400 text-sm">Manage your learning content.</p>
             </div>
-            <button onclick="CourseEditor.new()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-lg font-bold shadow-lg transition flex items-center gap-2">
-                <span>+</span> Create New Course
-            </button>
+            <div class="flex gap-3">
+                <select onchange="CourseEditor.filter(this.value)" class="bg-slate-800 border border-slate-700 text-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                    <option value="all">All Subjects</option>
+                    <option value="Mathematics">Mathematics</option>
+                    <option value="Science">Science</option>
+                    <option value="English">English</option>
+                    <option value="Technology">Technology</option>
+                </select>
+                <button onclick="CourseEditor.new()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-lg font-bold shadow-lg transition flex items-center gap-2">
+                    <span>+</span> Create New
+                </button>
+            </div>
         </div>
 
         <!-- Course Grid -->
         <div id="course-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div class="text-slate-500 text-center col-span-full py-12">Loading courses...</div>
         </div>
-
     </main>
 
     <!-- EDITOR MODAL (Full Screen) -->
@@ -62,34 +70,55 @@
                     <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Course Title</label>
                     <input id="c-title" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none" placeholder="Ex: Introduction to Python">
                 </div>
+                
+                <!-- Category & Type -->
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Subject</label>
-                        <select id="c-category" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white">
-                            <option>Mathematics</option>
-                            <option>Science</option>
-                            <option>English</option>
-                            <option>Technology</option>
-                            <option>General</option>
+                        <select id="c-category" onchange="CourseEditor.updateIcon()" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white">
+                            <option value="Mathematics">🧮 Mathematics</option>
+                            <option value="Science">🧪 Science</option>
+                            <option value="English">📝 English</option>
+                            <option value="Technology">💻 Technology</option>
+                            <option value="General">🌍 General</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Duration</label>
-                        <input id="c-duration" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white" placeholder="e.g. 2h 30m">
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Learning Style</label>
+                        <select id="c-type" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white">
+                            <option value="video">🎥 Video Lecture</option>
+                            <option value="game">🎮 Interactive Game</option>
+                            <option value="simulation">🔬 Simulation</option>
+                            <option value="reading">📖 Reading</option>
+                        </select>
                     </div>
                 </div>
+
+                <!-- Difficulty & Duration -->
                 <div class="grid grid-cols-2 gap-4">
                      <div>
                         <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Difficulty</label>
                         <select id="c-difficulty" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white">
-                            <option>Easy</option>
-                            <option>Medium</option>
-                            <option>Hard</option>
+                            <option value="Easy">🟢 Easy</option>
+                            <option value="Medium">🟡 Medium</option>
+                            <option value="Hard">🔴 Hard</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Credits</label>
-                        <input type="number" id="c-credits" value="1" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white">
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Duration</label>
+                        <input id="c-duration" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white" placeholder="e.g. 30m">
+                    </div>
+                </div>
+
+                <!-- Credits & Code -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Credits (XP)</label>
+                        <input type="number" id="c-credits" value="100" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Course Code</label>
+                        <input id="c-code" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white" placeholder="e.g. MATH101">
                     </div>
                 </div>
             </div>
@@ -119,69 +148,83 @@
         const CourseEditor = {
             currentId: null,
             modules: [],
+            courses: [], // Store for filtering
 
             init: async () => {
                 const uid = sessionStorage.getItem('user_id');
                 if(!uid) { location.href = '/login.html'; return; }
                 
-                // Load My Courses
                 try {
                     const res = await fetch(`/api/activities?instructorId=${uid}`);
-                    const courses = await res.json();
-                    const list = document.getElementById('course-list');
-                    
-                    if(courses.length === 0) {
-                        list.innerHTML = `<div class="col-span-full text-center py-12 text-slate-500">You haven't created any courses yet.</div>`;
-                        return;
-                    }
+                    CourseEditor.courses = await res.json();
+                    CourseEditor.renderList();
+                } catch(e) { console.error(e); }
+            },
 
-                    list.innerHTML = courses.map(c => `
-                        <div class="bg-slate-800 rounded-2xl overflow-hidden border border-slate-700 hover:border-indigo-500 transition group relative">
-                            <div class="h-32 bg-gradient-to-r from-slate-700 to-slate-800 p-6 flex flex-col justify-between relative">
-                                <div class="text-xs font-bold text-indigo-400 uppercase tracking-wider">${c.category}</div>
-                                <h3 class="text-xl font-bold text-white leading-tight">${c.title}</h3>
-                                <div class="absolute top-4 right-4 bg-slate-900/50 rounded px-2 py-1 text-xs text-yellow-400">⭐ ${Number(c.rating||0).toFixed(1)}</div>
+            renderList: (filterCat = 'all') => {
+                const list = document.getElementById('course-list');
+                const filtered = filterCat === 'all' ? CourseEditor.courses : CourseEditor.courses.filter(c => c.category === filterCat);
+
+                if(filtered.length === 0) {
+                    list.innerHTML = `<div class="col-span-full text-center py-12 text-slate-500">No courses found.</div>`;
+                    return;
+                }
+
+                const colors = { 'Mathematics': 'from-orange-500 to-red-600', 'Science': 'from-blue-500 to-indigo-600', 'English': 'from-pink-500 to-rose-600', 'Technology': 'from-emerald-500 to-teal-600', 'General': 'from-slate-600 to-slate-700' };
+
+                list.innerHTML = filtered.map(c => `
+                    <div class="bg-slate-800 rounded-2xl overflow-hidden border border-slate-700 hover:border-indigo-500 transition group relative shadow-lg">
+                        <div class="h-32 bg-gradient-to-r ${colors[c.category] || colors['General']} p-6 flex flex-col justify-between relative">
+                            <div class="flex justify-between items-start">
+                                <span class="text-xs font-bold text-white/80 bg-black/20 px-2 py-1 rounded uppercase tracking-wider">${c.category}</span>
+                                <span class="text-xs font-bold text-white bg-black/30 px-2 py-1 rounded">${c.difficulty}</span>
                             </div>
-                            <div class="p-4 flex justify-between items-center bg-slate-800">
-                                <div class="text-sm text-slate-400">
-                                    <span>👥 ${c.review_count||0} Reviews</span>
+                            <h3 class="text-xl font-bold text-white leading-tight truncate" title="${c.title}">${c.title}</h3>
+                        </div>
+                        <div class="p-4 bg-slate-800">
+                            <div class="flex justify-between text-xs text-slate-400 mb-4">
+                                <span>${c.course_code || 'NO-CODE'}</span>
+                                <span>${c.duration} • ${c.credits} XP</span>
+                            </div>
+                            <div class="flex justify-between items-center pt-4 border-t border-slate-700">
+                                <div class="text-xs text-slate-400">
+                                    <span class="text-yellow-400 font-bold">⭐ ${Number(c.rating||0).toFixed(1)}</span> (${c.review_count||0})
                                 </div>
                                 <div class="flex gap-2">
-                                    <button onclick="CourseEditor.edit(${c.id})" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded text-xs font-bold">Edit</button>
-                                    <button onclick="CourseEditor.delete(${c.id})" class="px-3 py-1.5 bg-red-900/20 text-red-400 hover:bg-red-900/40 rounded text-xs font-bold">Delete</button>
+                                    <button onclick="CourseEditor.edit(${c.id})" class="px-3 py-1.5 bg-slate-700 hover:bg-white hover:text-slate-900 transition rounded text-xs font-bold">Edit</button>
+                                    <button onclick="CourseEditor.delete(${c.id})" class="px-3 py-1.5 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition rounded text-xs font-bold">Del</button>
                                 </div>
                             </div>
                         </div>
-                    `).join('');
-
-                } catch(e) { console.error(e); }
+                    </div>
+                `).join('');
             },
+
+            filter: (cat) => CourseEditor.renderList(cat),
 
             new: () => {
                 CourseEditor.currentId = null;
                 CourseEditor.modules = [];
                 document.getElementById('c-title').value = '';
                 document.getElementById('c-duration').value = '';
-                document.getElementById('c-credits').value = 1;
+                document.getElementById('c-credits').value = 100;
+                document.getElementById('c-code').value = '';
                 CourseEditor.renderModules();
                 document.getElementById('editor-modal').classList.remove('hidden');
             },
 
             edit: async (id) => {
-                // Fetch full details
-                // Need an API endpoint to get single activity details including content JSON
-                // For now, let's assume we fetch all and filter client side or implement get-one
-                const res = await fetch('/api/activities'); 
-                const all = await res.json();
-                const c = all.find(x => x.id === id);
+                const c = CourseEditor.courses.find(x => x.id === id);
                 if(!c) return;
 
                 CourseEditor.currentId = c.id;
                 document.getElementById('c-title').value = c.title;
                 document.getElementById('c-category').value = c.category;
+                document.getElementById('c-type').value = c.type;
                 document.getElementById('c-duration').value = c.duration;
                 document.getElementById('c-credits').value = c.credits;
                 document.getElementById('c-difficulty').value = c.difficulty;
+                document.getElementById('c-code').value = c.course_code || '';
 
                 try {
                     CourseEditor.modules = typeof c.content === 'string' ? JSON.parse(c.content) : c.content;
@@ -195,13 +238,15 @@
                 const body = {
                     title: document.getElementById('c-title').value,
                     category: document.getElementById('c-category').value,
+                    type: document.getElementById('c-type').value,
                     duration: document.getElementById('c-duration').value,
                     difficulty: document.getElementById('c-difficulty').value,
                     credits: parseInt(document.getElementById('c-credits').value),
+                    course_code: document.getElementById('c-code').value,
                     content: CourseEditor.modules,
                     creator_id: sessionStorage.getItem('user_id'),
-                    requester_id: sessionStorage.getItem('user_id'), // For permission check
-                    requester_role: 'teacher' // Should check session role properly
+                    requester_id: sessionStorage.getItem('user_id'), 
+                    requester_role: 'teacher' 
                 };
 
                 if(!body.title) return alert('Title is required');
@@ -231,6 +276,7 @@
             },
 
             close: () => document.getElementById('editor-modal').classList.add('hidden'),
+            updateIcon: () => {}, // Placeholder if needed
 
             // --- MODULE BUILDER LOGIC ---
             addModule: (type) => {
