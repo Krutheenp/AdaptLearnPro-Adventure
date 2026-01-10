@@ -408,11 +408,109 @@ module.exports = async (req, res) => {
             }
         }
 
-        // --- GENERIC GETTERS ---
+        // --- ACTIVITIES / COURSES (CRUD) ---
         if (pathname === '/api/activities') {
-            const rows = await runQuery('SELECT * FROM activities ORDER BY id DESC');
-            return res.json(rows || MOCK_DB.activities);
+            // GET: List All (Filtered by Instructor optional)
+            if (method === 'GET') {
+                const instructorId = url.searchParams.get("instructorId");
+                let query = `
+                    SELECT a.*, 
+                    COALESCE(AVG(r.rating), 0) as rating, 
+                    COUNT(r.id) as review_count 
+                    FROM activities a 
+                    LEFT JOIN reviews r ON a.id = r.activity_id 
+                `;
+                const params = [];
+                if (instructorId) {
+                    query += " WHERE a.creator_id = $1 ";
+                    params.push(instructorId);
+                }
+                query += " GROUP BY a.id ORDER BY a.id DESC";
+                
+                if (db) {
+                    const rows = await runQuery(query, params);
+                    return res.json(rows || []);
+                }
+                return res.json(MOCK_DB.activities);
+            }
+
+            // POST: Create New Course
+            if (method === 'POST') {
+                const body = req.body;
+                if (!db) return res.json({ success: true, id: Date.now(), message: "Mock Create OK" });
+
+                const contentJson = JSON.stringify(body.content || []);
+                await runQuery(`
+                    INSERT INTO activities (title, type, difficulty, duration, content, category, credits, course_code, creator_id) 
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                `, [
+                    body.title, 
+                    body.type || 'mixed', 
+                    body.difficulty, 
+                    body.duration, 
+                    contentJson, 
+                    body.category || 'General', 
+                    body.credits || 1, 
+                    body.course_code || '', 
+                    body.creator_id
+                ]);
+                return res.json({ success: true });
+            }
+
+            // PUT: Update Course
+            if (method === 'PUT') {
+                const body = req.body;
+                if (!db) return res.json({ success: true, message: "Mock Update OK" });
+
+                // Permission Check
+                const existing = await runQuery("SELECT creator_id FROM activities WHERE id = $1", [body.id]);
+                if (!existing?.[0]) return res.status(404).json({ error: "Course not found" });
+                
+                // Allow if Admin or Owner
+                const isOwner = String(existing[0].creator_id) === String(body.requester_id);
+                const isAdmin = body.requester_role === 'admin';
+                if (!isOwner && !isAdmin) return res.status(403).json({ error: "Permission Denied" });
+
+                const contentJson = JSON.stringify(body.content || []);
+                await runQuery(`
+                    UPDATE activities SET title=$1, type=$2, difficulty=$3, duration=$4, content=$5, category=$6, credits=$7, course_code=$8 
+                    WHERE id=$9
+                `, [
+                    body.title, 
+                    body.type, 
+                    body.difficulty, 
+                    body.duration, 
+                    contentJson, 
+                    body.category, 
+                    body.credits, 
+                    body.course_code,
+                    body.id
+                ]);
+                return res.json({ success: true });
+            }
+
+            // DELETE: Remove Course
+            if (method === 'DELETE') {
+                const id = url.searchParams.get("id");
+                const reqId = url.searchParams.get("requester_id");
+                
+                if (!db) return res.json({ success: true });
+
+                const existing = await runQuery("SELECT creator_id FROM activities WHERE id = $1", [id]);
+                if (!existing?.[0]) return res.status(404).json({ error: "Not found" });
+
+                // Check Owner (Admin check needs role from somewhere, assuming owner for simple delete via param)
+                if (String(existing[0].creator_id) !== String(reqId)) {
+                     // In real app, we'd fetch user role from DB using reqId to check if admin
+                     const u = await runQuery("SELECT role FROM users WHERE id = $1", [reqId]);
+                     if (u?.[0]?.role !== 'admin') return res.status(403).json({ error: "Permission Denied" });
+                }
+
+                await runQuery("DELETE FROM activities WHERE id = $1", [id]);
+                return res.json({ success: true });
+            }
         }
+
         // --- LEADERBOARD (Dual Ranking) ---
         if (pathname === '/api/leaderboard') {
             if (db) {
