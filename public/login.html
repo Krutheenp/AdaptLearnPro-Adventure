@@ -141,7 +141,18 @@
                     ui.toast(data.message || 'เข้าสู่ระบบไม่สำเร็จ');
                 }
             } catch (err) {
-                ui.toast('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+                console.error("Login Error:", err);
+                
+                // --- CLIENT-SIDE MOCK FALLBACK (If Server fails) ---
+                if (username === 'demo' && password === 'demo') {
+                    sessionStorage.setItem('user_id', 99);
+                    sessionStorage.setItem('user_name', 'Demo Hero (Offline)');
+                    sessionStorage.setItem('user_role', 'student');
+                    window.location.href = '/';
+                    return;
+                }
+                
+                ui.toast('เกิดข้อผิดพลาดในการเชื่อมต่อ (ลอง demo/demo)');
             } finally {
                 ui.loading(false);
             }
