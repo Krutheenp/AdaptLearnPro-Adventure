@@ -148,7 +148,7 @@
                         
                         <div class="flex-1 text-center md:text-left z-10">
                             <h2 class="text-3xl font-bold text-white mb-2">Welcome back, <span id="dash-name" class="text-indigo-400">Hero</span>!</h2>
-                            <p class="text-slate-400 mb-6 max-w-lg">Your journey continues. Check your daily quests or dive into the adventure map below.</p>
+                            <p id="dash-welcome-msg" class="text-slate-400 mb-6 max-w-lg">Your journey continues. Check your daily quests or dive into the adventure map below.</p>
                             
                             <!-- Level Progress -->
                             <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700 max-w-md">
@@ -266,11 +266,18 @@
                 // Fetch Data
                 await Game.api.loadAll(uid);
                 
-                // Render
+                // 4. Render Initial State
                 Game.render.hud();
                 Game.render.dashboard();
                 
-                // Listeners
+                // 5. Fetch Welcome Message (Edge Config)
+                try {
+                    const wRes = await fetch('/api/welcome');
+                    const wData = await wRes.json();
+                    if(wData.greeting) document.getElementById('dash-welcome-msg').innerText = wData.greeting;
+                } catch(e) {}
+                
+                // 6. Setup Listeners
                 const aiInput = document.getElementById('ai-input');
                 if(aiInput) aiInput.addEventListener('keypress', (e) => e.key === 'Enter' && Game.ai.send());
             },

@@ -34,6 +34,17 @@ module.exports = async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host}`);
     const pathname = url.pathname;
 
+    // --- NEW: WELCOME (EDGE CONFIG) ---
+    if (pathname === '/api/welcome') {
+        try {
+            const { get } = require('@vercel/edge-config');
+            const greeting = await get('greeting');
+            return res.json({ greeting: greeting || "Welcome to your adventure!" });
+        } catch (e) {
+            return res.json({ greeting: "Welcome, Traveler!" });
+        }
+    }
+
     // 4. Try to connect DB (Safe Mode)
     let dbConnected = false;
     try {
