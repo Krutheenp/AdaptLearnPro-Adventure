@@ -601,40 +601,40 @@ module.exports = async (req, res) => {
             // PUT: Update Course
             if (method === 'PUT') {
                 const body = req.body;
+                console.log("PUT Body:", JSON.stringify(body)); // Debug
+
                 if (!db) return res.json({ success: true, message: "Mock Update OK" });
 
                 try {
-                    // Permission Check
+                    // 1. Permission Check
                     const existing = await runQuery("SELECT creator_id FROM activities WHERE id = $1", [body.id]);
-                    if (!existing || existing.length === 0) return res.status(404).json({ error: "Course ID not found in database. Please refresh and try creating a new one." });
+                    if (!existing || existing.length === 0) return res.status(404).json({ error: "Course ID not found." });
                     
                     const ownerId = existing[0].creator_id;
                     const reqId = parseInt(body.requester_id);
                     const isAdmin = body.requester_role === 'admin';
                     
-                    // Allow if: Admin OR Owner matches Request ID OR (Edge Case) Course has no owner
+                    // console.log(`Check: Owner=${ownerId} Req=${reqId} Admin=${isAdmin}`);
+
                     if (!isAdmin && ownerId && ownerId !== reqId) {
-                        return res.status(403).json({ error: `Permission Denied. Owner: ${ownerId}, You: ${reqId}` });
+                        return res.status(403).json({ error: "Permission Denied." });
                     }
 
-                    // Safe Content Parsing
+                    // 2. Prepare Data
                     let contentJson = '[]';
                     try {
-                        if (typeof body.content === 'object') contentJson = JSON.stringify(body.content);
-                        else if (typeof body.content === 'string') contentJson = body.content;
-                    } catch(e) { contentJson = '[]'; }
+                        contentJson = (typeof body.content === 'object') ? JSON.stringify(body.content) : body.content;
+                    } catch(e) {}
 
-                    // Ensure Integers
                     const price = parseInt(body.price) || 0;
                     const credits = parseInt(body.credits) || 0;
                     const courseId = parseInt(body.id);
 
-                    if (!courseId) return res.status(400).json({ error: "Invalid Course ID" });
-
-                    // Use db.query directly for RETURNING support
-                    const result = await db.query(`
-                        UPDATE activities SET title=$1, type=$2, difficulty=$3, duration=$4, content=$5, category=$6, credits=$7, course_code=$8, certificate_theme=$9, price=$10 
-                        WHERE id=$11 RETURNING id
+                    // 3. Execute Update (Standard)
+                    await runQuery(`
+                        UPDATE activities SET 
+                        title=$1, type=$2, difficulty=$3, duration=$4, content=$5, category=$6, credits=$7, course_code=$8, certificate_theme=$9, price=$10 
+                        WHERE id=$11
                     `, [
                         body.title || 'Untitled', 
                         body.type || 'mixed', 
@@ -649,12 +649,11 @@ module.exports = async (req, res) => {
                         courseId
                     ]);
                     
-                    if (result.rowCount > 0) return res.json({ success: true, updated: result.rows[0].id });
-                    else return res.status(404).json({ error: "Update failed: Course ID not found." });
+                    return res.json({ success: true, message: "Updated" });
 
                 } catch(e) {
-                    console.error("Update Course Error:", e);
-                    return res.status(500).json({ error: "Database Update Failed", details: e.message });
+                    console.error("FATAL Update Error:", e);
+                    return res.status(500).json({ error: "Database Error", details: e.message });
                 }
             }
 
