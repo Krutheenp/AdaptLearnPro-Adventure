@@ -168,37 +168,65 @@
 
             renderList: (filterCat = 'all') => {
                 const list = document.getElementById('course-list');
-                const filtered = filterCat === 'all' ? CourseEditor.courses : CourseEditor.courses.filter(c => c.category === filterCat);
+                
+                // Debug Log
+                console.log("Rendering Courses:", CourseEditor.courses);
 
-                if(filtered.length === 0) {
-                    list.innerHTML = `
-                        <div class="col-span-full text-center py-12 flex flex-col items-center">
-                            <div class="text-4xl mb-4">📭</div>
-                            <h3 class="text-xl font-bold text-slate-400">No courses found</h3>
-                            <p class="text-slate-500 text-sm mt-2">You haven't created any courses yet (or filter hidden them).</p>
-                            <button onclick="CourseEditor.new()" class="mt-4 text-indigo-400 hover:text-indigo-300 underline">Create your first course</button>
-                        </div>`;
+                if (!CourseEditor.courses || CourseEditor.courses.length === 0) {
+                    list.innerHTML = `<div class="col-span-full text-center py-12 text-slate-500">No courses available.</div>`;
                     return;
                 }
-                 const colors = { 'Mathematics': 'from-orange-500 to-red-600', 'Science': 'from-blue-500 to-indigo-600', 'English': 'from-pink-500 to-rose-600', 'Technology': 'from-emerald-500 to-teal-600', 'General': 'from-slate-600 to-slate-700' };
-                 list.innerHTML = filtered.map(c => `
-                    <div class="bg-slate-800 rounded-2xl overflow-hidden border border-slate-700 hover:border-indigo-500 transition group relative shadow-lg">
-                        <div class="h-32 bg-gradient-to-r ${colors[c.category] || colors['General']} p-6 flex flex-col justify-between relative">
-                            <div class="flex justify-between items-start">
-                                <span class="text-xs font-bold text-white/80 bg-black/20 px-2 py-1 rounded uppercase tracking-wider">${c.category}</span>
-                                <span class="text-xs font-bold text-white bg-black/30 px-2 py-1 rounded">${c.difficulty}</span>
+
+                try {
+                    const filtered = filterCat === 'all' ? CourseEditor.courses : CourseEditor.courses.filter(c => c.category === filterCat);
+                    
+                    list.innerHTML = filtered.map(c => {
+                        // Safe Accessors
+                        const title = c.title || 'Untitled';
+                        const cat = c.category || 'General';
+                        const diff = c.difficulty || 'Easy';
+                        const dur = c.duration || '-';
+                        const xp = c.credits || 0;
+                        const rating = Number(c.rating || 0).toFixed(1);
+                        const reviews = c.review_count || 0;
+
+                        // Color Logic
+                        let bgClass = 'from-slate-600 to-slate-700';
+                        if(cat === 'Mathematics') bgClass = 'from-orange-500 to-red-600';
+                        else if(cat === 'Science') bgClass = 'from-blue-500 to-indigo-600';
+                        else if(cat === 'English') bgClass = 'from-pink-500 to-rose-600';
+                        else if(cat === 'Technology') bgClass = 'from-emerald-500 to-teal-600';
+
+                        return `
+                        <div class="bg-slate-800 rounded-2xl overflow-hidden border border-slate-700 hover:border-indigo-500 transition shadow-lg flex flex-col">
+                            <div class="h-32 bg-gradient-to-r ${bgClass} p-4 flex flex-col justify-between">
+                                <div class="flex justify-between">
+                                    <span class="bg-black/30 text-white text-[10px] px-2 py-1 rounded uppercase font-bold">${cat}</span>
+                                    <span class="bg-black/30 text-white text-[10px] px-2 py-1 rounded">${diff}</span>
+                                </div>
+                                <h3 class="text-lg font-bold text-white leading-tight truncate">${title}</h3>
                             </div>
-                            <h3 class="text-xl font-bold text-white leading-tight truncate" title="${c.title}">${c.title}</h3>
-                        </div>
-                        <div class="p-4 bg-slate-800">
-                            <div class="flex justify-between text-xs text-slate-400 mb-4"><span>${c.course_code || 'NO-CODE'}</span><span>${c.duration} • ${c.credits} XP</span></div>
-                            <div class="flex justify-between items-center pt-4 border-t border-slate-700">
-                                <div class="text-xs text-slate-400"><span class="text-yellow-400 font-bold">⭐ ${Number(c.rating||0).toFixed(1)}</span> (${c.review_count||0})</div>
-                                <div class="flex gap-2"><button onclick="CourseEditor.edit(${c.id})" class="px-3 py-1.5 bg-slate-700 hover:bg-white hover:text-slate-900 transition rounded text-xs font-bold">Edit</button><button onclick="CourseEditor.delete(${c.id})" class="px-3 py-1.5 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition rounded text-xs font-bold">Del</button></div>
+                            <div class="p-4 bg-slate-800 flex-1 flex flex-col justify-between">
+                                <div class="flex justify-between text-xs text-slate-400 mb-3">
+                                    <span>⏱ ${dur}</span>
+                                    <span>⚡ ${xp} XP</span>
+                                </div>
+                                <div class="flex justify-between items-center pt-3 border-t border-slate-700">
+                                    <div class="text-xs text-yellow-400 font-bold">⭐ ${rating} <span class="text-slate-500 font-normal">(${reviews})</span></div>
+                                    <div class="flex gap-2">
+                                        <button onclick="CourseEditor.edit(${c.id})" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs">Edit</button>
+                                        <button onclick="CourseEditor.delete(${c.id})" class="px-3 py-1 bg-slate-700 hover:bg-red-500 text-white rounded text-xs">Del</button>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>`).join('');
+                        </div>`;
+                    }).join('');
+                } catch(e) {
+                    console.error("Render Error:", e);
+                    list.innerHTML = `<div class="col-span-full text-red-400">Error rendering list: ${e.message}</div>`;
+                }
             },
+
             filter: (cat) => CourseEditor.renderList(cat),
             updateIcon: () => {},
 
