@@ -389,7 +389,10 @@
                         node.style.top = `${top}px`;
                         node.style.left = left;
                         node.innerHTML = `<span class="filter drop-shadow-md">${act.type==='video'?'📜':'🎮'}</span>`;
-                        node.onclick = () => alert(`Starting Mission: ${act.title}`);
+                        node.onclick = () => {
+                            console.log("Navigating to lesson:", act.id);
+                            window.location.href = `/learn.html?id=${act.id}`;
+                        };
                         
                         const label = document.createElement('div');
                         label.className = "absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] font-bold text-white bg-slate-900 px-2 py-1 rounded whitespace-nowrap border border-slate-700";
