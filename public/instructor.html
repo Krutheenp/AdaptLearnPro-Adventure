@@ -150,18 +150,35 @@
             init: async () => {
                 const uid = sessionStorage.getItem('user_id');
                 if(!uid) { location.href = '/login.html'; return; }
+                
                 try {
+                    // Fetch courses created by THIS user
                     const res = await fetch(`/api/activities?instructorId=${uid}`);
-                    CourseEditor.courses = await res.json();
+                    const data = await res.json();
+                    
+                    console.log("Fetched Courses:", data); // Debug
+                    CourseEditor.courses = data;
                     CourseEditor.renderList();
-                } catch(e) { console.error(e); }
+                } catch(e) { 
+                    console.error("Load Error:", e);
+                    document.getElementById('course-list').innerHTML = `<div class="col-span-full text-red-400 text-center">Failed to load courses.</div>`;
+                }
             },
-            
+
             renderList: (filterCat = 'all') => {
-                 // ... (Keep existing renderList logic) ...
-                 const list = document.getElementById('course-list');
-                 const filtered = filterCat === 'all' ? CourseEditor.courses : CourseEditor.courses.filter(c => c.category === filterCat);
-                 if(filtered.length === 0) { list.innerHTML = `<div class="col-span-full text-center py-12 text-slate-500">No courses found.</div>`; return; }
+                const list = document.getElementById('course-list');
+                const filtered = filterCat === 'all' ? CourseEditor.courses : CourseEditor.courses.filter(c => c.category === filterCat);
+
+                if(filtered.length === 0) {
+                    list.innerHTML = `
+                        <div class="col-span-full text-center py-12 flex flex-col items-center">
+                            <div class="text-4xl mb-4">📭</div>
+                            <h3 class="text-xl font-bold text-slate-400">No courses found</h3>
+                            <p class="text-slate-500 text-sm mt-2">You haven't created any courses yet (or filter hidden them).</p>
+                            <button onclick="CourseEditor.new()" class="mt-4 text-indigo-400 hover:text-indigo-300 underline">Create your first course</button>
+                        </div>`;
+                    return;
+                }
                  const colors = { 'Mathematics': 'from-orange-500 to-red-600', 'Science': 'from-blue-500 to-indigo-600', 'English': 'from-pink-500 to-rose-600', 'Technology': 'from-emerald-500 to-teal-600', 'General': 'from-slate-600 to-slate-700' };
                  list.innerHTML = filtered.map(c => `
                     <div class="bg-slate-800 rounded-2xl overflow-hidden border border-slate-700 hover:border-indigo-500 transition group relative shadow-lg">

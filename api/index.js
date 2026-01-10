@@ -421,15 +421,24 @@ module.exports = async (req, res) => {
                     LEFT JOIN reviews r ON a.id = r.activity_id 
                 `;
                 const params = [];
+                
+                // Flexible Filter: Allow string/int comparison
                 if (instructorId) {
-                    query += " WHERE a.creator_id = $1 ";
-                    params.push(instructorId);
+                    // Cast creator_id to TEXT for reliable comparison with URL param
+                    query += " WHERE CAST(a.creator_id AS TEXT) = $1 ";
+                    params.push(String(instructorId));
                 }
+                
                 query += " GROUP BY a.id ORDER BY a.id DESC";
                 
                 if (db) {
-                    const rows = await runQuery(query, params);
-                    return res.json(rows || []);
+                    try {
+                        const rows = await runQuery(query, params);
+                        return res.json(rows || []);
+                    } catch(e) {
+                        console.error("Fetch Activities Error:", e);
+                        return res.json([]); // Fail safe
+                    }
                 }
                 return res.json(MOCK_DB.activities);
             }
