@@ -413,10 +413,32 @@ module.exports = async (req, res) => {
             const rows = await runQuery('SELECT * FROM activities ORDER BY id DESC');
             return res.json(rows || MOCK_DB.activities);
         }
+        // --- LEADERBOARD (Dual Ranking) ---
         if (pathname === '/api/leaderboard') {
-            const rows = await runQuery('SELECT id, name, avatar, level, xp FROM users ORDER BY xp DESC LIMIT 10');
-            return res.json(rows || MOCK_DB.users);
+            if (db) {
+                // 1. Student Ranking (By XP)
+                const students = await runQuery("SELECT id, name, avatar, level, xp, role FROM users WHERE role = 'student' ORDER BY xp DESC LIMIT 10");
+                
+                // 2. Instructor Ranking (By Course Ratings)
+                // Score = AvgRating of all their courses * Log(TotalReviews + 1) -> Simple weighted score
+                const instructors = await runQuery(`
+                    SELECT u.id, u.name, u.avatar, u.role,
+                    COALESCE(AVG(r.rating), 0) as avg_rating,
+                    COUNT(r.id) as review_count
+                    FROM users u
+                    JOIN activities a ON u.id = a.creator_id
+                    LEFT JOIN reviews r ON a.id = r.activity_id
+                    WHERE u.role IN ('teacher', 'admin')
+                    GROUP BY u.id
+                    ORDER BY avg_rating DESC, review_count DESC
+                    LIMIT 10
+                `);
+
+                return res.json({ students: students || [], instructors: instructors || [] });
+            }
+            return res.json({ students: MOCK_DB.users, instructors: [] });
         }
+
         if (pathname === '/api/history') {
             const userId = url.searchParams.get("userId");
             if (db && userId) {

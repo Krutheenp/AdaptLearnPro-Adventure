@@ -173,8 +173,14 @@
                 <!-- 2. LEADERBOARD VIEW -->
                 <div id="view-leaderboard" class="view-section hidden fade-in max-w-3xl mx-auto">
                     <div class="text-center mb-8">
-                        <h2 class="text-3xl font-bold text-white">Hall of Fame</h2>
+                        <h2 class="text-3xl font-bold text-white mb-4">🏆 Hall of Fame</h2>
+                        <!-- Tabs -->
+                        <div class="flex justify-center gap-4 bg-slate-800 p-1 rounded-xl inline-flex mx-auto">
+                            <button onclick="Game.render.leaderboard('students')" id="lb-tab-students" class="px-6 py-2 rounded-lg font-bold text-sm transition bg-indigo-600 text-white">Students</button>
+                            <button onclick="Game.render.leaderboard('instructors')" id="lb-tab-instructors" class="px-6 py-2 rounded-lg font-bold text-sm transition text-slate-400 hover:text-white">Instructors</button>
+                        </div>
                     </div>
+                    
                     <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden" id="lb-container">
                         <!-- List injected here -->
                     </div>
@@ -384,21 +390,48 @@
                     
                     container.style.height = `${acts.length * 150 + 200}px`;
                 },
-                leaderboard: async () => {
+                leaderboard: async (type = 'students') => {
+                    // Update Tabs UI
+                    document.getElementById('lb-tab-students').className = `px-6 py-2 rounded-lg font-bold text-sm transition ${type==='students' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`;
+                    document.getElementById('lb-tab-instructors').className = `px-6 py-2 rounded-lg font-bold text-sm transition ${type==='instructors' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`;
+
                     const box = document.getElementById('lb-container');
-                    box.innerHTML = '<div class="p-8 text-center text-slate-500">Loading...</div>';
+                    box.innerHTML = '<div class="p-8 text-center text-slate-500">Loading rankings...</div>';
+                    
                     try {
                         const res = await fetch('/api/leaderboard');
                         const data = await res.json();
-                        box.innerHTML = data.map((u, i) => `
+                        const list = data[type] || [];
+
+                        if(list.length === 0) {
+                            box.innerHTML = '<div class="p-8 text-center text-slate-500">No rankings available yet.</div>';
+                            return;
+                        }
+
+                        box.innerHTML = list.map((u, i) => {
+                            let statHtml = '';
+                            if (type === 'students') {
+                                statHtml = `<div class="text-yellow-400 font-mono text-right"><div class="font-bold">${(u.xp||0).toLocaleString()} XP</div><div class="text-[10px] text-slate-500">Level ${u.level||1}</div></div>`;
+                            } else {
+                                const stars = '⭐'.repeat(Math.round(u.avg_rating || 0));
+                                statHtml = `<div class="text-right"><div class="text-yellow-400 text-sm">${stars} (${Number(u.avg_rating).toFixed(1)})</div><div class="text-[10px] text-slate-500">${u.review_count||0} Reviews</div></div>`;
+                            }
+
+                            return `
                             <div class="flex items-center gap-4 p-4 border-b border-slate-700 bg-slate-800/50 hover:bg-slate-700 transition">
-                                <div class="w-8 font-bold text-center text-slate-400">#${i+1}</div>
-                                <div class="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center text-lg">${u.avatar||'👤'}</div>
-                                <div class="flex-1 font-bold text-white">${u.name}</div>
-                                <div class="text-yellow-400 font-mono">${(u.xp||0).toLocaleString()} XP</div>
+                                <div class="w-8 font-bold text-center ${i<3 ? 'text-yellow-500 text-xl' : 'text-slate-400'}">${i+1}</div>
+                                <div class="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center text-lg shadow-md border border-slate-500">${u.avatar||'👤'}</div>
+                                <div class="flex-1">
+                                    <div class="font-bold text-white">${u.name}</div>
+                                    <div class="text-[10px] text-indigo-400 uppercase font-bold tracking-wider">${u.role}</div>
+                                </div>
+                                ${statHtml}
                             </div>
-                        `).join('');
-                    } catch(e) { box.innerHTML = '<div class="p-4 text-red-400">Failed to load</div>'; }
+                        `}).join('');
+                    } catch(e) { 
+                        console.error(e);
+                        box.innerHTML = '<div class="p-4 text-red-400 text-center">Failed to load rankings</div>'; 
+                    }
                 },
                 shop: async () => {
                     const box = document.getElementById('shop-items');
