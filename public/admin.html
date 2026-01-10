@@ -85,20 +85,63 @@
             </div>
         </div>
 
-        <!-- USERS -->
         <div id="view-users" class="hidden space-y-6">
-            <h1 class="text-3xl font-bold text-white mb-6">User Management</h1>
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-white">User Management</h1>
+                <div class="flex gap-2">
+                    <input type="text" placeholder="Search users..." onkeyup="Admin.filterUsers(this.value)" class="bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white outline-none focus:border-indigo-500">
+                    <button onclick="Admin.openUserModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-bold">+ Add User</button>
+                </div>
+            </div>
             <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
                 <table class="w-full text-left text-sm text-slate-400">
                     <thead class="bg-slate-900 text-slate-200 uppercase font-bold text-xs">
-                        <tr><th class="px-6 py-4">User</th><th class="px-6 py-4">Role</th><th class="px-6 py-4">Stats</th><th class="px-6 py-4 text-right">Action</th></tr>
+                        <tr><th class="px-6 py-4">ID</th><th class="px-6 py-4">User</th><th class="px-6 py-4">Role</th><th class="px-6 py-4">Wallet</th><th class="px-6 py-4">Stats</th><th class="px-6 py-4 text-right">Action</th></tr>
                     </thead>
                     <tbody id="table-users" class="divide-y divide-slate-700"></tbody>
                 </table>
             </div>
         </div>
 
-        <!-- CERTIFICATES -->
+        <!-- EDIT USER MODAL -->
+        <div id="user-modal" class="fixed inset-0 bg-black/80 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+            <div class="bg-slate-900 w-full max-w-lg rounded-2xl border border-slate-700 shadow-2xl flex flex-col">
+                <div class="p-6 border-b border-slate-800 flex justify-between items-center">
+                    <h3 class="font-bold text-white text-xl" id="u-modal-title">Edit User</h3>
+                    <button onclick="document.getElementById('user-modal').classList.add('hidden')" class="text-slate-400 hover:text-white">✕</button>
+                </div>
+                <div class="p-6 space-y-4">
+                    <input type="hidden" id="u-id">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="text-xs font-bold text-slate-500 uppercase">Username</label><input id="u-username" class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white"></div>
+                        <div><label class="text-xs font-bold text-slate-500 uppercase">Password</label><input id="u-password" type="password" placeholder="(Unchanged)" class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white"></div>
+                    </div>
+                    <div><label class="text-xs font-bold text-slate-500 uppercase">Full Name</label><input id="u-name" class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white"></div>
+                    <div><label class="text-xs font-bold text-slate-500 uppercase">Email</label><input id="u-email" class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white"></div>
+                    
+                    <div class="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800">
+                        <div><label class="text-xs font-bold text-yellow-500 uppercase">Coins</label><input id="u-coins" type="number" class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white"></div>
+                        <div><label class="text-xs font-bold text-blue-500 uppercase">XP</label><input id="u-xp" type="number" class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white"></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="text-xs font-bold text-slate-500 uppercase">Level</label><input id="u-level" type="number" class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white"></div>
+                        <div>
+                            <label class="text-xs font-bold text-slate-500 uppercase">Role</label>
+                            <select id="u-role" class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white">
+                                <option value="student">Student</option>
+                                <option value="teacher">Teacher</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6 border-t border-slate-800 flex justify-end gap-3">
+                    <button onclick="document.getElementById('user-modal').classList.add('hidden')" class="px-4 py-2 text-slate-400 hover:text-white">Cancel</button>
+                    <button onclick="Admin.saveUser()" class="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-lg font-bold">Save Changes</button>
+                </div>
+            </div>
+        </div>
+
         <div id="view-certs" class="hidden space-y-6">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-3xl font-bold text-white">Certificate Management</h1>
@@ -211,36 +254,97 @@
                 document.getElementById(`btn-${name}`).classList.add('bg-slate-800', 'font-bold', 'text-white');
             },
 
-            renderUsers: () => {
-                const el = document.getElementById('table-users');
-                el.innerHTML = Admin.data.users.map(u => `
-                    <tr class="hover:bg-slate-800/50 border-b border-slate-700">
-                        <td class="px-6 py-4 font-bold text-white">${u.name} <span class="text-xs text-slate-500 block">@${u.username}</span></td>
-                        <td class="px-6 py-4"><span class="bg-slate-700 px-2 py-1 rounded text-xs font-bold uppercase text-slate-300">${u.role}</span></td>
-                        <td class="px-6 py-4 text-xs text-slate-300">Lvl ${u.level} • 🪙 ${u.coins||0}</td>
+            // --- USERS ---
+            renderUsers: (list = Admin.data.users) => {
+                const tbody = document.getElementById('table-users');
+                if(list.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-slate-500">No users found.</td></tr>'; return; }
+
+                tbody.innerHTML = list.map(u => `
+                    <tr class="hover:bg-slate-800/50 border-b border-slate-700 transition">
+                        <td class="px-6 py-4 font-mono text-slate-500 text-xs">#${u.id}</td>
+                        <td class="px-6 py-4 flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-lg shadow border border-slate-600">${u.avatar||'👤'}</div>
+                            <div>
+                                <div class="font-bold text-white">${u.name}</div>
+                                <div class="text-xs text-slate-500">@${u.username}</div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4"><span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${u.role==='admin'?'bg-red-900/50 text-red-300 border border-red-800':(u.role==='teacher'?'bg-yellow-900/50 text-yellow-300 border border-yellow-800':'bg-blue-900/50 text-blue-300 border border-blue-800')} ">${u.role}</span></td>
+                        <td class="px-6 py-4 font-mono text-yellow-400">🪙 ${(u.coins||0).toLocaleString()}</td>
+                        <td class="px-6 py-4 text-xs text-slate-300">
+                            <div class="font-bold">Lvl ${u.level||1}</div>
+                            <div class="text-blue-400">${(u.xp||0).toLocaleString()} XP</div>
+                        </td>
                         <td class="px-6 py-4 text-right">
-                            <button onclick="Admin.modUser(${u.id}, 'coins', 1000)" class="text-yellow-400 text-xs mr-2 hover:underline">+1k Coin</button>
-                            <button onclick="Admin.deleteUser(${u.id})" class="text-red-400 text-xs hover:underline">Del</button>
+                            <button onclick="Admin.openUserModal(${u.id})" class="text-indigo-400 hover:text-white bg-indigo-900/30 hover:bg-indigo-600 px-3 py-1 rounded text-xs mr-2 transition">Edit</button>
+                            <button onclick="Admin.deleteUser(${u.id})" class="text-red-400 hover:text-white bg-red-900/30 hover:bg-red-600 px-3 py-1 rounded text-xs transition">Del</button>
                         </td>
                     </tr>
                 `).join('');
             },
 
-            modUser: async (id, f, val) => {
-                if(!confirm('Update user?')) return;
-                const u = Admin.data.users.find(x=>x.id===id);
-                const body = { id }; body[f] = (u[f]||0) + val;
-                await fetch('/api/users', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
-                Admin.loadData();
+            openUserModal: (id = null) => {
+                const u = id ? Admin.data.users.find(x => x.id === id) : {};
+                document.getElementById('u-modal-title').innerText = id ? `Edit User #${id}` : 'Create New User';
+                document.getElementById('u-id').value = id || '';
+                document.getElementById('u-username').value = u.username || '';
+                document.getElementById('u-password').value = ''; // Reset
+                document.getElementById('u-name').value = u.name || '';
+                document.getElementById('u-email').value = u.email || '';
+                document.getElementById('u-coins').value = u.coins || 0;
+                document.getElementById('u-xp').value = u.xp || 0;
+                document.getElementById('u-level').value = u.level || 1;
+                document.getElementById('u-role').value = u.role || 'student';
+                
+                document.getElementById('user-modal').classList.remove('hidden');
+            },
+
+            saveUser: async () => {
+                const id = document.getElementById('u-id').value;
+                const body = {
+                    username: document.getElementById('u-username').value,
+                    name: document.getElementById('u-name').value,
+                    email: document.getElementById('u-email').value,
+                    coins: parseInt(document.getElementById('u-coins').value) || 0,
+                    xp: parseInt(document.getElementById('u-xp').value) || 0,
+                    level: parseInt(document.getElementById('u-level').value) || 1,
+                    role: document.getElementById('u-role').value
+                };
+                
+                const pwd = document.getElementById('u-password').value;
+                if(pwd) body.password = pwd;
+
+                const method = id ? 'PUT' : 'POST';
+                if(id) body.id = id;
+
+                try {
+                    const res = await fetch('/api/users', { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+                    if(res.ok) {
+                        alert('User saved!');
+                        document.getElementById('user-modal').classList.add('hidden');
+                        Admin.loadData();
+                    } else {
+                        const err = await res.json();
+                        alert('Error: ' + (err.message || 'Failed'));
+                    }
+                } catch(e) { alert('Save Error'); }
             },
 
             deleteUser: async (id) => {
-                if(!confirm('Delete user?')) return;
+                if(!confirm('Permanently delete this user?')) return;
                 await fetch(`/api/users?id=${id}`, { method: 'DELETE' });
                 Admin.loadData();
             },
 
-            renderCerts: (list = Admin.data.certs) => {
+            filterUsers: (val) => {
+                const term = val.toLowerCase();
+                const filtered = Admin.data.users.filter(u => 
+                    (u.name && u.name.toLowerCase().includes(term)) || 
+                    (u.username && u.username.toLowerCase().includes(term))
+                );
+                Admin.renderUsers(filtered);
+            },
+
                 const el = document.getElementById('table-certs');
                 if(list.length===0) { el.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-500">No certificates.</td></tr>'; return; }
                 el.innerHTML = list.map(c => `
