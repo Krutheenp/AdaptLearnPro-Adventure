@@ -76,13 +76,34 @@ module.exports = async (req, res) => {
             const schema = [
                 `CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username TEXT UNIQUE NOT NULL, password TEXT NOT NULL, role TEXT DEFAULT 'student', name TEXT, level INT DEFAULT 1, xp INT DEFAULT 0, coins INT DEFAULT 0, streak INT DEFAULT 0, avatar TEXT DEFAULT '🙂', cover_image TEXT, email TEXT, phone TEXT, bio TEXT, school TEXT, address TEXT, birthdate TEXT, social_links TEXT, last_login TEXT)`,
                 `CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)`,
-                `CREATE TABLE IF NOT EXISTS activities (id SERIAL PRIMARY KEY, title TEXT, type TEXT, difficulty TEXT, duration TEXT, content TEXT, category TEXT DEFAULT 'General', credits INT DEFAULT 1, course_code TEXT, creator_id INT REFERENCES users(id) ON DELETE SET NULL)`,
+                `CREATE TABLE IF NOT EXISTS activities (
+                    id SERIAL PRIMARY KEY, 
+                    title TEXT, 
+                    type TEXT, 
+                    difficulty TEXT, 
+                    duration TEXT, 
+                    content TEXT, 
+                    category TEXT DEFAULT 'General', 
+                    credits INT DEFAULT 1, 
+                    course_code TEXT, 
+                    certificate_theme TEXT DEFAULT 'classic', 
+                    price INT DEFAULT 0, 
+                    description TEXT,
+                    thumbnail TEXT,
+                    creator_id INT REFERENCES users(id) ON DELETE SET NULL
+                )`,
+                `CREATE INDEX IF NOT EXISTS idx_activities_category ON activities(category)`,
                 `CREATE TABLE IF NOT EXISTS user_progress (id SERIAL PRIMARY KEY, user_id INT REFERENCES users(id) ON DELETE CASCADE, activity_id INT REFERENCES activities(id) ON DELETE CASCADE, score INT DEFAULT 0, status TEXT, completed_at TEXT)`,
+                `CREATE TABLE IF NOT EXISTS enrollments (id SERIAL PRIMARY KEY, user_id INT REFERENCES users(id) ON DELETE CASCADE, activity_id INT REFERENCES activities(id) ON DELETE CASCADE, enrolled_at TEXT)`,
+                `CREATE UNIQUE INDEX IF NOT EXISTS idx_enrollments_unique ON enrollments(user_id, activity_id)`,
                 `CREATE TABLE IF NOT EXISTS site_visits (id SERIAL PRIMARY KEY, ip_address TEXT, user_agent TEXT, visit_time TEXT)`,
                 `CREATE TABLE IF NOT EXISTS login_history (id SERIAL PRIMARY KEY, user_id INT REFERENCES users(id) ON DELETE CASCADE, login_time TEXT, ip_address TEXT, device_info TEXT)`,
                 `CREATE TABLE IF NOT EXISTS items (id SERIAL PRIMARY KEY, name TEXT, description TEXT, price INT, type TEXT, icon TEXT)`,
                 `CREATE TABLE IF NOT EXISTS user_items (id SERIAL PRIMARY KEY, user_id INT REFERENCES users(id) ON DELETE CASCADE, item_id INT REFERENCES items(id) ON DELETE CASCADE, acquired_at TEXT)`,
-                `CREATE TABLE IF NOT EXISTS certificates (id SERIAL PRIMARY KEY, user_id INT REFERENCES users(id) ON DELETE CASCADE, user_name TEXT, course_title TEXT, issue_date TEXT, code TEXT)`
+                `CREATE TABLE IF NOT EXISTS certificates (id SERIAL PRIMARY KEY, user_id INT REFERENCES users(id) ON DELETE CASCADE, user_name TEXT, course_title TEXT, issue_date TEXT, code TEXT)`,
+                `CREATE TABLE IF NOT EXISTS portfolios (id SERIAL PRIMARY KEY, user_id INT REFERENCES users(id) ON DELETE CASCADE, title TEXT, description TEXT, media_url TEXT, type TEXT, created_at TEXT)`,
+                `CREATE TABLE IF NOT EXISTS teacher_skills (id SERIAL PRIMARY KEY, user_id INT REFERENCES users(id) ON DELETE CASCADE, skill_name TEXT, proficiency INT)`,
+                `CREATE TABLE IF NOT EXISTS system_config (key TEXT PRIMARY KEY, value TEXT)`
             ];
 
             let logs = [];
@@ -94,12 +115,19 @@ module.exports = async (req, res) => {
                     logs.push("ERR: " + e.message);
                 }
             }
-            // Explicit Migrations for existing DBs
-            try { await db.query("ALTER TABLE activities ADD COLUMN certificate_theme TEXT DEFAULT 'classic'"); } catch(e) {}
-            try { await db.query("ALTER TABLE activities ADD COLUMN price INT DEFAULT 0"); } catch(e) {}
-            try { await db.query("CREATE TABLE IF NOT EXISTS enrollments (id SERIAL PRIMARY KEY, user_id INT REFERENCES users(id) ON DELETE CASCADE, activity_id INT REFERENCES activities(id) ON DELETE CASCADE, enrolled_at TEXT)"); } catch(e) {}
-            try { await db.query("CREATE UNIQUE INDEX IF NOT EXISTS idx_enrollments_unique ON enrollments(user_id, activity_id)"); } catch(e) {}
-            try { await db.query("CREATE TABLE IF NOT EXISTS system_config (key TEXT PRIMARY KEY, value TEXT)"); } catch(e) {}
+            
+            // Explicit Migrations (Sync Columns)
+            const migrations = [
+                "ALTER TABLE activities ADD COLUMN certificate_theme TEXT DEFAULT 'classic'",
+                "ALTER TABLE activities ADD COLUMN price INT DEFAULT 0",
+                "ALTER TABLE activities ADD COLUMN description TEXT",
+                "ALTER TABLE activities ADD COLUMN thumbnail TEXT",
+                "ALTER TABLE activities ADD COLUMN course_code TEXT"
+            ];
+
+            for (const mig of migrations) {
+                try { await db.query(mig); logs.push("MIGRATED: " + mig); } catch(e) {}
+            }
 
             return res.json({ success: true, logs });
         }
