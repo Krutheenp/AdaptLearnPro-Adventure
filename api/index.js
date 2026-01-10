@@ -414,6 +414,9 @@ module.exports = async (req, res) => {
             if (method === 'GET') {
                 const instructorId = url.searchParams.get("instructorId");
                 
+                // Debug Log
+                console.log(`API GET /activities - Params: ${instructorId}`);
+
                 // DEBUG: Force fetch all rows if requested
                 if (instructorId === 'debug') {
                     if (db) {
@@ -423,31 +426,25 @@ module.exports = async (req, res) => {
                     return res.json([]);
                 }
 
-                let query = `
-                    SELECT a.*, 
-                    COALESCE(AVG(r.rating), 0) as rating, 
-                    COUNT(r.id) as review_count 
-                    FROM activities a 
-                    LEFT JOIN reviews r ON a.id = r.activity_id 
-                `;
+                // SIMPLIFIED QUERY (No Joins for now, to ensure data visibility)
+                let query = "SELECT * FROM activities";
                 const params = [];
                 
-                // Flexible Filter: Allow string/int comparison
                 if (instructorId && instructorId !== 'undefined' && instructorId !== 'null') {
-                    // Cast creator_id to TEXT for reliable comparison with URL param
-                    query += " WHERE CAST(a.creator_id AS TEXT) = $1 ";
+                    query += " WHERE CAST(creator_id AS TEXT) = $1";
                     params.push(String(instructorId));
                 }
                 
-                query += " GROUP BY a.id ORDER BY a.id DESC";
+                query += " ORDER BY id DESC";
                 
                 if (db) {
                     try {
                         const rows = await runQuery(query, params);
+                        console.log(`API Result Count: ${rows?.length}`);
                         return res.json(rows || []);
                     } catch(e) {
                         console.error("Fetch Activities Error:", e);
-                        return res.json([]); // Fail safe
+                        return res.status(500).json({ error: e.message });
                     }
                 }
                 return res.json(MOCK_DB.activities);
