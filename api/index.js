@@ -97,6 +97,30 @@ module.exports = async (req, res) => {
             return res.json({ success: true, logs });
         }
 
+        // --- UPLOAD (Vercel Blob) ---
+        if (pathname === '/api/upload' && method === 'POST') {
+            try {
+                const { put } = require('@vercel/blob');
+                // Vercel handles multipart/form-data automatically in some cases, 
+                // but for Serverless we often use simpler approaches or libraries.
+                // Assuming client sends raw or handled by vercel.
+                // For simplicity, let's assume we use the Vercel Blob token from Env.
+                const filename = url.searchParams.get('filename') || `upload_${Date.now()}.png`;
+                
+                // Read body as buffer
+                const chunks = [];
+                for await (const chunk of req) { chunks.push(chunk); }
+                const buffer = Buffer.concat(chunks);
+
+                const blob = await put(filename, buffer, {
+                    access: 'public',
+                });
+                return res.json({ success: true, url: blob.url });
+            } catch (e) {
+                return res.status(500).json({ error: "Upload failed", details: e.message });
+            }
+        }
+
         // --- VISITOR COUNT ---
         if (pathname === '/api/visit') {
             if (db) {
