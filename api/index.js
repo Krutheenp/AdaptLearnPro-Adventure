@@ -35,17 +35,14 @@ module.exports = async (req, res) => {
     const pathname = url.pathname;
 
     // --- WELCOME (EDGE CONFIG) ---
-    // Strictly matches the logic: fetch 'greeting' and return as JSON
-    if (pathname === '/api/welcome' || pathname === '/welcome') {
+    if (pathname === '/api/welcome') {
         try {
             const { get } = require('@vercel/edge-config');
             const greeting = await get('greeting');
-            // If greeting is a string, wrap it or return as is based on common API patterns
-            // The user snippet returns the value directly.
-            return res.status(200).json(greeting || { message: "Welcome to AdaptLearn Adventure!" });
+            return res.status(200).json({ greeting: greeting || "Welcome to AdaptLearn Adventure!" });
         } catch (e) {
             console.error("Edge Config Error:", e);
-            return res.status(200).json({ message: "Welcome, Brave Traveler!" });
+            return res.status(200).json({ greeting: "Welcome, Brave Traveler! (Default)" });
         }
     }
 
