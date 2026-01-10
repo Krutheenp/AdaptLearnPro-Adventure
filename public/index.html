@@ -4,16 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AdaptLearn Adventure - The Knowledge Quest</title>
+    <title>AdaptLearn Adventure</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #1a1a2e; color: #e2e8f0; overflow-x: hidden; }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
         .glass-strong { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(16px); border-right: 1px solid rgba(255,255,255,0.05); }
-        .hover-bounce:hover { transform: translateY(-3px); }
         .btn-game { background: linear-gradient(to bottom, #f59e0b, #d97706); border: 2px solid #78350f; box-shadow: 0 4px 0 #78350f; color: white; text-shadow: 1px 1px 0 #78350f; transition: all 0.1s; }
         .btn-game:active { transform: translateY(4px); box-shadow: 0 0 0 #78350f; }
         .fade-in { animation: fadeIn 0.5s ease-out; }
@@ -22,22 +20,21 @@
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
     </style>
 </head>
 
 <body class="bg-slate-900 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
 
-    <!-- LOGIN SCREEN (If not logged in) -->
-    <div id="guest-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] hidden">
+    <!-- LOGIN / GUEST SCREEN -->
+    <div id="guest-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900 hidden">
         <div class="text-center p-8 max-w-md w-full glass rounded-3xl shadow-2xl border border-slate-700 fade-in">
             <div class="text-6xl mb-6">🛡️</div>
             <h1 class="text-3xl font-bold text-white mb-2">AdaptLearn Adventure</h1>
-            <p class="text-slate-400 mb-8">Embark on your knowledge quest!</p>
+            <p class="text-slate-400 mb-8">Please login to start your journey.</p>
             <a href="/login.html" class="block w-full py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold rounded-xl shadow-lg transition transform hover:scale-105 active:scale-95 mb-4">
-                Login / Register
+                Login
             </a>
-            <div class="text-xs text-slate-500">v2.1.1 • Final Sync</div>
+            <div class="text-xs text-slate-500">v2.2.0 • Fixed</div>
         </div>
     </div>
 
@@ -100,7 +97,6 @@
                     <div class="flex items-center gap-1 bg-slate-800 px-2 py-1 rounded-full border border-slate-700">
                         <span>🪙</span><span class="text-xs font-bold text-yellow-400" id="mob-coins">0</span>
                     </div>
-                    <img src="" id="mob-avatar" class="w-8 h-8 rounded-full bg-slate-700 border border-slate-500 object-cover" onclick="window.location.href='/profile.html'" style="display:none">
                     <div id="mob-avatar-txt" class="w-8 h-8 rounded-full bg-slate-700 border border-slate-500 flex items-center justify-center" onclick="window.location.href='/profile.html'">🙂</div>
                 </div>
             </header>
@@ -111,7 +107,7 @@
                     <h2 class="text-2xl font-bold text-white" id="page-title">World Map</h2>
                 </div>
                 <div class="flex items-center gap-6 glass px-6 py-2 rounded-2xl">
-                    <div class="flex items-center gap-3" title="Your Wealth">
+                    <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full bg-yellow-500/20 text-yellow-400 flex items-center justify-center text-xl border border-yellow-500/50">🪙</div>
                         <div>
                             <div class="text-[10px] text-slate-400 uppercase font-bold">Coins</div>
@@ -119,7 +115,7 @@
                         </div>
                     </div>
                     <div class="w-[1px] h-8 bg-slate-700"></div>
-                    <div class="flex items-center gap-3" title="Login Streak">
+                    <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center text-xl border border-orange-500/50">🔥</div>
                         <div>
                             <div class="text-[10px] text-slate-400 uppercase font-bold">Streak</div>
@@ -139,16 +135,15 @@
                         <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 blur-[80px] rounded-full"></div>
                         
                         <div class="relative z-10">
-                            <div class="w-32 h-32 md:w-40 md:h-40 bg-slate-800 rounded-full border-4 border-indigo-500 flex items-center justify-center text-6xl shadow-2xl avatar-bob overflow-hidden">
+                            <div class="w-32 h-32 md:w-40 md:h-40 bg-slate-800 rounded-full border-4 border-indigo-500 flex items-center justify-center text-6xl shadow-2xl overflow-hidden">
                                 <span id="dash-avatar-txt">🙂</span>
-                                <img id="dash-avatar-img" class="w-full h-full object-cover hidden">
                             </div>
                             <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap shadow-lg" id="dash-role">Student</div>
                         </div>
                         
                         <div class="flex-1 text-center md:text-left z-10">
                             <h2 class="text-3xl font-bold text-white mb-2">Welcome back, <span id="dash-name" class="text-indigo-400">Hero</span>!</h2>
-                            <p id="dash-welcome-msg" class="text-slate-400 mb-6 max-w-lg">Your journey continues. Check your daily quests or dive into the adventure map below.</p>
+                            <p id="dash-welcome-msg" class="text-slate-400 mb-6 max-w-lg">Your journey continues.</p>
                             
                             <!-- Level Progress -->
                             <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700 max-w-md">
@@ -169,7 +164,6 @@
                             <span class="bg-slate-800/80 backdrop-blur text-white px-4 py-2 rounded-lg text-sm font-bold border border-slate-600" id="map-title-badge">🗺️ All Worlds</span>
                             <button onclick="Game.render.map(null)" class="bg-slate-700 text-white px-3 py-2 rounded-lg text-xs hover:bg-slate-600 hidden" id="map-back-btn">⬅️ Back</button>
                         </div>
-                        <svg class="absolute inset-0 w-full h-full z-0" id="map-svg"></svg>
                         <div id="map-nodes" class="relative z-10 w-full h-full"></div>
                     </div>
                 </div>
@@ -177,9 +171,7 @@
                 <!-- 2. LEADERBOARD VIEW -->
                 <div id="view-leaderboard" class="view-section hidden fade-in max-w-3xl mx-auto">
                     <div class="text-center mb-8">
-                        <div class="text-6xl mb-4">🏆</div>
                         <h2 class="text-3xl font-bold text-white">Hall of Fame</h2>
-                        <p class="text-slate-400">Top heroes of the realm</p>
                     </div>
                     <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden" id="lb-container">
                         <!-- List injected here -->
@@ -210,11 +202,6 @@
                 <button onclick="Game.ui.tab('leaderboard')" class="p-2 text-slate-400 hover:text-yellow-400 flex flex-col items-center">
                     <i class="fa-solid fa-trophy text-lg"></i><span class="text-[10px]">Rank</span>
                 </button>
-                <div class="relative -top-5">
-                    <button onclick="Game.ai.toggle()" class="w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center text-white shadow-lg border-4 border-slate-900 hover:scale-110 transition">
-                        <i class="fa-solid fa-robot text-xl"></i>
-                    </button>
-                </div>
                 <button onclick="Game.ui.tab('shop')" class="p-2 text-slate-400 hover:text-blue-400 flex flex-col items-center">
                     <i class="fa-solid fa-store text-lg"></i><span class="text-[10px]">Shop</span>
                 </button>
@@ -222,26 +209,6 @@
                     <i class="fa-solid fa-door-open text-lg"></i><span class="text-[10px]">Exit</span>
                 </button>
             </nav>
-
-            <!-- AI Chat Floating (Desktop) -->
-            <div id="ai-widget" class="hidden md:flex fixed bottom-8 right-8 z-50 flex-col items-end gap-4">
-                <div id="ai-window" class="w-80 h-96 bg-slate-800 rounded-2xl shadow-2xl border border-slate-600 flex flex-col hidden overflow-hidden animate-zoom-in">
-                    <div class="bg-slate-900 p-3 flex justify-between items-center border-b border-slate-700">
-                        <span class="font-bold text-indigo-400 text-sm">🤖 AI Game Master</span>
-                        <button onclick="Game.ai.toggle()" class="text-slate-500 hover:text-white">✕</button>
-                    </div>
-                    <div id="ai-chat-box" class="flex-1 p-3 overflow-y-auto space-y-3 bg-slate-800/50 text-sm">
-                        <div class="text-slate-400 text-center text-xs mt-4">Ask me anything about your quest!</div>
-                    </div>
-                    <div class="p-2 bg-slate-900 border-t border-slate-700 flex gap-2">
-                        <input id="ai-input" class="flex-1 bg-slate-800 border border-slate-600 rounded-lg px-3 py-1 text-sm text-white outline-none focus:border-indigo-500" placeholder="Type...">
-                        <button onclick="Game.ai.send()" class="bg-indigo-600 text-white px-3 py-1 rounded-lg text-xs font-bold">Send</button>
-                    </div>
-                </div>
-                <button onclick="Game.ai.toggle()" class="w-14 h-14 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full shadow-xl flex items-center justify-center text-2xl transition hover:scale-110 active:scale-95">
-                    <i class="fa-solid fa-robot"></i>
-                </button>
-            </div>
 
         </main>
     </div>
@@ -266,20 +233,9 @@
                 // Fetch Data
                 await Game.api.loadAll(uid);
                 
-                // 4. Render Initial State
+                // Render
                 Game.render.hud();
                 Game.render.dashboard();
-                
-                // 5. Fetch Welcome Message (Edge Config)
-                try {
-                    const wRes = await fetch('/api/welcome');
-                    const wData = await wRes.json();
-                    if(wData.greeting) document.getElementById('dash-welcome-msg').innerText = wData.greeting;
-                } catch(e) {}
-                
-                // 6. Setup Listeners
-                const aiInput = document.getElementById('ai-input');
-                if(aiInput) aiInput.addEventListener('keypress', (e) => e.key === 'Enter' && Game.ai.send());
             },
 
             ui: {
@@ -303,10 +259,7 @@
             },
 
             api: {
-                fetchAll: async () => {
-                    const uid = sessionStorage.getItem('user_id');
-                    if(!uid) return;
-
+                loadAll: async (uid) => {
                     try {
                         const [uRes, aRes] = await Promise.all([
                             fetch(`/api/analytics?userId=${uid}`), 
@@ -316,47 +269,33 @@
                         const userData = await uRes.json();
                         const actData = await aRes.json();
 
-                        // --- PERSISTENCE LOGIC (LOCAL SAVE) ---
-                        // If we get mock data or DB is down, try loading from LocalStorage
-                        const localSave = localStorage.getItem(`save_user_${uid}`);
-                        let finalUser = userData.user;
-
-                        if (localSave && (!finalUser || finalUser.id === 99)) {
-                            finalUser = JSON.parse(localSave);
-                            console.log("🎮 Loaded from Local Save");
-                        }
-
-                        Game.data.user = finalUser || { id: uid, name: 'Guest Hero', level: 1, xp: 0, coins: 0 };
+                        // Fallback logic
+                        Game.data.user = userData.user || { name: 'Unknown Hero', level: 1, coins: 0, streak: 0, role: 'student', avatar: '🙂' };
                         Game.data.activities = actData || [];
-                        
-                        Game.render.hud();
-                        Game.render.dashboard();
-                    } catch (e) { console.error("API Error", e); }
-                },
-                saveProgress: async (actId, score, status) => {
-                    const u = Game.data.user;
-                    if(!u) return;
-
-                    // 1. Update UI / Local State immediately
-                    if(status === 'completed') {
-                        u.xp += 100;
-                        u.coins += 50;
-                        u.level = Math.floor(u.xp / 1000) + 1;
-                        // Save to Browser
-                        localStorage.setItem(`save_user_${u.id}`, JSON.stringify(u));
+                        console.log("Data Loaded:", Game.data.user);
+                    } catch (e) { 
+                        console.error("Load Error", e); 
+                        // OFFLINE MODE
+                        Game.data.user = { name: 'Offline Hero', level: 1, coins: 0, streak: 0, role: 'student', avatar: '🧙‍♂️' };
+                        Game.data.activities = [{ title: 'Offline Mission', type: 'game', category: 'General' }];
                     }
-
-                    // 2. Try to sync with Server
+                },
+                buy: async (id) => {
+                    if(!confirm('Confirm buy?')) return;
                     try {
-                        await fetch('/api/progress', {
-                            method: 'POST',
+                        const res = await fetch('/api/shop/buy', { 
+                            method: 'POST', 
                             headers: {'Content-Type':'application/json'},
-                            body: JSON.stringify({ userId: u.id, activityId: actId, score, status })
+                            body: JSON.stringify({ userId: sessionStorage.getItem('user_id'), itemId: id }) 
                         });
-                    } catch(e) { console.warn("Server sync failed, saved locally."); }
-                    
-                    Game.render.hud();
-                    Game.render.dashboard();
+                        const d = await res.json();
+                        if(d.success) { 
+                            alert('Purchased!'); 
+                            Game.data.user.coins = d.new_balance; 
+                            Game.render.hud(); 
+                            Game.render.shop(); 
+                        } else { alert(d.error || 'Failed'); }
+                    } catch(e) { alert('Transaction Error'); }
                 }
             },
 
@@ -367,14 +306,7 @@
                     document.getElementById('hud-coins').innerText = (u.coins || 0).toLocaleString();
                     document.getElementById('hud-streak').innerText = u.streak || 0;
                     document.getElementById('mob-coins').innerText = (u.coins || 0);
-                    
-                    const avatarImg = document.getElementById('mob-avatar');
-                    const avatarTxt = document.getElementById('mob-avatar-txt');
-                    if(u.avatar && u.avatar.includes('/')) {
-                        avatarImg.src = u.avatar; avatarImg.style.display = 'block'; avatarTxt.style.display = 'none';
-                    } else {
-                        avatarTxt.innerText = u.avatar || '🙂'; avatarTxt.style.display = 'flex'; avatarImg.style.display = 'none';
-                    }
+                    document.getElementById('mob-avatar-txt').innerText = u.avatar || '🙂';
 
                     if (u.role === 'admin' || u.role === 'teacher') document.getElementById('menu-admin').classList.remove('hidden');
                 },
@@ -388,38 +320,24 @@
                     const pct = Math.min(((u.xp || 0) / nextXP) * 100, 100);
                     document.getElementById('dash-xp-bar').style.width = `${pct}%`;
                     document.getElementById('dash-xp-text').innerText = `${u.xp || 0} / ${nextXP} XP`;
-
-                    const avImg = document.getElementById('dash-avatar-img');
-                    const avTxt = document.getElementById('dash-avatar-txt');
-                    if(u.avatar && u.avatar.includes('/')) {
-                        avImg.src = u.avatar; avImg.classList.remove('hidden'); avTxt.classList.add('hidden');
-                    } else {
-                        avTxt.innerText = u.avatar || '🙂'; avTxt.classList.remove('hidden'); avImg.classList.add('hidden');
-                    }
+                    document.getElementById('dash-avatar-txt').innerText = u.avatar || '🙂';
                     
                     Game.render.map(null);
                 },
                 map: (category) => {
                     const container = document.getElementById('map-nodes');
-                    const svg = document.getElementById('map-svg');
-                    container.innerHTML = ''; svg.innerHTML = '';
+                    container.innerHTML = '';
                     
                     let acts = Game.data.activities;
-                    
-                    // Filter Mode
                     if(category) {
                         acts = acts.filter(a => (a.category || 'General') === category);
                         document.getElementById('map-title-badge').innerText = `🗺️ ${category}`;
                         document.getElementById('map-back-btn').classList.remove('hidden');
                     } else {
-                        // World Mode
                         document.getElementById('map-title-badge').innerText = `🌌 Galactic Map`;
                         document.getElementById('map-back-btn').classList.add('hidden');
                         
-                        // Show Categories as Planets
                         const categories = [...new Set(acts.map(a => a.category || 'General'))];
-                        const icons = { 'Mathematics': '📐', 'Science': '🧪', 'English': '📚', 'Technology': '💻', 'General': '🌍', 'Social Studies': '🏛️', 'Arts': '🎨', 'Health': '❤️', 'Business': '💼' };
-                        
                         categories.forEach((cat, i) => {
                             const top = 50 + (Math.floor(i/2) * 200);
                             const left = i%2===0 ? '25%' : '65%';
@@ -428,14 +346,13 @@
                             planet.className = "absolute w-40 h-40 bg-slate-800 border-4 border-slate-600 rounded-full flex flex-col items-center justify-center cursor-pointer hover:scale-110 hover:border-indigo-500 transition shadow-2xl z-20";
                             planet.style.top = `${top}px`;
                             planet.style.left = left;
-                            planet.innerHTML = `<div class="text-5xl mb-2">${icons[cat]||'🪐'}</div><div class="font-bold text-white">${cat}</div>`;
+                            planet.innerHTML = `<div class="text-5xl mb-2">🪐</div><div class="font-bold text-white">${cat}</div>`;
                             planet.onclick = () => { Game.data.currentWorld = cat; Game.render.map(cat); };
                             container.appendChild(planet);
                         });
-                        return; // Done rendering worlds
+                        return;
                     }
 
-                    // Render Activities Nodes (Inside Category)
                     acts.forEach((act, i) => {
                         const top = 50 + (i * 150);
                         const left = (i % 2 === 0) ? '20%' : '60%';
@@ -445,7 +362,7 @@
                         node.style.top = `${top}px`;
                         node.style.left = left;
                         node.innerHTML = `<span class="filter drop-shadow-md">${act.type==='video'?'📜':'🎮'}</span>`;
-                        node.onclick = () => alert(`Starting Mission: ${act.title}`); // Placeholder player launch
+                        node.onclick = () => alert(`Starting Mission: ${act.title}`);
                         
                         const label = document.createElement('div');
                         label.className = "absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] font-bold text-white bg-slate-900 px-2 py-1 rounded whitespace-nowrap border border-slate-700";
@@ -455,8 +372,7 @@
                         container.appendChild(node);
                     });
                     
-                    // Background
-                    document.getElementById('map-wrapper').style.background = `radial-gradient(circle at center, #0f172a 0%, #020617 100%), url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')`;
+                    container.style.height = `${acts.length * 150 + 200}px`;
                 },
                 leaderboard: async () => {
                     const box = document.getElementById('lb-container');
@@ -481,7 +397,6 @@
                         const data = await res.json();
                         box.innerHTML = data.map(item => `
                             <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col items-center text-center gap-2 hover:border-indigo-500 transition shadow-lg relative overflow-hidden group">
-                                <div class="absolute inset-0 bg-blue-500/5 group-hover:bg-blue-500/10 transition"></div>
                                 <div class="text-4xl mb-2 bg-slate-900 p-2 rounded-lg">${item.icon}</div>
                                 <h4 class="font-bold text-white relative z-10">${item.name}</h4>
                                 <div class="text-yellow-400 font-bold relative z-10">🪙 ${item.price}</div>
@@ -497,37 +412,6 @@
                         invBox.innerHTML = invData.map(i => `<div class="flex gap-2 items-center p-2 bg-slate-700/50 rounded mb-2 border border-slate-600"><span class="text-lg">${i.icon}</span> <span class="text-slate-300 text-xs">${i.name}</span></div>`).join('');
                     } else {
                         invBox.innerText = "No items yet.";
-                    }
-                }
-            },
-
-            ai: {
-                toggle: () => {
-                    const win = document.getElementById('ai-window');
-                    win.classList.toggle('hidden');
-                },
-                send: async () => {
-                    const inp = document.getElementById('ai-input');
-                    const msg = inp.value.trim();
-                    if(!msg) return;
-                    
-                    const box = document.getElementById('ai-chat-box');
-                    box.innerHTML += `<div class="text-right mb-2"><span class="bg-indigo-600 text-white px-3 py-2 rounded-lg inline-block rounded-tr-none text-xs">${msg}</span></div>`;
-                    inp.value = ''; box.scrollTop = box.scrollHeight;
-
-                    try {
-                        const res = await fetch('/api/chat', { 
-                            method: 'POST', 
-                            headers: {'Content-Type':'application/json'},
-                            body: JSON.stringify({ message: msg, userContext: Game.data.user }) 
-                        });
-                        const data = await res.json();
-                        const reply = data.success ? data.reply : (data.error || "AI Offline");
-                        
-                        box.innerHTML += `<div class="text-left mb-2"><span class="bg-slate-700 text-slate-200 px-3 py-2 rounded-lg inline-block rounded-tl-none text-xs">🤖 ${reply}</span></div>`;
-                        box.scrollTop = box.scrollHeight;
-                    } catch(e) {
-                        box.innerHTML += `<div class="text-left mb-2"><span class="text-red-400 text-xs">Connection Failed</span></div>`;
                     }
                 }
             }
