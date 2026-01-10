@@ -97,6 +97,48 @@ module.exports = async (req, res) => {
             return res.json({ success: true, logs });
         }
 
+        // --- SEED DATABASE ---
+        if (pathname === '/api/seed') {
+            if (!db) return res.json({ success: true, message: "Mock Seed OK" });
+
+            try {
+                // 1. Seed Admin
+                await db.query(`INSERT INTO users (username, password, role, name, level, xp, avatar) 
+                    VALUES ('admin', 'password123', 'admin', 'Super Admin', 99, 99999, '👑') 
+                    ON CONFLICT (username) DO NOTHING`);
+
+                // 2. Seed Items
+                const items = [
+                    { name: 'Streak Freeze', price: 50, icon: '🧊', type: 'consumable', desc: 'Prevent streak reset' },
+                    { name: 'Golden Frame', price: 500, icon: '🖼️', type: 'cosmetic', desc: 'Shiny profile frame' },
+                    { name: 'XP Boost (1h)', price: 100, icon: '⚡', type: 'consumable', desc: 'Double XP for 1 hour' }
+                ];
+                for (const i of items) {
+                    await db.query(`INSERT INTO items (name, price, icon, type, description) 
+                        VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING`, 
+                        [i.name, i.price, i.icon, i.type, i.desc]);
+                }
+
+                // 3. Seed Activities (if empty)
+                const actCount = await db.query("SELECT COUNT(*) FROM activities");
+                if (parseInt(actCount.rows[0].count) === 0) {
+                    const courses = [
+                        { title: "คณิตศาสตร์: สมการเชิงเส้น", type: "video", difficulty: "Medium", duration: "45m", category: "Mathematics", credits: 3 },
+                        { title: "วิทยาศาสตร์: ระบบสุริยะ", type: "game", difficulty: "Easy", duration: "30m", category: "Science", credits: 3 },
+                        { title: "Python Programming 101", type: "simulation", difficulty: "Medium", duration: "2h", category: "Technology", credits: 4 }
+                    ];
+                    for (const c of courses) {
+                        await db.query(`INSERT INTO activities (title, type, difficulty, duration, category, credits) VALUES ($1, $2, $3, $4, $5, $6)`, 
+                            [c.title, c.type, c.difficulty, c.duration, c.category, c.credits]);
+                    }
+                }
+
+                return res.json({ success: true, message: "Database Seeded Successfully" });
+            } catch (e) {
+                return res.status(500).json({ error: "Seed failed", details: e.message });
+            }
+        }
+
         // --- UPLOAD (Vercel Blob) ---
         if (pathname === '/api/upload' && method === 'POST') {
             try {
