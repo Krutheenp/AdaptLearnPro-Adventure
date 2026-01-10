@@ -601,34 +601,29 @@ module.exports = async (req, res) => {
             // PUT: Update Course
             if (method === 'PUT') {
                 const body = req.body;
-                console.log("API PUT Received:", JSON.stringify(body)); // DEBUG LOG
-
                 if (!db) return res.json({ success: true, message: "Mock Update OK" });
 
                 try {
                     // Permission Check
                     const existing = await runQuery("SELECT creator_id FROM activities WHERE id = $1", [body.id]);
-                    if (!existing?.[0]) return res.status(404).json({ error: "Course not found in DB" });
+                    if (!existing || existing.length === 0) return res.status(404).json({ error: "Course ID not found in database. Please refresh and try creating a new one." });
                     
-                    /* TEMPORARY BYPASS PERMISSION CHECK FOR DEBUGGING
                     const ownerId = existing[0].creator_id;
                     const reqId = parseInt(body.requester_id);
                     const isAdmin = body.requester_role === 'admin';
                     
-                    // Strict Check Log
-                    console.log(`PermCheck: Owner=${ownerId}, ReqID=${reqId}, Role=${body.requester_role}`);
-
+                    // Allow if: Admin OR Owner matches Request ID OR (Edge Case) Course has no owner
                     if (!isAdmin && ownerId && ownerId !== reqId) {
                         return res.status(403).json({ error: `Permission Denied. Owner: ${ownerId}, You: ${reqId}` });
                     }
-                    */
 
                     // Safe Content Parsing
                     let contentJson = '[]';
                     if (typeof body.content === 'object') contentJson = JSON.stringify(body.content);
                     else if (typeof body.content === 'string') contentJson = body.content;
 
-                    const result = await runQuery(`
+                    // Note: Postgres RETURNING clause is handy
+                    const result = await db.query(`
                         UPDATE activities SET title=$1, type=$2, difficulty=$3, duration=$4, content=$5, category=$6, credits=$7, course_code=$8, certificate_theme=$9, price=$10 
                         WHERE id=$11 RETURNING id
                     `, [
@@ -645,8 +640,8 @@ module.exports = async (req, res) => {
                         body.id
                     ]);
                     
-                    if (result && result.length > 0) return res.json({ success: true, updated: result[0].id });
-                    else return res.status(500).json({ error: "Update query ran but returned no ID" });
+                    if (result.rowCount > 0) return res.json({ success: true, updated: result.rows[0].id });
+                    else return res.status(404).json({ error: "Update failed: Course ID not found or no changes made." });
 
                 } catch(e) {
                     console.error("Update Course Error:", e);
