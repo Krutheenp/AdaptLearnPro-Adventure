@@ -170,19 +170,42 @@
                     // Extract Video ID or use direct URL
                     let contentHtml = '';
                     if (lesson.url.includes('.mp4') || lesson.url.includes('.webm') || lesson.url.includes('blob.vercel')) {
-                        contentHtml = `<video controls class="w-full h-full" src="${lesson.url}"></video>`;
+                        // Native Player with protection
+                        contentHtml = `
+                            <video controls controlsList="nodownload" oncontextmenu="return false;" class="w-full h-full object-contain bg-black">
+                                <source src="${lesson.url}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        `;
                     } else {
+                        // YouTube Embed with hiding tricks
                         let vidId = '';
                         try {
                             const url = new URL(lesson.url);
                             if(url.hostname.includes('youtube.com')) vidId = url.searchParams.get('v');
                             else if(url.hostname.includes('youtu.be')) vidId = url.pathname.slice(1);
                         } catch(e) {}
-                        contentHtml = vidId ? `<iframe class="w-full h-full" src="https://www.youtube.com/embed/${vidId}" frameborder="0" allowfullscreen></iframe>` : '<div class="flex items-center justify-center h-full text-slate-500">Invalid Video URL</div>';
+                        
+                        if (vidId) {
+                            contentHtml = `
+                                <div class="relative w-full h-full group">
+                                    <iframe class="w-full h-full" 
+                                        src="https://www.youtube-nocookie.com/embed/${vidId}?modestbranding=1&rel=0&controls=1&showinfo=0&iv_load_policy=3" 
+                                        frameborder="0" allowfullscreen>
+                                    </iframe>
+                                    <!-- Invisible Overlay to block Title click -->
+                                    <div class="absolute top-0 left-0 w-full h-16 z-10 cursor-default"></div>
+                                    <!-- Invisible Overlay to block 'Watch on YouTube' button (bottom right) -->
+                                    <div class="absolute bottom-0 right-0 w-40 h-12 z-10 cursor-default"></div>
+                                </div>
+                            `;
+                        } else {
+                            contentHtml = '<div class="flex items-center justify-center h-full text-slate-500">Invalid Video URL</div>';
+                        }
                     }
 
                     stage.innerHTML = `
-                        <div class="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl mb-6">
+                        <div class="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl mb-6 relative border border-slate-800">
                             ${contentHtml}
                         </div>
                         <div class="text-center">
