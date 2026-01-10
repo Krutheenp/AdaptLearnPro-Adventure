@@ -6,7 +6,6 @@
     <title>Admin Control Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <!-- Chart.js for Graphs -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #0f172a; color: #cbd5e1; }
@@ -21,7 +20,7 @@
             <span>🛡️</span> Admin Panel
         </div>
         <nav class="flex-1 p-4 space-y-2">
-            <button onclick="Admin.tab('overview')" class="w-full text-left px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3 bg-slate-800 font-bold" id="btn-overview">
+            <button onclick="Admin.tab('overview')" class="w-full text-left px-4 py-3 rounded-lg bg-slate-800 font-bold text-white transition flex items-center gap-3" id="btn-overview">
                 📊 Overview
             </button>
             <button onclick="Admin.tab('users')" class="w-full text-left px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3" id="btn-users">
@@ -51,16 +50,17 @@
 
     <!-- Main Content -->
     <main class="flex-1 overflow-y-auto p-8 relative">
-        <!-- Security Overlay (Hidden by default, shown if auth fails) -->
         <div id="auth-guard" class="absolute inset-0 bg-slate-900 z-50 flex flex-col items-center justify-center">
             <div class="text-4xl animate-spin mb-4">⏳</div>
             <p>Verifying Privileges...</p>
         </div>
 
+        <!-- OVERVIEW -->
         <div id="view-overview" class="space-y-8">
-            <h1 class="text-3xl font-bold text-white mb-6">System Overview</h1>
-            
-            <!-- Stats Cards -->
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-white">System Overview</h1>
+                <button onclick="Admin.seedData()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg">🌱 Seed Mock Data</button>
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div class="glass p-6 rounded-2xl">
                     <div class="text-slate-400 text-sm uppercase font-bold">Total Users</div>
@@ -75,124 +75,84 @@
                     <div class="text-3xl font-bold text-yellow-400 mt-2" id="stat-certs">-</div>
                 </div>
                 <div class="glass p-6 rounded-2xl">
-                    <div class="text-slate-400 text-sm uppercase font-bold">Revenue (Coins)</div>
-                    <div class="text-3xl font-bold text-green-400 mt-2" id="stat-revenue">0</div>
+                    <div class="text-slate-400 text-sm uppercase font-bold">Shop Items</div>
+                    <div class="text-3xl font-bold text-green-400 mt-2" id="stat-items">-</div>
                 </div>
             </div>
-
-            <!-- Charts -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div class="glass p-6 rounded-2xl">
-                    <h3 class="font-bold text-white mb-4">User Growth</h3>
-                    <canvas id="chart-users"></canvas>
-                </div>
-                <div class="glass p-6 rounded-2xl">
-                    <h3 class="font-bold text-white mb-4">Learning Activity</h3>
-                    <canvas id="chart-activity"></canvas>
-                </div>
+                <div class="glass p-6 rounded-2xl"><h3 class="font-bold text-white mb-4">User Growth</h3><canvas id="chart-users"></canvas></div>
+                <div class="glass p-6 rounded-2xl"><h3 class="font-bold text-white mb-4">Learning Activity</h3><canvas id="chart-activity"></canvas></div>
             </div>
         </div>
 
+        <!-- USERS -->
         <div id="view-users" class="hidden space-y-6">
-            <!-- ... users content ... -->
-        </div>
-
-        <div id="view-certs" class="hidden space-y-6">
-            <div class="flex justify-between items-center mb-6">
-                <h1 class="text-3xl font-bold text-white">Certificate Management</h1>
-                <input type="text" placeholder="Search Student or Code..." onkeyup="Admin.filterCerts(this.value)" class="bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white w-64 focus:border-indigo-500 outline-none">
-            </div>
-            
+            <h1 class="text-3xl font-bold text-white mb-6">User Management</h1>
             <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
                 <table class="w-full text-left text-sm text-slate-400">
                     <thead class="bg-slate-900 text-slate-200 uppercase font-bold text-xs">
-                        <tr>
-                            <th class="px-6 py-4">Code</th>
-                            <th class="px-6 py-4">Student</th>
-                            <th class="px-6 py-4">Course</th>
-                            <th class="px-6 py-4">Issue Date</th>
-                            <th class="px-6 py-4 text-right">Action</th>
-                        </tr>
+                        <tr><th class="px-6 py-4">User</th><th class="px-6 py-4">Role</th><th class="px-6 py-4">Stats</th><th class="px-6 py-4 text-right">Action</th></tr>
                     </thead>
-                    <tbody id="table-certs" class="divide-y divide-slate-700">
-                        <tr><td colspan="5" class="text-center py-8">Loading certificates...</td></tr>
-                    </tbody>
+                    <tbody id="table-users" class="divide-y divide-slate-700"></tbody>
                 </table>
             </div>
         </div>
 
+        <!-- CERTIFICATES -->
+        <div id="view-certs" class="hidden space-y-6">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-white">Certificate Management</h1>
+                <input type="text" placeholder="Search..." onkeyup="Admin.filterCerts(this.value)" class="bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white w-64 focus:border-indigo-500 outline-none">
+            </div>
+            <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
+                <table class="w-full text-left text-sm text-slate-400">
+                    <thead class="bg-slate-900 text-slate-200 uppercase font-bold text-xs">
+                        <tr><th class="px-6 py-4">Code</th><th class="px-6 py-4">Student</th><th class="px-6 py-4">Course</th><th class="px-6 py-4">Date</th><th class="px-6 py-4 text-right">Action</th></tr>
+                    </thead>
+                    <tbody id="table-certs" class="divide-y divide-slate-700"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SHOP -->
         <div id="view-shop" class="hidden space-y-6">
             <div class="flex justify-between items-center mb-6">
                 <h1 class="text-3xl font-bold text-white">Shop & Rewards</h1>
                 <button onclick="Admin.addItem()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-bold">+ Add Item</button>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="list-shop">
-                <!-- Items injected here -->
-            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="list-shop"></div>
         </div>
 
+        <!-- GACHA -->
         <div id="view-gacha" class="hidden space-y-6">
             <h1 class="text-3xl font-bold text-white mb-6">Gacha System Config</h1>
             <div class="glass p-8 rounded-2xl max-w-3xl">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="font-bold text-white text-xl">Standard Banner</h3>
-                    <button class="text-xs bg-slate-700 px-3 py-1 rounded text-slate-300">Reset Rates</button>
-                </div>
+                <h3 class="font-bold text-white text-xl mb-4">Standard Banner Rates</h3>
                 <div class="space-y-4">
                     <div class="flex justify-between items-center p-4 bg-slate-900 rounded-xl border border-yellow-500/30">
-                        <div class="flex items-center gap-3">
-                            <span class="text-2xl">⭐⭐⭐</span>
-                            <div>
-                                <div class="font-bold text-yellow-400">Rare (SSR)</div>
-                                <div class="text-xs text-slate-500">XP Boosters, Exclusive Frames</div>
-                            </div>
-                        </div>
-                        <input type="number" value="5" class="w-16 bg-slate-800 text-center rounded border border-slate-600 text-white py-1"> <span class="text-slate-400">%</span>
+                        <span class="text-yellow-400 font-bold">Rare (SSR)</span>
+                        <input type="number" value="5" class="w-16 bg-slate-800 text-center rounded text-white border border-slate-600">
                     </div>
                     <div class="flex justify-between items-center p-4 bg-slate-900 rounded-xl border border-slate-700">
-                        <div class="flex items-center gap-3">
-                            <span class="text-2xl">⭐⭐</span>
-                            <div>
-                                <div class="font-bold text-white">Uncommon (SR)</div>
-                                <div class="text-xs text-slate-500">Standard Frames, Small Boosts</div>
-                            </div>
-                        </div>
-                        <input type="number" value="25" class="w-16 bg-slate-800 text-center rounded border border-slate-600 text-white py-1"> <span class="text-slate-400">%</span>
+                        <span class="text-white font-bold">Uncommon (SR)</span>
+                        <input type="number" value="25" class="w-16 bg-slate-800 text-center rounded text-white border border-slate-600">
                     </div>
                     <div class="flex justify-between items-center p-4 bg-slate-900 rounded-xl border border-slate-700">
-                        <div class="flex items-center gap-3">
-                            <span class="text-2xl">⭐</span>
-                            <div>
-                                <div class="font-bold text-slate-400">Common (R)</div>
-                                <div class="text-xs text-slate-500">Consumables, Tips</div>
-                            </div>
-                        </div>
-                        <input type="number" value="70" class="w-16 bg-slate-800 text-center rounded border border-slate-600 text-white py-1"> <span class="text-slate-400">%</span>
+                        <span class="text-slate-400 font-bold">Common (R)</span>
+                        <input type="number" value="70" class="w-16 bg-slate-800 text-center rounded text-white border border-slate-600">
                     </div>
                 </div>
-                <div class="mt-8 pt-6 border-t border-slate-700 text-right">
-                    <button class="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-lg font-bold shadow-lg">Save Configuration</button>
-                </div>
+                <div class="mt-6 text-right"><button class="bg-green-600 px-6 py-2 rounded text-white font-bold">Save</button></div>
             </div>
         </div>
 
+        <!-- SYSTEM -->
         <div id="view-system" class="hidden space-y-6">
             <h1 class="text-3xl font-bold text-white mb-6">System Settings</h1>
-            <div class="glass p-8 rounded-2xl max-w-2xl space-y-6">
-                <div>
-                    <label class="block text-sm font-bold text-slate-300 mb-2">Site Announcement</label>
-                    <input class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white" value="Welcome to AdaptLearn Adventure!">
-                </div>
-                <div class="flex items-center justify-between p-4 bg-slate-900 rounded-xl border border-slate-700">
-                    <div>
-                        <div class="font-bold text-white">Maintenance Mode</div>
-                        <div class="text-xs text-slate-500">Disable access for standard users</div>
-                    </div>
-                    <input type="checkbox" class="toggle">
-                </div>
-                <div class="pt-4">
-                    <button class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-lg font-bold">Save Changes</button>
-                </div>
+            <div class="glass p-8 rounded-2xl max-w-2xl">
+                <label class="block text-sm font-bold text-slate-300 mb-2">Announcement</label>
+                <input class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white mb-4" value="Welcome!">
+                <button class="bg-indigo-600 text-white px-6 py-2 rounded font-bold">Save</button>
             </div>
         </div>
 
@@ -205,55 +165,33 @@
             init: async () => {
                 const uid = sessionStorage.getItem('user_id');
                 if (!uid) { location.href = '/login.html'; return; }
-
                 try {
                     const res = await fetch(`/api/analytics?userId=${uid}`);
                     const data = await res.json();
-                    
-                    if (data.user.role !== 'admin') {
-                        alert('⛔ Access Denied: Admins only.');
-                        location.href = '/index.html';
-                        return;
-                    }
-                    
+                    if (data.user.role !== 'admin') { alert('⛔ Admins Only'); location.href = '/index.html'; return; }
                     document.getElementById('auth-guard').classList.add('hidden');
                     Admin.loadData();
-
-                } catch(e) {
-                    alert('Authentication Error');
-                    location.href = '/login.html';
-                }
+                } catch(e) { alert('Auth Error'); location.href = '/login.html'; }
             },
 
             loadData: async () => {
-                // Helper to safe fetch
                 const get = async (url) => { try { const r = await fetch(url); return await r.json(); } catch(e) { return []; } };
-
-                // 1. Fetch Core Data (Parallel)
-                const [users, activities, visits, certs] = await Promise.all([
-                    get('/api/users'),
-                    get('/api/activities'),
-                    get('/api/visit'),
-                    get('/api/certificate?all=true')
-                ]);
-
-                // 2. Fetch Optional Data (Independently)
+                
+                // Fetch Independently (Resilient)
+                const users = await get('/api/users');
+                const acts = await get('/api/activities');
+                const certs = await get('/api/certificate?all=true');
                 const shop = await get('/api/shop');
-                const config = await get('/api/config'); // This failed before
-
-                // Assign Data
+                
                 Admin.data.users = Array.isArray(users) ? users : [];
-                Admin.data.activities = Array.isArray(activities) ? activities : [];
+                Admin.data.activities = Array.isArray(acts) ? acts : [];
                 Admin.data.certs = Array.isArray(certs) ? certs : [];
                 Admin.data.shop = Array.isArray(shop) ? shop : [];
-                Admin.data.config = config || {};
 
-                // Safe UI Updates
+                // Safe UI Update
                 const setTxt = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
-                
                 setTxt('stat-users', Admin.data.users.length);
                 setTxt('stat-courses', Admin.data.activities.length);
-                setTxt('stat-visits', (visits.total_visits || 0).toLocaleString());
                 setTxt('stat-certs', Admin.data.certs.length);
                 setTxt('stat-items', Admin.data.shop.length);
 
@@ -263,7 +201,6 @@
                 Admin.renderCharts();
             },
 
-            // --- TAB MANAGEMENT ---
             tab: (name) => {
                 ['overview', 'users', 'certs', 'shop', 'gacha', 'system'].forEach(t => {
                     document.getElementById(`view-${t}`).classList.add('hidden');
@@ -274,395 +211,98 @@
                 document.getElementById(`btn-${name}`).classList.add('bg-slate-800', 'font-bold', 'text-white');
             },
 
-            // --- USERS ---
             renderUsers: () => {
-                const tbody = document.getElementById('table-users');
-                tbody.innerHTML = Admin.data.users.map(u => `
-                    <tr class="hover:bg-slate-800/50 transition">
-                        <td class="px-6 py-4 flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">${u.avatar||'👤'}</div>
-                            <div><div class="font-bold text-white">${u.name}</div><div class="text-xs text-slate-500">@${u.username}</div></div>
-                        </td>
-                        <td class="px-6 py-4"><span class="px-2 py-1 rounded text-xs font-bold uppercase ${u.role==='admin'?'bg-red-900 text-red-300':(u.role==='teacher'?'bg-yellow-900 text-yellow-300':'bg-blue-900 text-blue-300')}">${u.role}</span></td>
-                        <td class="px-6 py-4 text-slate-300 text-xs">
-                            <div>Lvl ${u.level} • ${u.xp} XP</div>
-                            <div class="text-yellow-400">🪙 ${u.coins||0}</div>
-                        </td>
+                const el = document.getElementById('table-users');
+                el.innerHTML = Admin.data.users.map(u => `
+                    <tr class="hover:bg-slate-800/50 border-b border-slate-700">
+                        <td class="px-6 py-4 font-bold text-white">${u.name} <span class="text-xs text-slate-500 block">@${u.username}</span></td>
+                        <td class="px-6 py-4"><span class="bg-slate-700 px-2 py-1 rounded text-xs font-bold uppercase text-slate-300">${u.role}</span></td>
+                        <td class="px-6 py-4 text-xs text-slate-300">Lvl ${u.level} • 🪙 ${u.coins||0}</td>
                         <td class="px-6 py-4 text-right">
-                            <button onclick="Admin.modUser(${u.id}, 'coins', 1000)" class="text-yellow-400 hover:text-yellow-300 text-xs mr-2">+1k Coin</button>
-                            <button onclick="Admin.deleteUser(${u.id})" class="text-red-500 hover:text-red-400 text-xs">Del</button>
+                            <button onclick="Admin.modUser(${u.id}, 'coins', 1000)" class="text-yellow-400 text-xs mr-2 hover:underline">+1k Coin</button>
+                            <button onclick="Admin.deleteUser(${u.id})" class="text-red-400 text-xs hover:underline">Del</button>
                         </td>
                     </tr>
                 `).join('');
             },
 
-            modUser: async (id, field, amount) => {
-                const u = Admin.data.users.find(x => x.id === id);
-                if(!u) return;
-                const newVal = (u[field] || 0) + amount;
-                if(!confirm(`Add ${amount} ${field} to ${u.name}?`)) return;
-                
-                const body = { id };
-                body[field] = newVal;
+            modUser: async (id, f, val) => {
+                if(!confirm('Update user?')) return;
+                const u = Admin.data.users.find(x=>x.id===id);
+                const body = { id }; body[f] = (u[f]||0) + val;
                 await fetch('/api/users', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
                 Admin.loadData();
             },
 
             deleteUser: async (id) => {
-                if(!confirm('Permanently delete this user?')) return;
+                if(!confirm('Delete user?')) return;
                 await fetch(`/api/users?id=${id}`, { method: 'DELETE' });
                 Admin.loadData();
             },
 
-            filterUsers: (val) => {
-                // To be implemented
-            },
-
-            // --- CERTIFICATES ---
             renderCerts: (list = Admin.data.certs) => {
-                const tbody = document.getElementById('table-certs');
-                if(list.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-500">No certificates found.</td></tr>'; return; }
-                
-                tbody.innerHTML = list.map(c => `
-                    <tr class="hover:bg-slate-800/50 transition">
+                const el = document.getElementById('table-certs');
+                if(list.length===0) { el.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-500">No certificates.</td></tr>'; return; }
+                el.innerHTML = list.map(c => `
+                    <tr class="hover:bg-slate-800/50 border-b border-slate-700">
                         <td class="px-6 py-4 font-mono text-yellow-500">${c.code}</td>
-                        <td class="px-6 py-4 font-bold text-white">${c.user_name}</td>
+                        <td class="px-6 py-4 text-white font-bold">${c.user_name}</td>
                         <td class="px-6 py-4 text-slate-300">${c.course_title}</td>
                         <td class="px-6 py-4 text-slate-400">${c.issue_date}</td>
-                        <td class="px-6 py-4 text-right">
-                            <button onclick="Admin.revokeCert(${c.id})" class="text-red-400 hover:text-red-300 text-xs border border-red-900 bg-red-900/20 px-2 py-1 rounded">Revoke</button>
-                        </td>
+                        <td class="px-6 py-4 text-right"><button onclick="Admin.revoke(${c.id})" class="text-red-400 text-xs hover:underline">Revoke</button></td>
                     </tr>
                 `).join('');
             },
 
             filterCerts: (val) => {
-                const term = val.toLowerCase();
-                const filtered = Admin.data.certs.filter(c => 
-                    c.user_name.toLowerCase().includes(term) || 
-                    c.code.toLowerCase().includes(term) ||
-                    c.course_title.toLowerCase().includes(term)
-                );
-                Admin.renderCerts(filtered);
+                const v = val.toLowerCase();
+                Admin.renderCerts(Admin.data.certs.filter(c => c.user_name.toLowerCase().includes(v) || c.code.toLowerCase().includes(v)));
             },
 
-            revokeCert: async (id) => {
-                if(!confirm('Revoke this certificate?')) return;
+            revoke: async (id) => {
+                if(!confirm('Revoke certificate?')) return;
                 await fetch(`/api/certificate?id=${id}`, { method: 'DELETE' });
-                location.reload();
+                Admin.loadData();
             },
 
-            // --- SHOP ---
             renderShop: () => {
-                const box = document.getElementById('list-shop');
-                if (Admin.data.shop.length === 0) { box.innerHTML = '<div class="col-span-full text-center text-slate-500">No items in shop. Click Add Item to start.</div>'; return; }
-                
-                box.innerHTML = Admin.data.shop.map(item => `
-                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col items-center text-center relative group">
-                        <div class="text-4xl mb-2">${item.icon}</div>
-                        <h4 class="font-bold text-white">${item.name}</h4>
-                        <div class="text-yellow-400 font-bold text-sm">🪙 ${item.price}</div>
-                        <div class="text-xs text-slate-500 mt-1 capitalize">${item.type}</div>
-                        <button onclick="Admin.deleteItem(${item.id})" class="absolute top-2 right-2 text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition">✕</button>
+                const el = document.getElementById('list-shop');
+                if(Admin.data.shop.length===0) { el.innerHTML = '<div class="col-span-full text-center text-slate-500">No items.</div>'; return; }
+                el.innerHTML = Admin.data.shop.map(i => `
+                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-center relative group">
+                        <div class="text-4xl mb-2">${i.icon}</div>
+                        <h4 class="font-bold text-white">${i.name}</h4>
+                        <div class="text-yellow-400 text-sm font-bold">🪙 ${i.price}</div>
+                        <button onclick="Admin.delItem(${i.id})" class="absolute top-2 right-2 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100">✕</button>
                     </div>
                 `).join('');
             },
 
             addItem: async () => {
-                const name = prompt("Item Name:"); if(!name) return;
-                const price = prompt("Price (Coins):", "100");
-                const icon = prompt("Icon (Emoji):", "🎁");
-                
-                await fetch('/api/shop', { 
-                    method: 'POST', 
-                    headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({ name, price: parseInt(price), icon, type: 'consumable' }) 
-                });
+                const name = prompt("Name:"); if(!name) return;
+                const price = prompt("Price:", "100");
+                const icon = prompt("Icon:", "🎁");
+                await fetch('/api/shop', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name, price:parseInt(price), icon}) });
                 Admin.loadData();
             },
 
-            deleteItem: async (id) => {
-                if(!confirm("Delete this item?")) return;
+            delItem: async (id) => {
+                if(!confirm('Delete item?')) return;
                 await fetch(`/api/shop?id=${id}`, { method: 'DELETE' });
                 Admin.loadData();
             },
 
-            // --- GACHA & SYSTEM ---
-            renderGachaConfig: () => { /* Logic */ },
-            saveGacha: async () => { alert('Gacha rates saved (Simulation)'); },
-
             seedData: async () => {
-                if(!confirm('Reset and Seed Demo Data? (Users, Items, Courses)')) return;
+                if(!confirm('Seed Data?')) return;
                 await fetch('/api/seed');
-                alert('Seeding Complete. Refreshing...');
                 location.reload();
             },
 
             renderCharts: () => {
                 if(typeof Chart === 'undefined') return;
-                const ctxUsers = document.getElementById('chart-users');
-                const ctxActivity = document.getElementById('chart-activity');
-                
-                if(ctxUsers) new Chart(ctxUsers, {
-                    type: 'line',
-                    data: {
-                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                        datasets: [{ label: 'New Users', data: [12, 19, 3, 5, 2, 30], borderColor: '#818cf8', tension: 0.4 }]
-                    },
-                    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
-                });
-                
-                if(ctxActivity) new Chart(ctxActivity, {
-                    type: 'bar',
-                    data: {
-                        labels: ['Math', 'Sci', 'Eng', 'Tech', 'Art'],
-                        datasets: [{ label: 'Lessons Completed', data: [50, 75, 20, 90, 15], backgroundColor: '#34d399', borderRadius: 5 }]
-                    },
-                    options: { plugins: { legend: { display: false } } }
-                });
+                // Simple charts...
             }
         };
-        document.addEventListener('DOMContentLoaded', Admin.init);
-    </script>
-
-            loadData: async () => {
-                try {
-                    const [uRes, aRes, vRes, cRes, sRes, confRes] = await Promise.all([
-                        fetch('/api/users'),
-                        fetch('/api/activities'),
-                        fetch('/api/visit'),
-                        fetch('/api/certificate?all=true'),
-                        fetch('/api/shop'),
-                        fetch('/api/config')
-                    ]);
-
-                    Admin.data.users = await uRes.json();
-                    Admin.data.activities = await aRes.json();
-                    const visits = await vRes.json();
-                    Admin.data.certs = await cRes.json();
-                    Admin.data.shop = await sRes.json();
-                    Admin.data.config = await confRes.json();
-
-                    document.getElementById('stat-users').innerText = Admin.data.users.length;
-                    document.getElementById('stat-courses').innerText = Admin.data.activities.length;
-                    document.getElementById('stat-visits').innerText = (visits.total_visits || 0).toLocaleString();
-                    document.getElementById('stat-certs').innerText = Admin.data.certs.length;
-                    document.getElementById('stat-items').innerText = Admin.data.shop.length;
-
-                    Admin.renderUsers();
-                    Admin.renderCerts();
-                    Admin.renderShop();
-                    Admin.renderGachaConfig();
-                    Admin.renderCharts();
-                } catch(e) { console.error("Load Data Error", e); }
-            },
-
-            // --- USER ACTIONS ---
-            renderUsers: () => {
-                const tbody = document.getElementById('table-users');
-                tbody.innerHTML = Admin.data.users.map(u => `
-                    <tr class="hover:bg-slate-800/50 transition">
-                        <td class="px-6 py-4 flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">${u.avatar||'👤'}</div>
-                            <div><div class="font-bold text-white">${u.name}</div><div class="text-xs text-slate-500">@${u.username}</div></div>
-                        </td>
-                        <td class="px-6 py-4"><span class="px-2 py-1 rounded text-xs font-bold uppercase bg-slate-700 text-slate-300">${u.role}</span></td>
-                        <td class="px-6 py-4 text-slate-300 text-xs">
-                            <div>Lvl ${u.level} • ${u.xp} XP</div>
-                            <div class="text-yellow-400">🪙 ${u.coins||0}</div>
-                        </td>
-                        <td class="px-6 py-4 text-right">
-                            <button onclick="Admin.modUser(${u.id}, 'coins', 1000)" class="text-yellow-400 hover:text-yellow-300 text-xs mr-2">+1k Coin</button>
-                            <button onclick="Admin.deleteUser(${u.id})" class="text-red-500 hover:text-red-400 text-xs">Del</button>
-                        </td>
-                    </tr>
-                `).join('');
-            },
-
-            modUser: async (id, field, amount) => {
-                const u = Admin.data.users.find(x => x.id === id);
-                if(!u) return;
-                const newVal = (u[field] || 0) + amount;
-                if(!confirm(`Add ${amount} ${field} to ${u.name}?`)) return;
-                
-                const body = { id };
-                body[field] = newVal;
-                await fetch('/api/users', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
-                Admin.loadData();
-            },
-
-            deleteUser: async (id) => {
-                if(!confirm('Permanently delete this user?')) return;
-                await fetch(`/api/users?id=${id}`, { method: 'DELETE' });
-                Admin.loadData();
-            },
-
-            // --- SHOP ACTIONS ---
-            renderShop: () => {
-                const box = document.getElementById('list-shop');
-                if (Admin.data.shop.length === 0) { box.innerHTML = '<div class="col-span-full text-center text-slate-500">No items. Click Add Item to start.</div>'; return; }
-                
-                box.innerHTML = Admin.data.shop.map(item => `
-                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col items-center text-center relative group">
-                        <div class="text-4xl mb-2">${item.icon}</div>
-                        <h4 class="font-bold text-white">${item.name}</h4>
-                        <div class="text-yellow-400 font-bold text-sm">🪙 ${item.price}</div>
-                        <div class="text-xs text-slate-500 mt-1 capitalize">${item.type}</div>
-                        <button onclick="Admin.deleteItem(${item.id})" class="absolute top-2 right-2 text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition">✕</button>
-                    </div>
-                `).join('');
-            },
-
-            addItem: async () => {
-                const name = prompt("Item Name:");
-                if(!name) return;
-                const price = prompt("Price:", "100");
-                const icon = prompt("Icon (Emoji):", "🎁");
-                
-                await fetch('/api/shop', { 
-                    method: 'POST', 
-                    headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({ name, price: parseInt(price), icon, type: 'consumable' }) 
-                });
-                Admin.loadData();
-            },
-
-            deleteItem: async (id) => {
-                if(!confirm("Delete this item?")) return;
-                await fetch(`/api/shop?id=${id}`, { method: 'DELETE' });
-                Admin.loadData();
-            },
-
-            // --- GACHA ACTIONS ---
-            renderGachaConfig: () => {
-                // Ideally load from Admin.data.config.gacha_rates
-                // For now, static UI but prepared for save
-            },
-
-            saveGacha: async () => {
-                // Gather inputs and save to /api/config
-                alert('Gacha rates saved (Simulation)');
-            },
-
-            // --- SEEDING ---
-            seedData: async () => {
-                if(!confirm('Reset and Seed Demo Data? (Users, Items, Courses)')) return;
-                await fetch('/api/seed');
-                alert('Seeding Complete. Refreshing...');
-                location.reload();
-            },
-
-            tab: (name) => {
-                ['overview', 'users', 'certs', 'shop', 'gacha', 'system'].forEach(t => {
-                    document.getElementById(`view-${t}`).classList.add('hidden');
-                    const btn = document.getElementById(`btn-${t}`);
-                    if(btn) btn.classList.remove('bg-slate-800', 'font-bold', 'text-white');
-                });
-                document.getElementById(`view-${name}`).classList.remove('hidden');
-                document.getElementById(`btn-${name}`).classList.add('bg-slate-800', 'font-bold', 'text-white');
-            },
-
-            filterCerts: (val) => { /*...*/ },
-            renderCerts: (list = Admin.data.certs) => {
-
-            addItem: async () => {
-                const name = prompt("Item Name:");
-                if(!name) return;
-                const price = prompt("Price (Coins):", "100");
-                const icon = prompt("Icon (Emoji):", "🎁");
-                
-                // In a real app, we'd use a modal and proper POST API
-                // For now, this is a placeholder for the UI logic
-                alert("Add Item feature requires API update (Coming Soon)");
-            },
-
-            deleteItem: async (id) => {
-                if(!confirm("Delete this item?")) return;
-                // alert("Delete API pending");
-            },
-
-            renderCerts: (list = Admin.data.certs) => {
-                const tbody = document.getElementById('table-certs');
-                if(list.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-500">No certificates found.</td></tr>'; return; }
-                
-                tbody.innerHTML = list.map(c => `
-                    <tr class="hover:bg-slate-800/50 transition">
-                        <td class="px-6 py-4 font-mono text-yellow-500">${c.code}</td>
-                        <td class="px-6 py-4 font-bold text-white">${c.user_name}</td>
-                        <td class="px-6 py-4 text-slate-300">${c.course_title}</td>
-                        <td class="px-6 py-4 text-slate-400">${c.issue_date}</td>
-                        <td class="px-6 py-4 text-right">
-                            <button onclick="Admin.revokeCert(${c.id})" class="text-red-400 hover:text-red-300 text-xs border border-red-900 bg-red-900/20 px-2 py-1 rounded">Revoke</button>
-                        </td>
-                    </tr>
-                `).join('');
-            },
-
-            filterCerts: (val) => {
-                const term = val.toLowerCase();
-                const filtered = Admin.data.certs.filter(c => 
-                    c.user_name.toLowerCase().includes(term) || 
-                    c.code.toLowerCase().includes(term) ||
-                    c.course_title.toLowerCase().includes(term)
-                );
-                Admin.renderCerts(filtered);
-            },
-
-            revokeCert: async (id) => {
-                if(!confirm('Revoke this certificate? This action cannot be undone.')) return;
-                await fetch(`/api/certificate?id=${id}`, { method: 'DELETE' });
-                location.reload();
-            },
-
-            renderUsers: () => {
-
-                const tbody = document.getElementById('table-users');
-                tbody.innerHTML = Admin.data.users.map(u => `
-                    <tr class="hover:bg-slate-800/50 transition">
-                        <td class="px-6 py-4 flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">${u.avatar||'👤'}</div>
-                            <div>
-                                <div class="font-bold text-white">${u.name}</div>
-                                <div class="text-xs text-slate-500">@${u.username}</div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4"><span class="px-2 py-1 rounded text-xs font-bold uppercase ${u.role==='admin'?'bg-red-900 text-red-300':(u.role==='teacher'?'bg-yellow-900 text-yellow-300':'bg-blue-900 text-blue-300')}">${u.role}</span></td>
-                        <td class="px-6 py-4 text-slate-300">Lvl ${u.level} • ${u.xp} XP</td>
-                        <td class="px-6 py-4"><span class="text-green-400 text-xs">● Active</span></td>
-                        <td class="px-6 py-4 text-right">
-                            <button onclick="Admin.deleteUser(${u.id})" class="text-slate-500 hover:text-red-400 transition">🗑️</button>
-                        </td>
-                    </tr>
-                `).join('');
-            },
-
-            deleteUser: async (id) => {
-                if(!confirm('Permanently delete this user?')) return;
-                await fetch(`/api/users?id=${id}`, { method: 'DELETE' });
-                location.reload();
-            },
-
-            renderCharts: () => {
-                // Simple Mock Charts using Chart.js
-                new Chart(document.getElementById('chart-users'), {
-                    type: 'line',
-                    data: {
-                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                        datasets: [{ label: 'New Users', data: [12, 19, 3, 5, 2, 30], borderColor: '#818cf8', tension: 0.4 }]
-                    },
-                    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
-                });
-                new Chart(document.getElementById('chart-activity'), {
-                    type: 'bar',
-                    data: {
-                        labels: ['Math', 'Sci', 'Eng', 'Tech', 'Art'],
-                        datasets: [{ label: 'Lessons Completed', data: [50, 75, 20, 90, 15], backgroundColor: '#34d399', borderRadius: 5 }]
-                    },
-                    options: { plugins: { legend: { display: false } } }
-                });
-            }
-        };
-
         document.addEventListener('DOMContentLoaded', Admin.init);
     </script>
 </body>
