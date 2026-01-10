@@ -167,17 +167,23 @@
                 Learn.renderSidebar(); // Update active state
 
                 if(lesson.type === 'video') {
-                    // Extract Video ID
-                    let vidId = '';
-                    try {
-                        const url = new URL(lesson.url);
-                        if(url.hostname.includes('youtube.com')) vidId = url.searchParams.get('v');
-                        else if(url.hostname.includes('youtu.be')) vidId = url.pathname.slice(1);
-                    } catch(e) {}
+                    // Extract Video ID or use direct URL
+                    let contentHtml = '';
+                    if (lesson.url.includes('.mp4') || lesson.url.includes('.webm') || lesson.url.includes('blob.vercel')) {
+                        contentHtml = `<video controls class="w-full h-full" src="${lesson.url}"></video>`;
+                    } else {
+                        let vidId = '';
+                        try {
+                            const url = new URL(lesson.url);
+                            if(url.hostname.includes('youtube.com')) vidId = url.searchParams.get('v');
+                            else if(url.hostname.includes('youtu.be')) vidId = url.pathname.slice(1);
+                        } catch(e) {}
+                        contentHtml = vidId ? `<iframe class="w-full h-full" src="https://www.youtube.com/embed/${vidId}" frameborder="0" allowfullscreen></iframe>` : '<div class="flex items-center justify-center h-full text-slate-500">Invalid Video URL</div>';
+                    }
 
                     stage.innerHTML = `
                         <div class="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl mb-6">
-                            ${vidId ? `<iframe class="w-full h-full" src="https://www.youtube.com/embed/${vidId}" frameborder="0" allowfullscreen></iframe>` : '<div class="flex items-center justify-center h-full text-slate-500">Invalid Video URL</div>'}
+                            ${contentHtml}
                         </div>
                         <div class="text-center">
                             <button onclick="Learn.markComplete()" class="bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded-full font-bold shadow-lg transition transform hover:scale-105">
@@ -185,7 +191,7 @@
                             </button>
                         </div>
                     `;
-                } else if(lesson.type === 'text') {
+                } else if(lesson.type === 'article' || lesson.type === 'text') {
                     stage.innerHTML = `
                         <div class="prose prose-invert max-w-none bg-slate-900 p-8 rounded-2xl border border-slate-800 shadow-xl">
                             ${lesson.body.replace(/\n/g, '<br>')}
@@ -193,6 +199,30 @@
                         <div class="text-center mt-8">
                             <button onclick="Learn.markComplete()" class="bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded-full font-bold shadow-lg transition transform hover:scale-105">
                                 ✅ I have read this
+                            </button>
+                        </div>
+                    `;
+                } else if(lesson.type === 'simulation') {
+                    stage.innerHTML = `
+                        <div class="w-full h-[600px] bg-slate-900 rounded-2xl overflow-hidden shadow-2xl mb-6 border border-slate-700">
+                            <iframe src="${lesson.url}" class="w-full h-full border-none"></iframe>
+                        </div>
+                        <div class="text-center">
+                            <button onclick="Learn.markComplete()" class="bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded-full font-bold shadow-lg transition transform hover:scale-105">
+                                ✅ Complete Simulation
+                            </button>
+                        </div>
+                    `;
+                } else if(lesson.type === 'file') {
+                    stage.innerHTML = `
+                        <div class="flex flex-col items-center justify-center py-20 bg-slate-900 rounded-2xl border border-slate-800 shadow-xl">
+                            <div class="text-6xl mb-4">📄</div>
+                            <h3 class="text-2xl font-bold text-white mb-2">${lesson.filename || 'Download Resource'}</h3>
+                            <a href="${lesson.url}" target="_blank" class="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-xl font-bold shadow-lg mb-8 flex items-center gap-2">
+                                ⬇ Download File
+                            </a>
+                            <button onclick="Learn.markComplete()" class="text-sm text-slate-400 hover:text-white underline">
+                                Mark as Received
                             </button>
                         </div>
                     `;
