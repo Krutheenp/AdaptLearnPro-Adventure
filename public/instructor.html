@@ -267,42 +267,53 @@
             },
 
             save: async () => {
-                // 1. Fetch User Role first to ensure accuracy
+                const btn = document.querySelector('button[onclick="CourseEditor.save()"]');
+                const originalText = btn.innerText;
+                btn.innerText = "Saving...";
+                btn.disabled = true;
+
+                // 1. Prepare User Role & ID
                 let role = 'teacher';
+                const uid = sessionStorage.getItem('user_id');
                 try {
-                    const uid = sessionStorage.getItem('user_id');
                     const uRes = await fetch(`/api/analytics?userId=${uid}`);
                     const uData = await uRes.json();
                     if(uData.user && uData.user.role) role = uData.user.role;
                 } catch(e) {}
 
+                // 2. Prepare Data Payload
                 const body = {
-                    title: document.getElementById('c-title').value,
+                    title: document.getElementById('c-title').value.trim(),
                     category: document.getElementById('c-category').value,
                     type: document.getElementById('c-type').value,
                     duration: document.getElementById('c-duration').value,
                     difficulty: document.getElementById('c-difficulty').value,
                     credits: parseInt(document.getElementById('c-credits').value) || 0,
-                    price: parseInt(document.getElementById('c-price').value) || 0, // New
-                    course_code: document.getElementById('c-code').value,
+                    price: parseInt(document.getElementById('c-price').value) || 0,
+                    course_code: document.getElementById('c-code').value.trim(),
                     certificate_theme: document.getElementById('c-cert-theme').value,
-                    content: CourseEditor.modules, // Flat for now, logic handles structure
-                    creator_id: sessionStorage.getItem('user_id'),
-                    requester_id: sessionStorage.getItem('user_id'), 
+                    
+                    // Content Logic: Ensure it's an Array of Units
+                    content: (CourseEditor.curriculum && CourseEditor.curriculum.length > 0) 
+                             ? CourseEditor.curriculum 
+                             : CourseEditor.modules, // Fallback
+
+                    creator_id: parseInt(uid) || null, // Ensure Int
+                    requester_id: uid, 
                     requester_role: role 
                 };
 
-                // Handle nested curriculum if present
-                if (CourseEditor.curriculum && CourseEditor.curriculum.length > 0) {
-                    body.content = CourseEditor.curriculum;
+                if(!body.title) {
+                    alert('Please enter a course title.');
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                    return;
                 }
-
-                if(!body.title) return alert('Title is required');
 
                 const method = CourseEditor.currentId ? 'PUT' : 'POST';
                 if(CourseEditor.currentId) body.id = CourseEditor.currentId;
 
-                console.log("Saving Course Payload:", body); // Debug
+                console.log("Submitting Course:", body);
 
                 try {
                     const res = await fetch('/api/activities', {
@@ -310,18 +321,20 @@
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(body)
                     });
+                    
                     const result = await res.json();
                     
                     if(res.ok && result.success) {
-                        alert('Course saved successfully!');
+                        alert(`Course ${CourseEditor.currentId ? 'updated' : 'created'} successfully!`);
                         location.reload();
                     } else {
-                        alert(`Failed to save: ${result.error || 'Unknown Error'}`);
-                        console.error('Save Error:', result);
+                        throw new Error(result.error || result.details || 'Unknown server error');
                     }
                 } catch(e) { 
-                    alert('Network Error saving course'); 
-                    console.error(e);
+                    console.error("Save Failed:", e);
+                    alert(`Failed to save: ${e.message}`);
+                    btn.innerText = originalText;
+                    btn.disabled = false;
                 }
             },
 

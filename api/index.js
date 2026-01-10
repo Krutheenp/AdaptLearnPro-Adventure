@@ -568,15 +568,18 @@ module.exports = async (req, res) => {
                 if (!db) return res.json({ success: true, id: Date.now(), message: "Mock Create OK" });
 
                 try {
-                    const contentJson = JSON.stringify(body.content || []);
-                    // Ensure creator_id is stored as Integer
+                    // Safe Content Parsing
+                    let contentJson = '[]';
+                    if (typeof body.content === 'object') contentJson = JSON.stringify(body.content);
+                    else if (typeof body.content === 'string') contentJson = body.content;
+
                     const creatorId = parseInt(body.creator_id) || null;
 
                     await runQuery(`
-                        INSERT INTO activities (title, type, difficulty, duration, content, category, credits, course_code, certificate_theme, creator_id) 
-                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                        INSERT INTO activities (title, type, difficulty, duration, content, category, credits, course_code, certificate_theme, price, creator_id) 
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                     `, [
-                        body.title || 'Untitled Course', 
+                        body.title || 'Untitled', 
                         body.type || 'mixed', 
                         body.difficulty || 'Easy', 
                         body.duration || '1h', 
@@ -585,6 +588,7 @@ module.exports = async (req, res) => {
                         body.credits || 1, 
                         body.course_code || '', 
                         body.certificate_theme || 'classic',
+                        body.price || 0,
                         creatorId
                     ]);
                     return res.json({ success: true });
@@ -604,18 +608,23 @@ module.exports = async (req, res) => {
                     const existing = await runQuery("SELECT creator_id FROM activities WHERE id = $1", [body.id]);
                     if (!existing?.[0]) return res.status(404).json({ error: "Course not found" });
                     
-                    // Allow if Admin or Owner
-                    const isOwner = String(existing[0].creator_id) === String(body.requester_id);
+                    const ownerId = existing[0].creator_id;
+                    const reqId = parseInt(body.requester_id);
                     const isAdmin = body.requester_role === 'admin';
                     
-                    if (!isOwner && !isAdmin) {
-                        return res.status(403).json({ error: `Permission Denied. Owner: ${existing[0].creator_id}, You: ${body.requester_id}` });
+                    // Allow if: Admin OR Owner matches Request ID OR (Edge Case) Course has no owner
+                    if (!isAdmin && ownerId && ownerId !== reqId) {
+                        return res.status(403).json({ error: `Permission Denied. Not your course.` });
                     }
 
-                    const contentJson = JSON.stringify(body.content || []);
+                    // Safe Content Parsing
+                    let contentJson = '[]';
+                    if (typeof body.content === 'object') contentJson = JSON.stringify(body.content);
+                    else if (typeof body.content === 'string') contentJson = body.content;
+
                     await runQuery(`
-                        UPDATE activities SET title=$1, type=$2, difficulty=$3, duration=$4, content=$5, category=$6, credits=$7, course_code=$8, certificate_theme=$9 
-                        WHERE id=$10
+                        UPDATE activities SET title=$1, type=$2, difficulty=$3, duration=$4, content=$5, category=$6, credits=$7, course_code=$8, certificate_theme=$9, price=$10 
+                        WHERE id=$11
                     `, [
                         body.title, 
                         body.type, 
@@ -626,6 +635,7 @@ module.exports = async (req, res) => {
                         body.credits, 
                         body.course_code,
                         body.certificate_theme || 'classic',
+                        body.price || 0,
                         body.id
                     ]);
                     return res.json({ success: true });
