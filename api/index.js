@@ -619,29 +619,38 @@ module.exports = async (req, res) => {
 
                     // Safe Content Parsing
                     let contentJson = '[]';
-                    if (typeof body.content === 'object') contentJson = JSON.stringify(body.content);
-                    else if (typeof body.content === 'string') contentJson = body.content;
+                    try {
+                        if (typeof body.content === 'object') contentJson = JSON.stringify(body.content);
+                        else if (typeof body.content === 'string') contentJson = body.content;
+                    } catch(e) { contentJson = '[]'; }
 
-                    // Note: Postgres RETURNING clause is handy
+                    // Ensure Integers
+                    const price = parseInt(body.price) || 0;
+                    const credits = parseInt(body.credits) || 0;
+                    const courseId = parseInt(body.id);
+
+                    if (!courseId) return res.status(400).json({ error: "Invalid Course ID" });
+
+                    // Use db.query directly for RETURNING support
                     const result = await db.query(`
                         UPDATE activities SET title=$1, type=$2, difficulty=$3, duration=$4, content=$5, category=$6, credits=$7, course_code=$8, certificate_theme=$9, price=$10 
                         WHERE id=$11 RETURNING id
                     `, [
-                        body.title, 
-                        body.type, 
-                        body.difficulty, 
-                        body.duration, 
+                        body.title || 'Untitled', 
+                        body.type || 'mixed', 
+                        body.difficulty || 'Easy', 
+                        body.duration || '1h', 
                         contentJson, 
-                        body.category, 
-                        body.credits, 
-                        body.course_code,
+                        body.category || 'General', 
+                        credits, 
+                        body.course_code || '', 
                         body.certificate_theme || 'classic',
-                        body.price || 0,
-                        body.id
+                        price,
+                        courseId
                     ]);
                     
                     if (result.rowCount > 0) return res.json({ success: true, updated: result.rows[0].id });
-                    else return res.status(404).json({ error: "Update failed: Course ID not found or no changes made." });
+                    else return res.status(404).json({ error: "Update failed: Course ID not found." });
 
                 } catch(e) {
                     console.error("Update Course Error:", e);
