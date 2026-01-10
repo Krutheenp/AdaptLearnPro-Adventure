@@ -94,13 +94,56 @@ module.exports = async (req, res) => {
                     logs.push("ERR: " + e.message);
                 }
             }
-            // Explicit Migration for existing DBs
+            // Explicit Migrations for existing DBs
             try { await db.query("ALTER TABLE activities ADD COLUMN certificate_theme TEXT DEFAULT 'classic'"); } catch(e) {}
             try { await db.query("ALTER TABLE activities ADD COLUMN price INT DEFAULT 0"); } catch(e) {}
             try { await db.query("CREATE TABLE IF NOT EXISTS enrollments (id SERIAL PRIMARY KEY, user_id INT REFERENCES users(id) ON DELETE CASCADE, activity_id INT REFERENCES activities(id) ON DELETE CASCADE, enrolled_at TEXT)"); } catch(e) {}
             try { await db.query("CREATE UNIQUE INDEX IF NOT EXISTS idx_enrollments_unique ON enrollments(user_id, activity_id)"); } catch(e) {}
+            try { await db.query("CREATE TABLE IF NOT EXISTS system_config (key TEXT PRIMARY KEY, value TEXT)"); } catch(e) {}
 
             return res.json({ success: true, logs });
+        }
+
+        // --- SHOP MANAGEMENT (Admin) ---
+        if (pathname === '/api/shop') {
+            // GET Items
+            if (method === 'GET') {
+                if (db) {
+                    const items = await runQuery("SELECT * FROM items ORDER BY price ASC");
+                    return res.json(items || []);
+                }
+                return res.json(MOCK_DB.items || []);
+            }
+            // POST Add Item
+            if (method === 'POST') {
+                const { name, price, icon, type, description } = req.body;
+                if(db) await runQuery("INSERT INTO items (name, price, icon, type, description) VALUES ($1, $2, $3, $4, $5)", [name, price, icon, type, description || '']);
+                return res.json({ success: true });
+            }
+            // DELETE Item
+            if (method === 'DELETE') {
+                const id = url.searchParams.get("id");
+                if(db) await runQuery("DELETE FROM items WHERE id = $1", [id]);
+                return res.json({ success: true });
+            }
+        }
+
+        // --- SYSTEM CONFIG (Gacha Rates etc.) ---
+        if (pathname === '/api/config') {
+            if (method === 'GET') {
+                if(db) {
+                    const rows = await runQuery("SELECT * FROM system_config");
+                    const config = {};
+                    rows.forEach(r => config[r.key] = r.value);
+                    return res.json(config);
+                }
+                return res.json({});
+            }
+            if (method === 'POST') {
+                const { key, value } = req.body;
+                if(db) await runQuery("INSERT INTO system_config (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2", [key, JSON.stringify(value)]);
+                return res.json({ success: true });
+            }
         }
 
         // --- ENROLL / UNLOCK COURSE ---

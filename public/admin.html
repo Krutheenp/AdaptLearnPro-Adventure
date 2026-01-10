@@ -200,7 +200,7 @@
 
     <script>
         const Admin = {
-            data: { users: [], activities: [], certs: [], shop: [] },
+            data: { users: [], activities: [], certs: [], shop: [], config: {} },
 
             init: async () => {
                 const uid = sessionStorage.getItem('user_id');
@@ -227,12 +227,13 @@
 
             loadData: async () => {
                 try {
-                    const [uRes, aRes, vRes, cRes, sRes] = await Promise.all([
+                    const [uRes, aRes, vRes, cRes, sRes, confRes] = await Promise.all([
                         fetch('/api/users'),
                         fetch('/api/activities'),
                         fetch('/api/visit'),
                         fetch('/api/certificate?all=true'),
-                        fetch('/api/shop')
+                        fetch('/api/shop'),
+                        fetch('/api/config')
                     ]);
 
                     Admin.data.users = await uRes.json();
@@ -240,6 +241,7 @@
                     const visits = await vRes.json();
                     Admin.data.certs = await cRes.json();
                     Admin.data.shop = await sRes.json();
+                    Admin.data.config = await confRes.json();
 
                     document.getElementById('stat-users').innerText = Admin.data.users.length;
                     document.getElementById('stat-courses').innerText = Admin.data.activities.length;
@@ -250,8 +252,104 @@
                     Admin.renderUsers();
                     Admin.renderCerts();
                     Admin.renderShop();
+                    Admin.renderGachaConfig();
                     Admin.renderCharts();
                 } catch(e) { console.error("Load Data Error", e); }
+            },
+
+            // --- USER ACTIONS ---
+            renderUsers: () => {
+                const tbody = document.getElementById('table-users');
+                tbody.innerHTML = Admin.data.users.map(u => `
+                    <tr class="hover:bg-slate-800/50 transition">
+                        <td class="px-6 py-4 flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">${u.avatar||'👤'}</div>
+                            <div><div class="font-bold text-white">${u.name}</div><div class="text-xs text-slate-500">@${u.username}</div></div>
+                        </td>
+                        <td class="px-6 py-4"><span class="px-2 py-1 rounded text-xs font-bold uppercase bg-slate-700 text-slate-300">${u.role}</span></td>
+                        <td class="px-6 py-4 text-slate-300 text-xs">
+                            <div>Lvl ${u.level} • ${u.xp} XP</div>
+                            <div class="text-yellow-400">🪙 ${u.coins||0}</div>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <button onclick="Admin.modUser(${u.id}, 'coins', 1000)" class="text-yellow-400 hover:text-yellow-300 text-xs mr-2">+1k Coin</button>
+                            <button onclick="Admin.deleteUser(${u.id})" class="text-red-500 hover:text-red-400 text-xs">Del</button>
+                        </td>
+                    </tr>
+                `).join('');
+            },
+
+            modUser: async (id, field, amount) => {
+                const u = Admin.data.users.find(x => x.id === id);
+                if(!u) return;
+                const newVal = (u[field] || 0) + amount;
+                if(!confirm(`Add ${amount} ${field} to ${u.name}?`)) return;
+                
+                const body = { id };
+                body[field] = newVal;
+                await fetch('/api/users', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+                Admin.loadData();
+            },
+
+            deleteUser: async (id) => {
+                if(!confirm('Permanently delete this user?')) return;
+                await fetch(`/api/users?id=${id}`, { method: 'DELETE' });
+                Admin.loadData();
+            },
+
+            // --- SHOP ACTIONS ---
+            renderShop: () => {
+                const box = document.getElementById('list-shop');
+                if (Admin.data.shop.length === 0) { box.innerHTML = '<div class="col-span-full text-center text-slate-500">No items. Click Add Item to start.</div>'; return; }
+                
+                box.innerHTML = Admin.data.shop.map(item => `
+                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col items-center text-center relative group">
+                        <div class="text-4xl mb-2">${item.icon}</div>
+                        <h4 class="font-bold text-white">${item.name}</h4>
+                        <div class="text-yellow-400 font-bold text-sm">🪙 ${item.price}</div>
+                        <div class="text-xs text-slate-500 mt-1 capitalize">${item.type}</div>
+                        <button onclick="Admin.deleteItem(${item.id})" class="absolute top-2 right-2 text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition">✕</button>
+                    </div>
+                `).join('');
+            },
+
+            addItem: async () => {
+                const name = prompt("Item Name:");
+                if(!name) return;
+                const price = prompt("Price:", "100");
+                const icon = prompt("Icon (Emoji):", "🎁");
+                
+                await fetch('/api/shop', { 
+                    method: 'POST', 
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ name, price: parseInt(price), icon, type: 'consumable' }) 
+                });
+                Admin.loadData();
+            },
+
+            deleteItem: async (id) => {
+                if(!confirm("Delete this item?")) return;
+                await fetch(`/api/shop?id=${id}`, { method: 'DELETE' });
+                Admin.loadData();
+            },
+
+            // --- GACHA ACTIONS ---
+            renderGachaConfig: () => {
+                // Ideally load from Admin.data.config.gacha_rates
+                // For now, static UI but prepared for save
+            },
+
+            saveGacha: async () => {
+                // Gather inputs and save to /api/config
+                alert('Gacha rates saved (Simulation)');
+            },
+
+            // --- SEEDING ---
+            seedData: async () => {
+                if(!confirm('Reset and Seed Demo Data? (Users, Items, Courses)')) return;
+                await fetch('/api/seed');
+                alert('Seeding Complete. Refreshing...');
+                location.reload();
             },
 
             tab: (name) => {
@@ -264,20 +362,8 @@
                 document.getElementById(`btn-${name}`).classList.add('bg-slate-800', 'font-bold', 'text-white');
             },
 
-            renderShop: () => {
-                const box = document.getElementById('list-shop');
-                if (Admin.data.shop.length === 0) { box.innerHTML = '<div class="col-span-full text-center text-slate-500">No items in shop.</div>'; return; }
-                
-                box.innerHTML = Admin.data.shop.map(item => `
-                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col items-center text-center relative group">
-                        <div class="text-4xl mb-2">${item.icon}</div>
-                        <h4 class="font-bold text-white">${item.name}</h4>
-                        <div class="text-yellow-400 font-bold text-sm">🪙 ${item.price}</div>
-                        <div class="text-xs text-slate-500 mt-1 capitalize">${item.type}</div>
-                        <button onclick="Admin.deleteItem(${item.id})" class="absolute top-2 right-2 text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition">✕</button>
-                    </div>
-                `).join('');
-            },
+            filterCerts: (val) => { /*...*/ },
+            renderCerts: (list = Admin.data.certs) => {
 
             addItem: async () => {
                 const name = prompt("Item Name:");
