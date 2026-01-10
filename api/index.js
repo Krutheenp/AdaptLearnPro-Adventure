@@ -1,34 +1,30 @@
-// Vercel API Handler - STABLE VERSION
+// Vercel API Handler - Production Mode (Postgres)
 const { sql } = require('@vercel/postgres');
-
-// --- MOCK DB ---
-const MOCK = {
-    users: [
-        { id: 1, username: 'admin', password: '123', name: 'Super Admin', role: 'admin', level: 99, coins: 9999, avatar: '👑' },
-        { id: 2, username: 'teacher', password: '123', name: 'Prof. Albus', role: 'teacher', level: 50, coins: 5000, avatar: '🧙‍♂️' },
-        { id: 3, username: 'student', password: '123', name: 'Novice Hero', role: 'student', level: 5, coins: 500, avatar: '🙂' }
-    ],
-    activities: [
-        { id: 1, title: 'Math Adventure', type: 'game', category: 'Mathematics', credits: 3 },
-        { id: 2, title: 'Science Lab', type: 'video', category: 'Science', credits: 2 }
-    ],
-    items: [
-        { id: 1, name: 'Streak Freeze', price: 50, icon: '🧊' },
-        { id: 2, name: 'Golden Frame', price: 500, icon: '🖼️' }
-    ]
-};
 
 module.exports = async (req, res) => {
     const { method } = req;
     const url = new URL(req.url, `http://${req.headers.host}`);
     const pathname = url.pathname;
 
-    res.setHeader('Content-Type', 'application/json');
+    // Enable CORS for frontend access
+    res.setHeader('Access-Control-Allow-Credentials', true);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader(
+        'Access-Control-Allow-Headers',
+        'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+    );
 
-    // 1. Force Mock Mode if Env Missing (Prevents Crash)
-    const useMock = !process.env.POSTGRES_URL;
+    if (method === 'OPTIONS') {
+        res.status(200).end();
+        return;
+    }
 
     try {
+        // --- CHECK CONNECTION ---
+        if (!process.env.POSTGRES_URL) {
+            throw new Error("Database Configuration Missing: POSTGRES_URL not found. Please link Vercel Postgres in settings.");
+        }
         // --- LOGIN ---
         if (pathname === '/api/login' && method === 'POST') {
             const { username, password } = req.body;
