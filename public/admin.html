@@ -30,12 +30,18 @@
             <button onclick="Admin.tab('certs')" class="w-full text-left px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3" id="btn-certs">
                 🏅 Certificates
             </button>
+            <button onclick="Admin.tab('shop')" class="w-full text-left px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3" id="btn-shop">
+                🛍️ Shop & Rewards
+            </button>
+            <button onclick="Admin.tab('gacha')" class="w-full text-left px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3" id="btn-gacha">
+                🎲 Gacha System
+            </button>
             <button onclick="Admin.tab('system')" class="w-full text-left px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3" id="btn-system">
                 ⚙️ System Settings
             </button>
             <div class="border-t border-slate-800 my-4"></div>
             <a href="/instructor.html" class="w-full text-left px-4 py-3 rounded-lg text-yellow-500 hover:bg-slate-800 hover:text-yellow-400 transition flex items-center gap-3">
-                🪄 Course Studio
+                🪄 Instructor Studio
             </a>
             <a href="/index.html" class="w-full text-left px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition flex items-center gap-3">
                 🏠 Back to App
@@ -69,8 +75,8 @@
                     <div class="text-3xl font-bold text-yellow-400 mt-2" id="stat-certs">-</div>
                 </div>
                 <div class="glass p-6 rounded-2xl">
-                    <div class="text-slate-400 text-sm uppercase font-bold">Total Visitors</div>
-                    <div class="text-3xl font-bold text-green-400 mt-2" id="stat-visits">-</div>
+                    <div class="text-slate-400 text-sm uppercase font-bold">Revenue (Coins)</div>
+                    <div class="text-3xl font-bold text-green-400 mt-2" id="stat-revenue">0</div>
                 </div>
             </div>
 
@@ -115,6 +121,61 @@
             </div>
         </div>
 
+        <div id="view-shop" class="hidden space-y-6">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-white">Shop & Rewards</h1>
+                <button onclick="Admin.addItem()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-bold">+ Add Item</button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="list-shop">
+                <!-- Items injected here -->
+            </div>
+        </div>
+
+        <div id="view-gacha" class="hidden space-y-6">
+            <h1 class="text-3xl font-bold text-white mb-6">Gacha System Config</h1>
+            <div class="glass p-8 rounded-2xl max-w-3xl">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="font-bold text-white text-xl">Standard Banner</h3>
+                    <button class="text-xs bg-slate-700 px-3 py-1 rounded text-slate-300">Reset Rates</button>
+                </div>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center p-4 bg-slate-900 rounded-xl border border-yellow-500/30">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">⭐⭐⭐</span>
+                            <div>
+                                <div class="font-bold text-yellow-400">Rare (SSR)</div>
+                                <div class="text-xs text-slate-500">XP Boosters, Exclusive Frames</div>
+                            </div>
+                        </div>
+                        <input type="number" value="5" class="w-16 bg-slate-800 text-center rounded border border-slate-600 text-white py-1"> <span class="text-slate-400">%</span>
+                    </div>
+                    <div class="flex justify-between items-center p-4 bg-slate-900 rounded-xl border border-slate-700">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">⭐⭐</span>
+                            <div>
+                                <div class="font-bold text-white">Uncommon (SR)</div>
+                                <div class="text-xs text-slate-500">Standard Frames, Small Boosts</div>
+                            </div>
+                        </div>
+                        <input type="number" value="25" class="w-16 bg-slate-800 text-center rounded border border-slate-600 text-white py-1"> <span class="text-slate-400">%</span>
+                    </div>
+                    <div class="flex justify-between items-center p-4 bg-slate-900 rounded-xl border border-slate-700">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">⭐</span>
+                            <div>
+                                <div class="font-bold text-slate-400">Common (R)</div>
+                                <div class="text-xs text-slate-500">Consumables, Tips</div>
+                            </div>
+                        </div>
+                        <input type="number" value="70" class="w-16 bg-slate-800 text-center rounded border border-slate-600 text-white py-1"> <span class="text-slate-400">%</span>
+                    </div>
+                </div>
+                <div class="mt-8 pt-6 border-t border-slate-700 text-right">
+                    <button class="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-lg font-bold shadow-lg">Save Configuration</button>
+                </div>
+            </div>
+        </div>
+
         <div id="view-system" class="hidden space-y-6">
             <h1 class="text-3xl font-bold text-white mb-6">System Settings</h1>
             <div class="glass p-8 rounded-2xl max-w-2xl space-y-6">
@@ -139,15 +200,13 @@
 
     <script>
         const Admin = {
-            data: { users: [], activities: [], certs: [] },
+            data: { users: [], activities: [], certs: [], shop: [] },
 
             init: async () => {
-                // 1. Security Check
                 const uid = sessionStorage.getItem('user_id');
                 if (!uid) { location.href = '/login.html'; return; }
 
                 try {
-                    // Double check role via API (Frontend check isn't enough)
                     const res = await fetch(`/api/analytics?userId=${uid}`);
                     const data = await res.json();
                     
@@ -167,37 +226,73 @@
             },
 
             loadData: async () => {
-                // Fetch Overview Data + Certs
-                const [uRes, aRes, vRes, cRes] = await Promise.all([
-                    fetch('/api/users'),
-                    fetch('/api/activities'),
-                    fetch('/api/visit'),
-                    fetch('/api/certificate?all=true') // Need to update API for this
-                ]);
+                try {
+                    const [uRes, aRes, vRes, cRes, sRes] = await Promise.all([
+                        fetch('/api/users'),
+                        fetch('/api/activities'),
+                        fetch('/api/visit'),
+                        fetch('/api/certificate?all=true'),
+                        fetch('/api/shop')
+                    ]);
 
-                Admin.data.users = await uRes.json();
-                Admin.data.activities = await aRes.json();
-                const visits = await vRes.json();
-                Admin.data.certs = await cRes.json(); // Array of certs
+                    Admin.data.users = await uRes.json();
+                    Admin.data.activities = await aRes.json();
+                    const visits = await vRes.json();
+                    Admin.data.certs = await cRes.json();
+                    Admin.data.shop = await sRes.json();
 
-                // Update Stats
-                document.getElementById('stat-users').innerText = Admin.data.users.length;
-                document.getElementById('stat-courses').innerText = Admin.data.activities.length;
-                document.getElementById('stat-visits').innerText = (visits.total_visits || 0).toLocaleString();
-                document.getElementById('stat-certs').innerText = Admin.data.certs.length;
+                    document.getElementById('stat-users').innerText = Admin.data.users.length;
+                    document.getElementById('stat-courses').innerText = Admin.data.activities.length;
+                    document.getElementById('stat-visits').innerText = (visits.total_visits || 0).toLocaleString();
+                    document.getElementById('stat-certs').innerText = Admin.data.certs.length;
+                    document.getElementById('stat-items').innerText = Admin.data.shop.length;
 
-                Admin.renderUsers();
-                Admin.renderCerts();
-                Admin.renderCharts();
+                    Admin.renderUsers();
+                    Admin.renderCerts();
+                    Admin.renderShop();
+                    Admin.renderCharts();
+                } catch(e) { console.error("Load Data Error", e); }
             },
 
             tab: (name) => {
-                ['overview', 'users', 'certs', 'system'].forEach(t => {
+                ['overview', 'users', 'certs', 'shop', 'gacha', 'system'].forEach(t => {
                     document.getElementById(`view-${t}`).classList.add('hidden');
-                    document.getElementById(`btn-${t}`).classList.remove('bg-slate-800', 'font-bold', 'text-white');
+                    const btn = document.getElementById(`btn-${t}`);
+                    if(btn) btn.classList.remove('bg-slate-800', 'font-bold', 'text-white');
                 });
                 document.getElementById(`view-${name}`).classList.remove('hidden');
                 document.getElementById(`btn-${name}`).classList.add('bg-slate-800', 'font-bold', 'text-white');
+            },
+
+            renderShop: () => {
+                const box = document.getElementById('list-shop');
+                if (Admin.data.shop.length === 0) { box.innerHTML = '<div class="col-span-full text-center text-slate-500">No items in shop.</div>'; return; }
+                
+                box.innerHTML = Admin.data.shop.map(item => `
+                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col items-center text-center relative group">
+                        <div class="text-4xl mb-2">${item.icon}</div>
+                        <h4 class="font-bold text-white">${item.name}</h4>
+                        <div class="text-yellow-400 font-bold text-sm">🪙 ${item.price}</div>
+                        <div class="text-xs text-slate-500 mt-1 capitalize">${item.type}</div>
+                        <button onclick="Admin.deleteItem(${item.id})" class="absolute top-2 right-2 text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition">✕</button>
+                    </div>
+                `).join('');
+            },
+
+            addItem: async () => {
+                const name = prompt("Item Name:");
+                if(!name) return;
+                const price = prompt("Price (Coins):", "100");
+                const icon = prompt("Icon (Emoji):", "🎁");
+                
+                // In a real app, we'd use a modal and proper POST API
+                // For now, this is a placeholder for the UI logic
+                alert("Add Item feature requires API update (Coming Soon)");
+            },
+
+            deleteItem: async (id) => {
+                if(!confirm("Delete this item?")) return;
+                // alert("Delete API pending");
             },
 
             renderCerts: (list = Admin.data.certs) => {
