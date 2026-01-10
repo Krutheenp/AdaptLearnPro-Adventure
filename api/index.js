@@ -25,7 +25,31 @@ module.exports = async (req, res) => {
         if (!process.env.POSTGRES_URL) {
             throw new Error("Database Configuration Missing: POSTGRES_URL not found. Please link Vercel Postgres in settings.");
         }
-        // --- LOGIN ---
+        // --- DIAGNOSTIC TOOL ---
+        if (pathname === '/api/check-db') {
+            const hasEnv = !!process.env.POSTGRES_URL;
+            let status = "Unknown";
+            let details = "None";
+            
+            try {
+                if (!hasEnv) throw new Error("POSTGRES_URL env var is missing");
+                await sql`SELECT 1`; // Simple Ping
+                status = "Connected ✅";
+                details = "Database is reachable.";
+            } catch (e) {
+                status = "Connection Failed ❌";
+                details = e.message;
+            }
+
+            return res.status(200).json({
+                status: status,
+                env_check: hasEnv ? "OK" : "Missing",
+                details: details,
+                timestamp: new Date().toISOString()
+            });
+        }
+
+        // --- 1. INITIALIZE ---
         if (pathname === '/api/login' && method === 'POST') {
             const { username, password } = req.body;
             
