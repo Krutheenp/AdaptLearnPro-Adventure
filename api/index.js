@@ -213,6 +213,174 @@ module.exports = async (req, res) => {
             return res.json({ success: true });
         }
 
+        // --- ANALYTICS (Profile Data) ---
+        if (pathname === '/api/analytics') {
+            const userId = url.searchParams.get("userId");
+            if (!userId) return res.status(400).json({ error: "Missing User ID" });
+
+            if (db) {
+                // 1. User Info
+                const userRes = await runQuery("SELECT id, name, username, email, phone, bio, school, address, birthdate, social_links, role, level, xp, avatar, cover_image, coins, streak FROM users WHERE id = $1", [userId]);
+                const user = userRes?.[0] || {};
+
+                // 2. Progress
+                const progress = await runQuery(`
+                    SELECT p.*, a.title, a.type, a.difficulty 
+                    FROM user_progress p 
+                    JOIN activities a ON p.activity_id = a.id 
+                    WHERE p.user_id = $1 
+                    ORDER BY p.completed_at DESC
+                `, [userId]);
+
+                // 3. Certificates
+                let certs = await runQuery("SELECT * FROM certificates WHERE user_id = $1 ORDER BY id DESC", [userId]);
+                if (!certs.length && user.name) {
+                    certs = await runQuery("SELECT * FROM certificates WHERE user_name = $1 ORDER BY id DESC", [user.name]);
+                }
+
+                // 4. Portfolios
+                const portfolios = await runQuery("SELECT * FROM portfolios WHERE user_id = $1 ORDER BY created_at DESC", [userId]);
+
+                // 5. Teacher Skills
+                let skills = [];
+                if (user.role === 'teacher' || user.role === 'admin') {
+                    skills = await runQuery("SELECT * FROM teacher_skills WHERE user_id = $1", [userId]);
+                }
+
+                // 6. Rank
+                const allUsers = await runQuery("SELECT id, xp FROM users ORDER BY xp DESC");
+                const rank = allUsers ? (allUsers.findIndex(u => String(u.id) === String(userId)) + 1) : 0;
+
+                return res.json({
+                    user,
+                    total_score: progress?.reduce((sum, p) => sum + (p.score || 0), 0) || 0,
+                    completed_count: progress?.filter(p => p.status === 'completed').length || 0,
+                    activities: progress || [],
+                    certificates: certs || [],
+                    portfolios: portfolios || [],
+                    skills: skills || [],
+                    rank,
+                    total_users: allUsers?.length || 0
+                });
+            }
+            // Mock Fallback
+            return res.json({ user: MOCK_DB.users[0], activities: [], rank: 1 });
+        }
+
+        // --- USER MANAGEMENT ---
+        if (pathname === '/api/users') {
+            // GET Users
+            if (method === 'GET') {
+                if (db) {
+                    const users = await runQuery("SELECT id, name, username, email, phone, bio, school, address, birthdate, social_links, role, level, xp, avatar FROM users ORDER BY id DESC");
+                    return res.json(users || []);
+                }
+                return res.json(MOCK_DB.users);
+            }
+            // PUT (Update Profile)
+            if (method === 'PUT') {
+                const body = req.body;
+                if (!db) return res.json({ success: true, message: "Mock Update OK" });
+                
+                if (body.id) {
+                    let fields = [];
+                    let values = [];
+                    let idx = 1;
+
+                    const cols = ['name', 'email', 'phone', 'bio', 'school', 'address', 'birthdate', 'social_links', 'avatar', 'cover_image', 'role'];
+                    cols.forEach(col => {
+                        if (body[col] !== undefined) {
+                            fields.push(`${col} = $${idx++}`);
+                            values.push(body[col]);
+                        }
+                    });
+
+                    if (fields.length > 0) {
+                        values.push(body.id);
+                        await runQuery(`UPDATE users SET ${fields.join(", ")} WHERE id = $${idx}`, values);
+                        return res.json({ success: true });
+                    }
+                }
+                return res.json({ success: true }); // No fields to update
+            }
+        }
+
+        // --- SHOP & INVENTORY ---
+        if (pathname === '/api/shop') {
+            if (db) {
+                const items = await runQuery("SELECT * FROM items ORDER BY price ASC");
+                return res.json(items || []);
+            }
+            return res.json(MOCK_DB.items || []);
+        }
+
+        if (pathname === '/api/shop/buy' && method === 'POST') {
+            const { userId, itemId } = req.body;
+            if (!db) return res.json({ success: true, new_balance: 9999 });
+
+            const uRes = await runQuery("SELECT coins FROM users WHERE id = $1", [userId]);
+            const iRes = await runQuery("SELECT price FROM items WHERE id = $1", [itemId]);
+
+            if (uRes?.[0] && iRes?.[0]) {
+                const coins = uRes[0].coins;
+                const price = iRes[0].price;
+
+                if (coins >= price) {
+                    await runQuery("UPDATE users SET coins = coins - $1 WHERE id = $2", [price, userId]);
+                    await runQuery("INSERT INTO user_items (user_id, item_id, acquired_at) VALUES ($1, $2, $3)", [userId, itemId, new Date().toISOString()]);
+                    return res.json({ success: true, new_balance: coins - price });
+                }
+                return res.status(400).json({ error: "Not enough coins" });
+            }
+            return res.status(404).json({ error: "User or Item not found" });
+        }
+
+        if (pathname === '/api/inventory') {
+            const userId = url.searchParams.get("userId");
+            if (db && userId) {
+                const items = await runQuery(`
+                    SELECT i.*, ui.acquired_at 
+                    FROM user_items ui 
+                    JOIN items i ON ui.item_id = i.id 
+                    WHERE ui.user_id = $1 
+                    ORDER BY ui.acquired_at DESC
+                `, [userId]);
+                return res.json(items || []);
+            }
+            return res.json([]);
+        }
+
+        // --- CERTIFICATES & PORTFOLIO ---
+        if (pathname === '/api/certificate' && method === 'POST') {
+            const body = req.body;
+            const code = "CERT-" + Math.random().toString(36).substr(2, 9).toUpperCase();
+            const date = new Date().toLocaleDateString('th-TH');
+            
+            if (db) {
+                let userId = body.userId;
+                if (!userId && body.userName) {
+                    const u = await runQuery("SELECT id FROM users WHERE name = $1", [body.userName]);
+                    if (u?.[0]) userId = u[0].id;
+                }
+                await runQuery("INSERT INTO certificates (user_id, user_name, course_title, issue_date, code) VALUES ($1, $2, $3, $4, $5)", 
+                    [userId, body.userName, body.courseTitle, date, code]);
+            }
+            return res.json({ success: true, code, date });
+        }
+
+        if (pathname === '/api/portfolios') {
+            if (method === 'POST') {
+                const body = req.body;
+                if(db) await runQuery("INSERT INTO portfolios (user_id, title, description, media_url, type, created_at) VALUES ($1, $2, $3, $4, $5, $6)", 
+                    [body.user_id, body.title, body.description, body.media_url, body.type, new Date().toISOString()]);
+                return res.json({ success: true });
+            }
+            if (method === 'DELETE') {
+                if(db) await runQuery("DELETE FROM portfolios WHERE id = $1", [url.searchParams.get("id")]);
+                return res.json({ success: true });
+            }
+        }
+
         // --- AI CHAT (Gemini) ---
         if (pathname === '/api/chat' && method === 'POST') {
             const apiKey = process.env.GEMINI_API_KEY;
