@@ -37,60 +37,47 @@
 
     <!-- Main Content -->
     <main class="flex-1 overflow-y-auto p-8 relative">
-        <!-- Auth Guard -->
         <div id="auth-guard" class="absolute inset-0 bg-slate-950 z-[100] flex flex-col items-center justify-center">
             <div class="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-4"></div>
             <p class="text-white text-sm font-bold tracking-widest uppercase">Authenticating...</p>
         </div>
 
-        <!-- VIEWS -->
         <div id="view-overview" class="space-y-8">
-            <div class="flex justify-between items-end">
-                <h1 class="text-4xl font-black text-white">Dashboard</h1>
-                <button onclick="Admin.seedData()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-xl font-bold text-sm shadow-xl">🌱 Seed Data</button>
-            </div>
-            <!-- Stats -->
+            <div class="flex justify-between items-end"><h1 class="text-4xl font-black text-white">Dashboard</h1><button onclick="Admin.seedData()" class="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold text-sm">🌱 Seed Data</button></div>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div class="glass p-6 rounded-[2rem] border-l-4 border-l-blue-500"><div class="text-slate-400 text-xs font-bold uppercase">Users</div><div class="text-3xl font-black text-white mt-1" id="stat-users">-</div></div>
-                <div class="glass p-6 rounded-[2rem] border-l-4 border-l-purple-500"><div class="text-slate-400 text-xs font-bold uppercase">Courses</div><div class="text-3xl font-black text-white mt-1" id="stat-courses">-</div></div>
-                <div class="glass p-6 rounded-[2rem] border-l-4 border-l-green-500"><div class="text-slate-400 text-xs font-bold uppercase">Visits</div><div class="text-3xl font-black text-white mt-1" id="stat-visits">-</div></div>
-                <div class="glass p-6 rounded-[2rem] border-l-4 border-l-yellow-500"><div class="text-slate-400 text-xs font-bold uppercase">Items</div><div class="text-3xl font-black text-white mt-1" id="stat-items">-</div></div>
+                <div class="glass p-6 rounded-[2rem] border-l-4 border-l-blue-500"><div class="text-slate-400 text-xs font-bold uppercase">Users</div><div class="text-3xl font-black text-white mt-1" id="stat-users">0</div></div>
+                <div class="glass p-6 rounded-[2rem] border-l-4 border-l-purple-500"><div class="text-slate-400 text-xs font-bold uppercase">Courses</div><div class="text-3xl font-black text-white mt-1" id="stat-courses">0</div></div>
+                <div class="glass p-6 rounded-[2rem] border-l-4 border-l-green-500"><div class="text-slate-400 text-xs font-bold uppercase">Visits</div><div class="text-3xl font-black text-white mt-1" id="stat-visits">0</div></div>
+                <div class="glass p-6 rounded-[2rem] border-l-4 border-l-yellow-500"><div class="text-slate-400 text-xs font-bold uppercase">Certs</div><div class="text-3xl font-black text-white mt-1" id="stat-certs">0</div></div>
             </div>
-            <!-- Charts -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div class="glass p-8 rounded-[2rem]">
-                    <h3 class="font-bold text-white mb-6">User Activity Trend</h3>
-                    <div class="chart-box"><canvas id="chart-main"></canvas></div>
-                </div>
-                <div class="glass p-8 rounded-[2rem]">
-                    <h3 class="font-bold text-white mb-6">Role Distribution</h3>
-                    <div class="chart-box"><canvas id="chart-roles"></canvas></div>
-                </div>
+                <div class="glass p-8 rounded-[2rem]"><h3 class="font-bold text-white mb-6">User Activity</h3><div class="chart-box"><canvas id="chart-main"></canvas></div></div>
+                <div class="glass p-8 rounded-[2rem]"><h3 class="font-bold text-white mb-6">Role Mix</h3><div class="chart-box"><canvas id="chart-roles"></canvas></div></div>
             </div>
         </div>
 
         <div id="view-users" class="hidden space-y-6">
             <div class="flex justify-between items-center"><h1 class="text-3xl font-bold text-white">Users</h1><button onclick="Admin.openUserModal()" class="bg-white text-slate-900 px-4 py-2 rounded-xl font-bold text-sm hover:bg-slate-200">+ Add Member</button></div>
-            <div class="bg-slate-900 rounded-3xl overflow-hidden border border-slate-800"><table class="w-full text-left text-sm"><thead class="bg-slate-800/50 text-slate-200 text-xs uppercase font-bold tracking-widest"><tr><th class="px-6 py-4">Player</th><th class="px-6 py-4">Role</th><th class="px-6 py-4">Wallet & Stats</th><th class="px-6 py-4 text-right">Actions</th></tr></thead><tbody id="table-users" class="divide-y divide-slate-800"></tbody></table></div>
+            <div class="bg-slate-900 rounded-3xl overflow-hidden border border-slate-800"><table class="w-full text-left text-sm text-slate-400"><thead class="bg-slate-800/50 text-slate-200 text-xs font-bold"><tr><th class="px-6 py-4">Player</th><th class="px-6 py-4">Role</th><th class="px-6 py-4">Stats</th><th class="px-6 py-4 text-right">Actions</th></tr></thead><tbody id="table-users" class="divide-y divide-slate-800"></tbody></table></div>
         </div>
 
         <div id="view-certs" class="hidden space-y-6">
-            <h1 class="text-3xl font-bold text-white">Certificates</h1>
-            <div class="bg-slate-900 rounded-3xl overflow-hidden border border-slate-800"><table class="w-full text-left text-sm"><thead class="bg-slate-800/50 text-slate-200 text-xs uppercase font-bold"><tr><th class="px-6 py-4">Code</th><th class="px-6 py-4">Student</th><th class="px-6 py-4">Course</th><th class="px-6 py-4 text-right">Action</th></tr></thead><tbody id="table-certs" class="divide-y divide-slate-800"></tbody></table></div>
+            <h1 class="text-3xl font-bold text-white">Certificates Archive</h1>
+            <div class="bg-slate-900 rounded-3xl border border-slate-800"><table class="w-full text-left text-sm text-slate-400"><thead class="bg-slate-800/50 text-slate-200 text-xs font-bold font-mono"><tr><th class="px-6 py-4">Code</th><th class="px-6 py-4">Student</th><th class="px-6 py-4 text-right">Action</th></tr></thead><tbody id="table-certs" class="divide-y divide-slate-800"></tbody></table></div>
         </div>
 
         <div id="view-shop" class="hidden space-y-6">
-            <div class="flex justify-between items-center"><h1 class="text-3xl font-bold text-white">Shop</h1><button onclick="Admin.addItem()" class="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold">+ New Item</button></div>
+            <div class="flex justify-between items-center"><h1 class="text-3xl font-bold text-white">Item Shop</h1><button onclick="Admin.addItem()" class="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold">+ New Item</button></div>
             <div id="list-shop" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
         </div>
 
         <div id="view-gacha" class="hidden space-y-6">
-            <h1 class="text-3xl font-bold text-white">Gacha Rates</h1>
+            <h1 class="text-3xl font-bold text-white">Gacha Configuration</h1>
             <div class="glass p-8 rounded-3xl max-w-xl space-y-4">
-                <div class="flex justify-between items-center p-4 bg-slate-900 rounded-xl"><span>Rare (SSR)</span><input id="conf-ssr" type="number" class="w-20 bg-slate-800 rounded-lg text-center py-2" value="5"></div>
-                <div class="flex justify-between items-center p-4 bg-slate-900 rounded-xl"><span>Uncommon (SR)</span><input id="conf-sr" type="number" class="w-20 bg-slate-800 rounded-lg text-center py-2" value="25"></div>
-                <div class="flex justify-between items-center p-4 bg-slate-900 rounded-xl"><span>Common (R)</span><input id="conf-r" type="number" class="w-20 bg-slate-800 rounded-lg text-center py-2" value="70"></div>
-                <button onclick="Admin.saveConfig('gacha_rates')" class="w-full bg-green-600 py-3 rounded-xl font-bold">Save Configuration</button>
+                <div class="flex justify-between items-center p-4 bg-slate-900 rounded-xl"><span>SSR</span><input id="conf-ssr" type="number" class="w-20 bg-slate-800 rounded-lg text-center py-2" value="5"></div>
+                <div class="flex justify-between items-center p-4 bg-slate-900 rounded-xl"><span>SR</span><input id="conf-sr" type="number" class="w-20 bg-slate-800 rounded-lg text-center py-2" value="25"></div>
+                <div class="flex justify-between items-center p-4 bg-slate-900 rounded-xl"><span>R</span><input id="conf-r" type="number" class="w-20 bg-slate-800 rounded-lg text-center py-2" value="70"></div>
+                <button onclick="Admin.saveConfig('gacha_rates')" class="w-full bg-green-600 py-3 rounded-xl font-bold">Save Rates</button>
             </div>
         </div>
 
@@ -100,44 +87,20 @@
         </div>
     </main>
 
-    <!-- USER MODAL -->
-    <div id="user-modal" class="fixed inset-0 bg-black/90 z-[200] hidden flex items-center justify-center p-4 backdrop-blur-md">
-        <div class="bg-slate-900 w-full max-w-lg rounded-[2.5rem] border border-slate-800 p-8">
-            <h2 id="u-modal-title" class="text-2xl font-black text-white mb-6">User Details</h2>
+    <!-- MODALS (User / Item Editor) -->
+    <div id="user-modal" class="fixed inset-0 bg-black/95 z-[200] hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 w-full max-w-md rounded-[2.5rem] border border-slate-800 p-8 shadow-2xl">
+            <h2 id="u-modal-title" class="text-2xl font-black text-white mb-6">Edit User</h2>
             <input type="hidden" id="u-id">
             <div class="space-y-4">
+                <div><label class="text-[10px] uppercase font-bold text-slate-500 ml-2">Name</label><input id="u-name" class="w-full bg-slate-800 border-none rounded-2xl px-4 py-3 text-white"></div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div><label class="text-[10px] uppercase font-bold text-slate-500">Username</label><input id="u-username" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"></div>
-                    <div><label class="text-[10px] uppercase font-bold text-slate-500">Password</label><input id="u-password" type="password" placeholder="••••••" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"></div>
+                    <div><label class="text-[10px] uppercase font-bold text-yellow-500 ml-2">Coins</label><input id="u-coins" type="number" class="w-full bg-slate-800 border-none rounded-2xl px-4 py-3 text-white"></div>
+                    <div><label class="text-[10px] uppercase font-bold text-blue-500 ml-2">XP</label><input id="u-xp" type="number" class="w-full bg-slate-800 border-none rounded-2xl px-4 py-3 text-white"></div>
                 </div>
-                <div><label class="text-[10px] uppercase font-bold text-slate-500">Full Name</label><input id="u-name" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"></div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="text-[10px] uppercase font-bold text-yellow-500">Coins</label><input id="u-coins" type="number" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"></div>
-                    <div><label class="text-[10px] uppercase font-bold text-blue-500">XP</label><input id="u-xp" type="number" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"></div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="text-[10px] uppercase font-bold text-slate-500">Level</label><input id="u-level" type="number" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"></div>
-                    <div><label class="text-[10px] uppercase font-bold text-slate-500">Role</label><select id="u-role" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"><option value="student">Student</option><option value="teacher">Teacher</option><option value="admin">Admin</option></select></div>
-                </div>
+                <div><label class="text-[10px] uppercase font-bold text-slate-500 ml-2">Role</label><select id="u-role" class="w-full bg-slate-800 border-none rounded-2xl px-4 py-3 text-white"><option value="student">Student</option><option value="teacher">Teacher</option><option value="admin">Admin</option></select></div>
             </div>
             <div class="mt-8 flex gap-3"><button onclick="document.getElementById('user-modal').classList.add('hidden')" class="flex-1 text-slate-500 font-bold">Cancel</button><button onclick="Admin.saveUser()" class="flex-1 bg-indigo-600 text-white rounded-2xl py-3 font-bold shadow-lg">Save</button></div>
-        </div>
-    </div>
-
-    <!-- ITEM MODAL -->
-    <div id="item-modal" class="fixed inset-0 bg-black/90 z-[200] hidden flex items-center justify-center p-4 backdrop-blur-md">
-        <div class="bg-slate-900 w-full max-w-md rounded-[2.5rem] border border-slate-800 p-8">
-            <h2 id="i-modal-title" class="text-2xl font-black text-white mb-6">Item Editor</h2>
-            <input type="hidden" id="i-id">
-            <div class="space-y-4">
-                <div><label class="text-[10px] uppercase font-bold text-slate-500">Name</label><input id="i-name" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"></div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label class="text-[10px] uppercase font-bold text-yellow-500">Price</label><input id="i-price" type="number" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"></div>
-                    <div><label class="text-[10px] uppercase font-bold text-slate-500">Icon</label><input id="i-icon" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white text-center border-none"></div>
-                </div>
-                <div><label class="text-[10px] uppercase font-bold text-slate-500">Type</label><select id="i-type" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"><option value="consumable">Consumable</option><option value="cosmetic">Cosmetic</option><option value="feature">Feature</option></select></div>
-            </div>
-            <div class="mt-8 flex gap-3"><button onclick="document.getElementById('item-modal').classList.add('hidden')" class="flex-1 text-slate-500 font-bold">Cancel</button><button onclick="Admin.saveItem()" class="flex-1 bg-green-600 text-white rounded-2xl py-3 font-bold">Save Item</button></div>
         </div>
     </div>
 
@@ -148,79 +111,55 @@
 
             init: async () => {
                 const uid = sessionStorage.getItem('user_id');
-                const role = sessionStorage.getItem('user_role');
                 if (!uid) { location.href = '/login.html'; return; }
-
-                if (role === 'admin') {
-                    document.getElementById('auth-guard').classList.add('hidden');
-                    Admin.loadData();
-                } else {
-                    try {
-                        const res = await fetch(`/api/analytics?userId=${uid}`);
-                        const d = await res.json();
-                        if (d.user && d.user.role === 'admin') {
-                            sessionStorage.setItem('user_role', 'admin');
-                            document.getElementById('auth-guard').classList.add('hidden');
-                            Admin.loadData();
-                        } else { alert('⛔ Access Denied'); location.href = '/index.html'; }
-                    } catch(e) { location.href = '/login.html'; }
-                }
+                const role = sessionStorage.getItem('user_role');
+                if(role === 'admin') { document.getElementById('auth-guard').classList.add('hidden'); Admin.loadData(); return; }
+                try {
+                    const res = await fetch(`/api/analytics?userId=${uid}`);
+                    const d = await res.json();
+                    if (d.user && d.user.role === 'admin') {
+                        sessionStorage.setItem('user_role', 'admin');
+                        document.getElementById('auth-guard').classList.add('hidden'); Admin.loadData();
+                    } else { alert('⛔ Access Denied'); location.href = '/index.html'; }
+                } catch(e) { location.href = '/login.html'; }
             },
 
             loadData: async () => {
                 const get = async (u) => { try { const r = await fetch(u); return r.ok ? await r.json() : []; } catch(e) { return []; } };
-                
-                console.log("Loading Admin Data...");
                 const [u, a, c, s, v, cf] = await Promise.all([
-                    get('/api/users'), get('/api/activities?instructorId=debug'), get('/api/certificate?all=true'), get('/api/shop'), get('/api/visit'), get('/api/config')
+                    get('/api/users'), get('/api/activities?instructorId=debug'), get('/api/certificate'), get('/api/shop'), get('/api/visit'), get('/api/config')
                 ]);
-
                 Admin.data = { users: u, activities: a, certs: c, shop: s, config: cf || {} };
-
                 document.getElementById('stat-users').innerText = u.length;
                 document.getElementById('stat-courses').innerText = a.length;
                 document.getElementById('stat-certs').innerText = c.length;
                 document.getElementById('stat-items').innerText = s.length;
                 document.getElementById('stat-visits').innerText = (v.total_visits||0).toLocaleString();
-
-                if(cf.announcement) document.getElementById('sys-announcement').value = JSON.parse(cf.announcement);
-                
-                Admin.renderUsers();
-                Admin.renderCerts();
-                Admin.renderShop();
-                Admin.renderCharts();
+                if(cf.announcement) document.getElementById('sys-announcement').value = cf.announcement;
+                Admin.renderUsers(); Admin.renderCerts(); Admin.renderShop(); Admin.renderCharts();
             },
 
             tab: (name) => {
-                const views = ['overview', 'users', 'certs', 'shop', 'gacha', 'system'];
-                views.forEach(t => {
-                    const v = document.getElementById(`view-${t}`);
-                    const b = document.getElementById(`btn-${t}`);
-                    if(v) v.classList.add('hidden');
-                    if(b) b.classList.remove('active-btn');
+                ['overview', 'users', 'certs', 'shop', 'gacha', 'system'].forEach(t => {
+                    const v = document.getElementById(`view-${t}`); const b = document.getElementById(`btn-${t}`);
+                    if(v) v.classList.add('hidden'); if(b) b.classList.remove('active-btn');
                 });
-                const targetView = document.getElementById(`view-${name}`);
-                const targetBtn = document.getElementById(`btn-${name}`);
-                if(targetView) targetView.classList.remove('hidden');
-                if(targetBtn) targetBtn.classList.add('active-btn');
+                const tv = document.getElementById(`view-${name}`); const tb = document.getElementById(`btn-${name}`);
+                if(tv) tv.classList.remove('hidden'); if(tb) tb.classList.add('active-btn');
             },
 
-            // --- USER CRUD ---
-            renderUsers: (list = Admin.data.users) => {
-                const el = document.getElementById('table-users');
-                el.innerHTML = list.map(u => `
+            renderUsers: () => {
+                document.getElementById('table-users').innerHTML = Admin.data.users.map(u => `
                     <tr class="hover:bg-slate-800/30 transition border-b border-slate-900/50">
-                        <td class="px-6 py-4 flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-lg shadow">${u.avatar||'👤'}</div>
-                            <div><div class="font-bold text-white">${u.name}</div><div class="text-[10px] text-slate-500">@${u.username}</div></div>
-                        </td>
-                        <td class="px-6 py-4"><span class="px-2 py-1 rounded-lg text-[10px] font-bold uppercase ${u.role==='admin'?'bg-red-500/20 text-red-400':(u.role==='teacher'?'bg-yellow-500/20 text-yellow-400':'bg-blue-500/20 text-blue-400')}">${u.role}</span></td>
-                        <td class="px-6 py-4 text-xs"><div class="text-yellow-400 font-mono font-bold">🪙 ${u.coins||0}</div><div class="text-slate-400">Lvl ${u.level} • ${u.xp} XP</div></td>
-                        <td class="px-6 py-4 text-right"><button onclick="Admin.openUserModal(${u.id})" class="text-indigo-400 p-2 hover:text-white transition">✏️</button><button onclick="Admin.deleteUser(${u.id})" class="text-red-500 p-2 hover:text-white transition">🗑️</button></td>
+                        <td class="px-6 py-4 font-bold text-white">${u.name}<div class="text-[10px] text-slate-500">@${u.username}</div></td>
+                        <td class="px-6 py-4"><span class="px-2 py-1 rounded-lg text-[10px] font-bold uppercase bg-slate-800 text-slate-400">${u.role}</span></td>
+                        <td class="px-6 py-4 text-xs"><div class="text-yellow-400 font-mono">🪙 ${u.coins||0}</div><div class="text-slate-500">Lvl ${u.level}</div></td>
+                        <td class="px-6 py-4 text-right"><button onclick="Admin.openUserModal(${u.id})" class="p-2 text-indigo-400">✏️</button><button onclick="Admin.deleteUser(${u.id})" class="p-2 text-red-500">🗑️</button></td>
                     </tr>`).join('');
             },
-            openUserModal: (id = null) => {
-                const u = id ? Admin.data.users.find(x => x.id === id) : { coins: 0, xp: 0, level: 1, role: 'student' };
+
+            openUserModal: (id) => {
+                const u = Admin.data.users.find(x => x.id === id) || { coins: 0, xp: 0, level: 1, role: 'student' };
                 document.getElementById('u-id').value = id || '';
                 document.getElementById('u-username').value = u.username || '';
                 document.getElementById('u-name').value = u.name || '';
@@ -230,53 +169,40 @@
                 document.getElementById('u-role').value = u.role;
                 document.getElementById('user-modal').classList.remove('hidden');
             },
+
             saveUser: async () => {
                 const id = document.getElementById('u-id').value;
                 const body = { id, name: document.getElementById('u-name').value, username: document.getElementById('u-username').value, coins: parseInt(document.getElementById('u-coins').value), xp: parseInt(document.getElementById('u-xp').value), level: parseInt(document.getElementById('u-level').value), role: document.getElementById('u-role').value };
-                if(document.getElementById('u-password').value) body.password = document.getElementById('u-password').value;
-                await fetch('/api/users', { method: id ? 'PUT' : 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+                await fetch('/api/users', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
                 document.getElementById('user-modal').classList.add('hidden'); Admin.loadData();
             },
-            deleteUser: async (id) => { if(confirm('Delete user permanent?')) { await fetch(`/api/users?id=${id}`, {method:'DELETE'}); Admin.loadData(); } },
-            filterUsers: (v) => Admin.renderUsers(Admin.data.users.filter(u => (u.name||'').toLowerCase().includes(v.toLowerCase()) || (u.username||'').toLowerCase().includes(v.toLowerCase()))),
 
-            // --- SHOP CRUD ---
-            renderShop: () => {
-                const el = document.getElementById('list-shop');
-                el.innerHTML = Admin.data.shop.map(i => `
-                    <div class="glass p-6 rounded-3xl text-center relative group hover:border-indigo-500 transition cursor-pointer" onclick="Admin.editItem(${i.id})">
-                        <div class="text-5xl mb-3">${i.icon}</div>
-                        <h4 class="font-bold text-white truncate">${i.name}</h4>
-                        <div class="text-yellow-400 font-black mt-1">🪙 ${i.price}</div>
-                        <button onclick="event.stopPropagation(); Admin.delItem(${i.id})" class="absolute top-3 right-3 text-slate-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition">✕</button>
-                    </div>`).join('');
+            deleteUser: async (id) => { if(confirm('Delete User?')) { await fetch(`/api/users?id=${id}`, {method:'DELETE'}); Admin.loadData(); } },
+
+            renderCerts: () => {
+                document.getElementById('table-certs').innerHTML = Admin.data.certs.map(c => `<tr class="border-b border-slate-900/50 text-xs"><td class="px-6 py-4 font-mono text-yellow-500">${c.code}</td><td class="px-6 py-4 text-white">${c.user_name}</td><td class="px-6 py-4 text-right"><button onclick="Admin.revokeCert(${c.id})" class="text-red-500">Revoke</button></td></tr>`).join('');
             },
-            addItem: () => { document.getElementById('i-id').value = ''; document.getElementById('i-name').value = ''; document.getElementById('i-price').value = 100; document.getElementById('i-icon').value = '🎁'; document.getElementById('item-modal').classList.remove('hidden'); },
-            editItem: (id) => { const i = Admin.data.shop.find(x => x.id === id); document.getElementById('i-id').value = i.id; document.getElementById('i-name').value = i.name; document.getElementById('i-price').value = i.price; document.getElementById('i-icon').value = i.icon; document.getElementById('i-type').value = i.type; document.getElementById('item-modal').classList.remove('hidden'); },
-            saveItem: async () => { const id = document.getElementById('i-id').value; const body = { name: document.getElementById('i-name').value, price: parseInt(document.getElementById('i-price').value), icon: document.getElementById('i-icon').value, type: document.getElementById('i-type').value }; await fetch('/api/shop', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) }); document.getElementById('item-modal').classList.add('hidden'); Admin.loadData(); },
-            delItem: async (id) => { if(confirm('Remove item?')) { await fetch(`/api/shop?id=${id}`, {method:'DELETE'}); Admin.loadData(); } },
+            revokeCert: async (id) => { if(confirm('Revoke?')) { await fetch(`/api/certificate?id=${id}`, {method:'DELETE'}); Admin.loadData(); } },
 
-            // --- OTHER ---
-            renderCerts: () => { document.getElementById('table-certs').innerHTML = Admin.data.certs.map(c => `<tr class="border-b border-slate-900/50"><td class="px-6 py-4 font-mono text-yellow-500">${c.code}</td><td class="px-6 py-4 text-white">${c.user_name}</td><td class="px-6 py-4 text-slate-400 text-xs">${c.course_title}</td><td class="px-6 py-4 text-right"><button onclick="Admin.delCert(${c.id})" class="text-red-500 text-xs">Revoke</button></td></tr>`).join(''); },
-            delCert: async (id) => { if(confirm('Revoke?')) { await fetch(`/api/certificate?id=${id}`, {method:'DELETE'}); Admin.loadData(); } },
+            renderShop: () => {
+                document.getElementById('list-shop').innerHTML = Admin.data.shop.map(i => `<div class="glass p-6 rounded-3xl text-center relative group"><div class="text-5xl mb-3">${i.icon}</div><h4 class="font-bold text-white truncate">${i.name}</h4><div class="text-yellow-400 font-bold mt-1">🪙 ${i.price}</div><button onclick="Admin.delItem(${i.id})" class="absolute top-3 right-3 text-red-500 opacity-0 group-hover:opacity-100 transition">✕</button></div>`).join('');
+            },
+            addItem: async () => { const name = prompt("Name:"); if(name) { await fetch('/api/shop', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, price: 100, icon: '🎁', type: 'consumable' }) }); Admin.loadData(); } },
+            delItem: async (id) => { if(confirm('Delete Item?')) { await fetch(`/api/shop?id=${id}`, {method:'DELETE'}); Admin.loadData(); } },
+
             saveConfig: async (key) => {
-                let v = "";
-                if(key==='announcement') v = document.getElementById('sys-announcement').value;
-                if(key==='gacha_rates') v = { ssr: parseInt(document.getElementById('conf-ssr').value), sr: parseInt(document.getElementById('conf-sr').value), r: parseInt(document.getElementById('conf-r').value) };
+                let v = key === 'announcement' ? document.getElementById('sys-announcement').value : { ssr: 5, sr: 25, r: 70 };
                 await fetch('/api/config', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ key, value: v }) }); alert('Saved! ✅');
             },
             seedData: async () => { if(confirm('Seed All Data?')) { await fetch('/api/seed'); Admin.loadData(); } },
 
-            // --- CHARTS ---
             renderCharts: () => {
                 if (typeof Chart === 'undefined') return;
-                const roles = { admin: 0, teacher: 0, student: 0 };
-                Admin.data.users.forEach(u => { if(roles[u.role] !== undefined) roles[u.role]++; });
+                const r = { admin: 0, teacher: 0, student: 0 }; Admin.data.users.forEach(u => { if(r[u.role]!==undefined) r[u.role]++; });
                 if(Admin.charts.roles) Admin.charts.roles.destroy();
-                Admin.charts.roles = new Chart(document.getElementById('chart-roles'), { type: 'doughnut', data: { labels: ['Admin', 'Teacher', 'Student'], datasets: [{ data: [roles.admin, roles.teacher, roles.student], backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6'], borderWeight: 0 }] }, options: { plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10 } } }, cutout: '75%' } });
-
-                const cats = {};
-                Admin.data.activities.forEach(a => cats[a.category] = (cats[a.category]||0) + 1);
+                Admin.charts.roles = new Chart(document.getElementById('chart-roles'), { type: 'doughnut', data: { labels: ['Admin', 'Teacher', 'Student'], datasets: [{ data: [r.admin, r.teacher, r.student], backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6'], borderWeight: 0 }] }, options: { plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } }, cutout: '75%' } });
+                
+                const cats = {}; Admin.data.activities.forEach(a => cats[a.category] = (cats[a.category]||0) + 1);
                 if(Admin.charts.main) Admin.charts.main.destroy();
                 Admin.charts.main = new Chart(document.getElementById('chart-main'), { type: 'bar', data: { labels: Object.keys(cats), datasets: [{ label: 'Courses', data: Object.values(cats), backgroundColor: '#6366f1', borderRadius: 8 }] }, options: { scales: { y: { beginAtZero: true, grid: { color: '#1e293b' } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } } });
             }
