@@ -332,26 +332,25 @@
                             fetch('/api/stats').then(r => r.json())
                         ]);
                         
-                        Game.data.activities = aRes || [];
+                        Game.data.activities = Array.isArray(aRes) ? aRes : [];
                         Game.data.globalStats = sRes || { users: 0, activities: 0, certificates: 0, visits: 0 };
                         
-                        const uData = uRes;
-                        if (uData && uData.user) {
-                            Game.data.user = uData.user;
-                            Game.data.certificates = uData.certificates || [];
-                            sessionStorage.setItem('user_id', Game.data.user.id);
-                            sessionStorage.setItem('user_name', Game.data.user.name);
-                            sessionStorage.setItem('user_role', Game.data.user.role);
-                            sessionStorage.setItem('user_xp', Game.data.user.xp);
-                            sessionStorage.setItem('user_coins', Game.data.user.coins);
+                        if (uRes && uRes.user) {
+                            Game.data.user = uRes.user;
+                            Game.data.certificates = uRes.certificates || [];
+                            // Ensure Local Session is mirrored exactly with DB
+                            sessionStorage.setItem('user_name', uRes.user.name);
+                            sessionStorage.setItem('user_role', uRes.user.role);
+                            sessionStorage.setItem('user_xp', uRes.user.xp);
+                            sessionStorage.setItem('user_coins', uRes.user.coins);
                         } else {
-                            Game.data.user = { name: 'Guest Scholar', level: 1, role: 'guest', avatar: '🕵️', coins: 0, xp: 0 };
+                            Game.data.user = { name: 'Guest Explorer', role: 'guest', level: 1, avatar: '🕵️', coins: 0, xp: 0 };
                         }
-                        console.log("📊 System Sync Complete");
+                        console.log("📊 Global Database Synced Successfully");
                     } catch (e) {
-                        console.error("❌ System Sync Error", e);
+                        console.error("❌ Data Sync Protocol Failed", e);
                         Game.data.activities = [];
-                        Game.data.user = { name: 'Offline Mode', role: 'guest', avatar: '📡' };
+                        Game.data.user = { name: 'Offline', role: 'guest', avatar: '📡' };
                     }
                 }
             },
