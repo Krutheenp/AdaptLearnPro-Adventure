@@ -272,24 +272,29 @@
                 const uid = sessionStorage.getItem('user_id');
                 const auth = sessionStorage.getItem('auth');
 
-                console.log("🚀 Initializing System: ID=" + uid);
+                console.log("🚀 Mission Control Active: ID=" + uid);
 
-                // Track Visit
-                fetch('/api/visit', { method: 'POST' }).catch(() => {});
-
-                // Set initial UI state
+                // Setup UI
                 if (auth === 'true' && uid) {
                     document.getElementById('auth-footer').classList.remove('hidden');
                     document.getElementById('guest-footer').classList.add('hidden');
                     document.querySelectorAll('.auth-only').forEach(el => el.classList.remove('hidden'));
                 }
 
-                // Fetch All Data
+                // Initial Load
                 await Game.api.loadAll(uid || "0");
-                
-                // Final Render
                 Game.render.hud();
                 Game.render.dashboard();
+
+                // FORCE SYNC: Refresh data when user returns to this tab
+                window.onfocus = async () => {
+                    console.log("📡 Re-syncing Galactic Data...");
+                    await Game.api.loadAll(sessionStorage.getItem('user_id') || "0");
+                    Game.render.hud();
+                    Game.render.dashboard();
+                };
+                
+                fetch('/api/visit', { method: 'POST' }).catch(() => {});
             },
 
             ui: {

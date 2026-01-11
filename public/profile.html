@@ -175,22 +175,30 @@
                 if(!uid) { location.href = '/login.html'; return; }
                 
                 try {
-                    // Try Analytics first (Rich Data)
-                    let res = await fetch(`/api/analytics?userId=${uid}`);
-                    let data = await res.json();
+                    // Always fetch FRESH data from DB, ignore Cache
+                    const res = await fetch(`/api/analytics?userId=${uid}&t=${Date.now()}`);
+                    const data = await res.json();
                     
-                    if(!res.ok || !data.user) {
-                        console.warn("User data not found in DB");
-                        alert('Your profile record is missing. Please contact admin.');
+                    if(!data || !data.user) {
+                        alert('System Error: Profile Out of Sync. Please re-login.');
+                        sessionStorage.clear();
+                        location.href = '/login.html';
                         return;
                     }
                     
                     App.user = data.user;
+                    
+                    // Sync SESSION with LATEST DB DATA
+                    sessionStorage.setItem('user_name', App.user.name);
+                    sessionStorage.setItem('user_xp', App.user.xp);
+                    sessionStorage.setItem('user_coins', App.user.coins);
+                    sessionStorage.setItem('user_level', App.user.level);
+
                     App.render(data);
                     App.loadHistory(); 
                 } catch(e) {
                     console.error(e);
-                    alert('Connection Error. Showing cached/demo data.');
+                    alert('Communication Link Failed. Retrying...');
                 }
             },
             loadHistory: async () => {
