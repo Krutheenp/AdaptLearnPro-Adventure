@@ -326,10 +326,11 @@
             api: {
                 loadAll: async (uid) => {
                     try {
+                        const safeUid = uid || "0";
                         const [aRes, uRes, sRes] = await Promise.all([
-                            fetch(`/api/activities?studentId=${uid}`).then(r => r.json()),
-                            fetch(`/api/analytics?userId=${uid}`).then(r => r.json()),
-                            fetch('/api/stats').then(r => r.json())
+                            fetch(`/api/activities?studentId=${safeUid}`).then(r => r.ok ? r.json() : []),
+                            fetch(`/api/analytics?userId=${safeUid}`).then(r => r.ok ? r.json() : null),
+                            fetch('/api/stats').then(r => r.ok ? r.json() : null)
                         ]);
                         
                         Game.data.activities = Array.isArray(aRes) ? aRes : [];
@@ -338,19 +339,20 @@
                         if (uRes && uRes.user) {
                             Game.data.user = uRes.user;
                             Game.data.certificates = uRes.certificates || [];
-                            // Ensure Local Session is mirrored exactly with DB
-                            sessionStorage.setItem('user_name', uRes.user.name);
-                            sessionStorage.setItem('user_role', uRes.user.role);
-                            sessionStorage.setItem('user_xp', uRes.user.xp);
-                            sessionStorage.setItem('user_coins', uRes.user.coins);
+                            // Mirror DB state to Session for speed in other pages
+                            sessionStorage.setItem('user_id', Game.data.user.id);
+                            sessionStorage.setItem('user_name', Game.data.user.name);
+                            sessionStorage.setItem('user_role', Game.data.user.role);
+                            sessionStorage.setItem('user_xp', Game.data.user.xp);
+                            sessionStorage.setItem('user_coins', Game.data.user.coins);
                         } else {
                             Game.data.user = { name: 'Guest Explorer', role: 'guest', level: 1, avatar: '🕵️', coins: 0, xp: 0 };
                         }
-                        console.log("📊 Global Database Synced Successfully");
+                        console.log("📡 Data Synchronization: SUCCESS");
                     } catch (e) {
-                        console.error("❌ Data Sync Protocol Failed", e);
+                        console.error("📡 Data Synchronization: FAILED", e);
                         Game.data.activities = [];
-                        Game.data.user = { name: 'Offline', role: 'guest', avatar: '📡' };
+                        Game.data.user = { name: 'Connection Error', role: 'guest', avatar: '📡' };
                     }
                 }
             },
@@ -418,9 +420,14 @@
                         subEl.innerText = `Select a star system to explore`;
                         back.classList.add('hidden');
                         
-                        const cats = [...new Set(acts.map(a => a.category || 'General'))];
+                        const cats = [...new Set(acts.filter(a => a.title).map(a => a.category || 'General'))];
                         if (cats.length === 0) {
-                            container.innerHTML = '<div class="m-auto text-slate-600 font-bold uppercase tracking-[0.3em] animate-pulse">Initializing Galactic Data...</div>';
+                            container.innerHTML = `
+                                <div class="m-auto text-center space-y-4">
+                                    <div class="text-6xl opacity-20">📡</div>
+                                    <div class="text-slate-600 font-bold uppercase tracking-[0.3em]">No Active Sectors Found</div>
+                                    <p class="text-slate-700 text-xs">Waiting for galactic data broadcast...</p>
+                                </div>`;
                             return;
                         }
                         
