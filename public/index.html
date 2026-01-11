@@ -505,6 +505,7 @@
                 shop: async (filter = 'all') => {
                     const shopEl = document.getElementById('shop-list');
                     const invEl = document.getElementById('user-inv');
+                    const isGuest = Game.data.user.role === 'guest';
                     
                     // Update active tab in filter bar
                     document.querySelectorAll('#shop-filter-bar button').forEach(btn => {
@@ -512,28 +513,16 @@
                         else btn.classList.remove('active-tab');
                     });
 
-                    if (Game.data.user.role === 'guest') {
-                        shopEl.innerHTML = `
-                            <div class="col-span-full p-20 bg-slate-900/50 rounded-[3rem] text-center border-2 border-dashed border-slate-800">
-                                <div class="text-6xl mb-6 opacity-20">🔒</div>
-                                <h3 class="text-2xl font-black text-white mb-2">Marketplace Restricted</h3>
-                                <p class="text-slate-500 mb-8">Please login to acquire items and unlock missions.</p>
-                                <a href="/login.html" class="inline-block bg-indigo-600 text-white px-10 py-4 rounded-2xl font-black shadow-xl">AUTHENTICATE NOW</a>
-                            </div>`;
-                        invEl.innerHTML = '<div class="text-center py-20 text-slate-700 font-bold uppercase text-[10px] tracking-widest">Backpack Locked</div>';
-                        return;
-                    }
-
                     try {
                         shopEl.innerHTML = '<div class="col-span-full py-20 text-center animate-pulse text-slate-500 font-black uppercase tracking-[0.3em]">Loading Warehouse...</div>';
                         
                         const [sRes, iRes] = await Promise.all([
-                            fetch('/api/shop'),
-                            fetch(`/api/inventory?userId=${Game.data.user.id}`)
+                            fetch('/api/shop').then(r => r.json()),
+                            isGuest ? Promise.resolve([]) : fetch(`/api/inventory?userId=${Game.data.user.id}`).then(r => r.json())
                         ]);
                         
-                        const items = await sRes.json();
-                        const inventory = await iRes.json();
+                        const items = sRes || [];
+                        const inventory = iRes || [];
                         
                         // Prepare unified list
                         let unified = [];
@@ -568,22 +557,26 @@
                                             <h4 class="text-xl font-black text-white mb-2 leading-tight">${p.name}</h4>
                                             <p class="text-slate-500 text-xs line-clamp-2">${p.description || 'Enhance your adventure profile with this unique asset.'}</p>
                                         </div>
-                                        <button onclick="${p.shop_type === 'item' ? `Game.api.buy(${p.id})` : `Game.api.enroll(${p.id}, ${p.price})`}" 
-                                                class="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all bg-slate-800 text-white hover:bg-yellow-500 hover:text-slate-950 shadow-xl">
-                                            🪙 ${p.price} Buy Now
+                                        <button onclick="${isGuest ? "location.href='/login.html'" : (p.shop_type === 'item' ? `Game.api.buy(${p.id})` : `Game.api.enroll(${p.id}, ${p.price})`)}" 
+                                                class="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${isGuest ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30' : 'bg-slate-800 text-white hover:bg-yellow-500 hover:text-slate-950 shadow-xl'}">
+                                            ${isGuest ? '🔐 LOGIN TO UNLOCK' : `🪙 ${p.price} Buy Now`}
                                         </button>
                                     </div>
                                 </div>`).join('');
                         }
 
-                        invEl.innerHTML = inventory.map(i => `
-                            <div class="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5 group hover:border-white/10 transition-all">
-                                <span class="text-2xl group-hover:scale-110 transition-transform">${i.icon}</span>
-                                <div class="min-w-0">
-                                    <div class="text-sm font-black text-white truncate">${i.name}</div>
-                                    <div class="text-[8px] font-bold text-slate-500 uppercase tracking-widest">${i.type}</div>
-                                </div>
-                            </div>`).join('') || '<div class="text-center py-20 text-slate-700 font-bold uppercase text-[10px] tracking-widest opacity-20">Backpack is Empty</div>';
+                        if (isGuest) {
+                            invEl.innerHTML = '<div class="text-center py-20 text-slate-700 font-bold uppercase text-[10px] tracking-widest opacity-20">Backpack Locked</div>';
+                        } else {
+                            invEl.innerHTML = inventory.map(i => `
+                                <div class="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5 group hover:border-white/10 transition-all">
+                                    <span class="text-2xl group-hover:scale-110 transition-transform">${i.icon}</span>
+                                    <div class="min-w-0">
+                                        <div class="text-sm font-black text-white truncate">${i.name}</div>
+                                        <div class="text-[8px] font-bold text-slate-500 uppercase tracking-widest">${i.type}</div>
+                                    </div>
+                                </div>`).join('') || '<div class="text-center py-20 text-slate-700 font-bold uppercase text-[10px] tracking-widest opacity-20">Backpack is Empty</div>';
+                        }
 
                     } catch(e) { console.error(e); }
                 }
