@@ -1,4 +1,4 @@
-// Vercel API Handler - Modern Gamified Build v3.1
+// Vercel API Handler - Perfect Integration v3.2
 const { Pool } = require('pg');
 
 let pool = null;
@@ -7,7 +7,7 @@ function getPool() {
         pool = new Pool({
             connectionString: process.env.POSTGRES_URL,
             ssl: { rejectUnauthorized: false },
-            max: 25,
+            max: 20,
             idleTimeoutMillis: 30000,
         });
     }
@@ -27,7 +27,7 @@ module.exports = async (req, res) => {
     const pathname = url.pathname;
     const db = getPool();
 
-    if (!db) return res.status(500).json({ error: "Cloud DB Unavailable" });
+    if (!db) return res.status(500).json({ error: "Real-time DB Connection Failed" });
 
     let body = {};
     if (method === 'POST' || method === 'PUT') {
@@ -40,28 +40,44 @@ module.exports = async (req, res) => {
     };
 
     try {
-        // --- 1. CORE SYSTEM ---
+        // --- SYSTEM ---
         if (pathname === '/api/init') {
             const schema = [
-                `CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username TEXT UNIQUE NOT NULL, password TEXT NOT NULL, role TEXT DEFAULT 'student', name TEXT, level INT DEFAULT 1, xp INT DEFAULT 0, coins INT DEFAULT 0, streak INT DEFAULT 0, avatar TEXT DEFAULT '🙂', status TEXT DEFAULT 'active', email TEXT, phone TEXT, bio TEXT, school TEXT, cover_image TEXT, birthdate TEXT, last_active TEXT)`,
+                `CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username TEXT UNIQUE NOT NULL, password TEXT NOT NULL, role TEXT DEFAULT 'student', name TEXT, level INT DEFAULT 1, xp INT DEFAULT 0, coins INT DEFAULT 0, avatar TEXT DEFAULT '🙂', status TEXT DEFAULT 'active', email TEXT, phone TEXT, bio TEXT, school TEXT, cover_image TEXT, birthdate TEXT)`,
                 `CREATE TABLE IF NOT EXISTS activities (id SERIAL PRIMARY KEY, title TEXT UNIQUE NOT NULL, type TEXT, content TEXT, category TEXT DEFAULT 'General', credits INT DEFAULT 100, price INT DEFAULT 0, creator_id INT, difficulty TEXT DEFAULT 'Novice')`,
                 `CREATE TABLE IF NOT EXISTS enrollments (id SERIAL PRIMARY KEY, user_id INT REFERENCES users(id) ON DELETE CASCADE, activity_id INT REFERENCES activities(id) ON DELETE CASCADE, enrolled_at TEXT, UNIQUE(user_id, activity_id))`,
                 `CREATE TABLE IF NOT EXISTS items (id SERIAL PRIMARY KEY, name TEXT UNIQUE NOT NULL, description TEXT, price INT DEFAULT 0, type TEXT, icon TEXT)`,
                 `CREATE TABLE IF NOT EXISTS user_items (id SERIAL PRIMARY KEY, user_id INT REFERENCES users(id) ON DELETE CASCADE, item_id INT REFERENCES items(id) ON DELETE CASCADE, acquired_at TEXT)`,
-                `CREATE TABLE IF NOT EXISTS certificates (id SERIAL PRIMARY KEY, user_id INT REFERENCES users(id) ON DELETE CASCADE, user_name TEXT, course_title TEXT, issue_date TEXT, code TEXT UNIQUE)`,
-                `CREATE TABLE IF NOT EXISTS system_config (key TEXT PRIMARY KEY, value TEXT)`
+                `CREATE TABLE IF NOT EXISTS certificates (id SERIAL PRIMARY KEY, user_id INT REFERENCES users(id) ON DELETE CASCADE, user_name TEXT, course_title TEXT, issue_date TEXT, code TEXT UNIQUE)`
             ];
-            for (const q of schema) await runQuery(q);
-            return res.json({ success: true, version: "3.1" });
+            for (const q of schema) await db.query(q);
+            return res.json({ success: true, status: "Initialized" });
         }
 
-        // --- 2. AUTH & PROFILE ---
+        if (pathname === '/api/seed') {
+            await db.query(`INSERT INTO users (username, password, role, name, level, xp, coins, avatar) VALUES ('admin', 'password123', 'admin', 'Super Admin', 99, 99999, 99999, '👑') ON CONFLICT (username) DO NOTHING`);
+            const items = [
+                ['Streak Freeze', 50, '🧊', 'consumable', 'Protect your learning streak'],
+                ['Golden Frame', 500, '🖼️', 'cosmetic', 'Ultimate profile decoration'],
+                ['XP Booster', 150, '⚡', 'consumable', 'Double XP rewards']
+            ];
+            for (const i of items) await db.query(`INSERT INTO items (name, price, icon, type, description) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (name) DO NOTHING`, i);
+            
+            const sampleContent = JSON.stringify([{title:'Mission Start', lessons:[{title:'Welcome aboard', type:'article', body:'Your training begins here.'}]}]);
+            const courses = [
+                ['Galactic Fundamentals', 'article', 'Science', 100, 0, sampleContent],
+                ['Nebula Navigation', 'video', 'Technology', 250, 50, sampleContent],
+                ['Warp Drive Physics', 'simulation', 'Technology', 500, 150, sampleContent]
+            ];
+            for (const c of courses) await db.query(`INSERT INTO activities (title, type, category, credits, price, content, creator_id) VALUES ($1, $2, $3, $4, $5, $6, 1) ON CONFLICT (title) DO NOTHING`, c);
+            
+            return res.json({ success: true, message: "Data Synced with Cloud" });
+        }
+
+        // --- AUTH & DATA ---
         if (pathname === '/api/login' && method === 'POST') {
             const rows = await runQuery("SELECT * FROM users WHERE username = $1 AND password = $2", [body.username, body.password]);
-            if (rows.length > 0) {
-                await runQuery("UPDATE users SET last_active = $1 WHERE id = $2", [new Date().toISOString(), rows[0].id]);
-                return res.json({ success: true, ...rows[0] });
-            }
+            if (rows.length > 0) return res.json({ success: true, ...rows[0] });
             return res.status(401).json({ success: false });
         }
 
@@ -74,10 +90,15 @@ module.exports = async (req, res) => {
             return res.json({ user, certificates: certs, rank: parseInt(rank) + 1 });
         }
 
-        // --- 3. STORE & MISSIONS ---
         if (pathname === '/api/activities') {
             const sid = url.searchParams.get("studentId") || "0";
-            return res.json(await runQuery(`SELECT a.*, (SELECT id FROM enrollments WHERE user_id = $1 AND activity_id = a.id) as enrollment_id FROM activities a ORDER BY a.id DESC`, [sid]));
+            const q = `
+                SELECT a.*, 
+                CASE WHEN e.id IS NOT NULL THEN 1 ELSE 0 END as is_enrolled 
+                FROM activities a 
+                LEFT JOIN enrollments e ON a.id = e.activity_id AND e.user_id = $1 
+                ORDER BY a.id DESC`;
+            return res.json(await runQuery(q, [sid]));
         }
 
         if (pathname === '/api/shop') return res.json(await runQuery("SELECT * FROM items ORDER BY price ASC"));
@@ -92,6 +113,11 @@ module.exports = async (req, res) => {
             return res.json({ success: true });
         }
 
+        if (pathname === '/api/inventory') {
+            const uid = url.searchParams.get("userId");
+            return res.json(await runQuery("SELECT i.* FROM items i JOIN user_items ui ON i.id = ui.item_id WHERE ui.user_id = $1", [uid]));
+        }
+
         if (pathname === '/api/users' && method === 'PUT') {
             const b = body; const f = []; const v = []; let i = 1;
             ['name','role','level','xp','coins','avatar','bio','school','cover_image'].forEach(k => { if(b[k] !== undefined) { f.push(`${k} = $${i++}`); v.push(b[k]); } });
@@ -99,8 +125,9 @@ module.exports = async (req, res) => {
             return res.json({ success: true });
         }
 
-        return res.status(404).json({ error: "Protocol Error" });
+        return res.status(404).json({ error: "Not Found" });
     } catch (err) {
+        console.error(err);
         return res.status(500).json({ error: err.message });
     }
 };
