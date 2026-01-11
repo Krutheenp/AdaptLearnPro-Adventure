@@ -91,19 +91,51 @@ module.exports = async (req, res) => {
         // --- 4. USERS (Admin) ---
         if (pathname === '/api/users') {
             if (method === 'GET') return res.json(await runQuery("SELECT * FROM users ORDER BY id DESC") || []);
+            
             if (method === 'POST') {
                 const b = req.body;
-                await runQuery("INSERT INTO users (username, password, name, role, coins, xp, level) VALUES ($1, $2, $3, $4, $5, $6, $7)", 
-                    [b.username, b.password || '1234', b.name, b.role || 'student', b.coins || 0, b.xp || 0, b.level || 1]);
-                return res.json({ success: true });
+                if (!b.username || !b.name) return res.status(400).json({ error: "Username and Name are required" });
+                
+                try {
+                    await runQuery("INSERT INTO users (username, password, name, role, coins, xp, level, avatar) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)", 
+                        [b.username, b.password || '1234', b.name, b.role || 'student', parseInt(b.coins) || 0, parseInt(b.xp) || 0, parseInt(b.level) || 1, b.avatar || '🙂']);
+                    return res.json({ success: true });
+                } catch (e) {
+                    if (e.message.includes('unique constraint')) return res.status(400).json({ error: "Username already exists" });
+                    throw e;
+                }
             }
+            
             if (method === 'PUT') {
-                const b = req.body; const fields = []; const vals = []; let i = 1;
-                ['name','role','level','xp','coins','status','password','avatar','username'].forEach(f => { if(b[f] !== undefined) { fields.push(`${f} = $${i++}`); vals.push(b[f]); } });
-                vals.push(b.id); await runQuery(`UPDATE users SET ${fields.join(', ')} WHERE id = $${i}`, vals);
+                const b = req.body;
+                if (!b.id) return res.status(400).json({ error: "User ID is required" });
+                
+                const fields = []; const vals = []; let i = 1;
+                // List of fields that admin is allowed to update
+                const allowed = ['name','role','level','xp','coins','status','password','avatar','username','email','phone','bio','school','address'];
+                
+                allowed.forEach(f => { 
+                    if(b[f] !== undefined) { 
+                        fields.push(`${f} = $${i++}`); 
+                        // Handle numeric types explicitly
+                        if (['level','xp','coins'].includes(f)) vals.push(parseInt(b[f]) || 0);
+                        else vals.push(b[f]);
+                    } 
+                });
+
+                if (fields.length === 0) return res.json({ success: true, message: "No fields to update" });
+
+                vals.push(parseInt(b.id)); 
+                await runQuery(`UPDATE users SET ${fields.join(', ')} WHERE id = $${i}`, vals);
                 return res.json({ success: true });
             }
-            if (method === 'DELETE') { await runQuery("DELETE FROM users WHERE id = $1", [url.searchParams.get("id")]); return res.json({ success: true }); }
+            
+            if (method === 'DELETE') { 
+                const id = url.searchParams.get("id");
+                if (!id) return res.status(400).json({ error: "ID required" });
+                await runQuery("DELETE FROM users WHERE id = $1", [parseInt(id)]); 
+                return res.json({ success: true }); 
+            }
         }
 
         // --- 5. ACTIVITIES (Courses) ---
@@ -131,20 +163,40 @@ module.exports = async (req, res) => {
             if (method === 'DELETE') { await runQuery("DELETE FROM activities WHERE id = $1", [url.searchParams.get("id")]); return res.json({ success: true }); }
         }
 
-        // --- 6. SHOP ---
+        // --- 6. SHOP & CERTIFICATES ---
         if (pathname === '/api/shop') {
             if (method === 'GET') return res.json(await runQuery("SELECT * FROM items ORDER BY price ASC"));
+            
             if (method === 'POST') {
                 const b = req.body;
-                await runQuery("INSERT INTO items (name, price, icon, type, description) VALUES ($1, $2, $3, $4, $5)", [b.name, b.price, b.icon, b.type, b.description]);
-                return res.json({ success: true });
+                if (!b.name) return res.status(400).json({ error: "Item name required" });
+                try {
+                    await runQuery("INSERT INTO items (name, price, icon, type, description) VALUES ($1, $2, $3, $4, $5)", 
+                        [b.name, parseInt(b.price) || 0, b.icon || '📦', b.type || 'consumable', b.description || '']);
+                    return res.json({ success: true });
+                } catch (e) {
+                    return res.status(500).json({ error: "Failed to create item", details: e.message });
+                }
             }
+            
             if (method === 'PUT') {
                 const b = req.body;
-                await runQuery("UPDATE items SET name=$1, price=$2, icon=$3, type=$4, description=$5 WHERE id=$6", [b.name, b.price, b.icon, b.type, b.description, b.id]);
-                return res.json({ success: true });
+                if (!b.id) return res.status(400).json({ error: "Item ID required" });
+                try {
+                    await runQuery("UPDATE items SET name=$1, price=$2, icon=$3, type=$4, description=$5 WHERE id=$6", 
+                        [b.name, parseInt(b.price) || 0, b.icon, b.type, b.description || '', parseInt(b.id)]);
+                    return res.json({ success: true });
+                } catch (e) {
+                    return res.status(500).json({ error: "Failed to update item", details: e.message });
+                }
             }
-            if (method === 'DELETE') { await runQuery("DELETE FROM items WHERE id = $1", [url.searchParams.get("id")]); return res.json({ success: true }); }
+            
+            if (method === 'DELETE') { 
+                const id = url.searchParams.get("id");
+                if (!id) return res.status(400).json({ error: "ID required" });
+                await runQuery("DELETE FROM items WHERE id = $1", [parseInt(id)]); 
+                return res.json({ success: true }); 
+            }
         }
 
         // --- 7. CERTIFICATES ---

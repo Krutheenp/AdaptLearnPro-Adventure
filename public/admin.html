@@ -3,15 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - AdaptLearn Pro</title>
+    <title>Super Admin Dashboard - AdaptLearn Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #0f172a; color: #cbd5e1; }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
-        .active-tab { background-color: #1e293b !important; color: white !important; font-weight: bold; border-left: 4px solid #ef4444; }
-        .chart-box { position: relative; height: 250px; width: 100%; }
+        .chart-box { position: relative; height: 220px; width: 100%; }
+        .active-tab { background-color: #1e293b !important; color: white !important; font-weight: 800; border-left: 4px solid #ef4444; }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden bg-slate-950">
@@ -20,86 +24,173 @@
     <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col z-50">
         <div class="h-20 flex items-center px-6 border-b border-slate-800">
             <div class="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center text-white text-xl shadow-lg mr-3">🛡️</div>
-            <span class="font-bold text-white text-lg tracking-tight">Control Center</span>
+            <span class="font-black text-white text-lg tracking-tight">Admin Console</span>
         </div>
         <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
-            <button onclick="Admin.tab('overview')" class="w-full text-left px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition flex items-center gap-3 active-tab" id="btn-overview">📊 Overview</button>
-            <button onclick="Admin.tab('users')" class="w-full text-left px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition flex items-center gap-3" id="btn-users">👥 Members</button>
-            <button onclick="Admin.tab('certs')" class="w-full text-left px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition flex items-center gap-3" id="btn-certs">🏅 Certificates</button>
-            <button onclick="Admin.tab('shop')" class="w-full text-left px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition flex items-center gap-3" id="btn-shop">🛍️ Shop Items</button>
-            <button onclick="Admin.tab('system')" class="w-full text-left px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition flex items-center gap-3" id="btn-system">⚙️ Settings</button>
+            <button onclick="Admin.tab('overview')" class="w-full text-left px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition flex items-center gap-3 active-tab" id="tab-overview">📊 Overview</button>
+            <button onclick="Admin.tab('users')" class="w-full text-left px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition flex items-center gap-3" id="tab-users">👥 User Accounts</button>
+            <button onclick="Admin.tab('certs')" class="w-full text-left px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition flex items-center gap-3" id="tab-certs">🏅 Certificates</button>
+            <button onclick="Admin.tab('shop')" class="w-full text-left px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition flex items-center gap-3" id="tab-shop">🛍️ Shop Items</button>
+            <button onclick="Admin.tab('system')" class="w-full text-left px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition flex items-center gap-3" id="tab-system">⚙️ Site Config</button>
             <div class="border-t border-slate-800 my-4"></div>
             <a href="/instructor.html" class="w-full text-left px-4 py-3 rounded-xl text-yellow-500 hover:bg-yellow-500/10 transition flex items-center gap-3">🪄 Instructor Studio</a>
-            <a href="/index.html" class="w-full text-left px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-800 transition flex items-center gap-3">🏠 Exit Dashboard</a>
+            <a href="/index.html" class="w-full text-left px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-800 transition flex items-center gap-3">🏠 Back to Site</a>
         </nav>
     </aside>
 
     <!-- Main Content -->
     <main class="flex-1 overflow-y-auto p-8 relative">
-        <!-- Auth Guard Loader -->
+        <!-- Auth Guard -->
         <div id="auth-guard" class="absolute inset-0 bg-slate-950 z-[100] flex flex-col items-center justify-center">
             <div class="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p class="text-white font-bold tracking-widest" id="auth-msg">VERIFYING ACCESS...</p>
-            <button onclick="Admin.loadData()" class="mt-4 text-xs text-slate-500 underline">Bypass Loader</button>
+            <p class="text-white font-bold tracking-widest uppercase text-xs" id="auth-status">Authenticating Admin...</p>
+            <button onclick="Admin.loadData()" class="mt-6 text-[10px] text-slate-600 underline">Bypass Verification</button>
         </div>
 
-        <!-- VIEWS -->
+        <!-- 1. OVERVIEW -->
         <div id="view-overview" class="space-y-8">
-            <div class="flex justify-between items-center"><h1 class="text-4xl font-black text-white">System Dashboard</h1><button onclick="Admin.seedData()" class="bg-indigo-600 px-6 py-2 rounded-xl font-bold text-sm text-white">🌱 Seed Data</button></div>
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-4xl font-black text-white">Dashboard</h1>
+                    <p class="text-slate-500 text-sm">System performance and user engagement.</p>
+                </div>
+                <button onclick="Admin.seedData()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-xl transition active:scale-95">🌱 Reset & Seed Data</button>
+            </div>
+            
+            <!-- Cards -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div class="glass p-6 rounded-[2rem] border-l-4 border-l-blue-500"><div class="text-slate-400 text-xs font-bold uppercase">Users</div><div class="text-3xl font-black text-white mt-1" id="stat-users">0</div></div>
-                <div class="glass p-6 rounded-[2rem] border-l-4 border-l-purple-500"><div class="text-slate-400 text-xs font-bold uppercase">Courses</div><div class="text-3xl font-black text-white mt-1" id="stat-courses">0</div></div>
-                <div class="glass p-6 rounded-[2rem] border-l-4 border-l-green-500"><div class="text-slate-400 text-xs font-bold uppercase">Visits</div><div class="text-3xl font-black text-white mt-1" id="stat-visits">0</div></div>
-                <div class="glass p-6 rounded-[2rem] border-l-4 border-l-yellow-500"><div class="text-slate-400 text-xs font-bold uppercase">Shop</div><div class="text-3xl font-black text-white mt-1" id="stat-items">0</div></div>
+                <div class="glass p-6 rounded-[2rem] border-l-4 border-l-blue-500 shadow-xl">
+                    <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Total Members</div>
+                    <div class="text-3xl font-black text-white mt-1" id="stat-users">0</div>
+                </div>
+                <div class="glass p-6 rounded-[2rem] border-l-4 border-l-purple-500 shadow-xl">
+                    <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Active Courses</div>
+                    <div class="text-3xl font-black text-white mt-1" id="stat-courses">0</div>
+                </div>
+                <div class="glass p-6 rounded-[2rem] border-l-4 border-l-green-500 shadow-xl">
+                    <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Total Visits</div>
+                    <div class="text-3xl font-black text-white mt-1" id="stat-visits">0</div>
+                </div>
+                <div class="glass p-6 rounded-[2rem] border-l-4 border-l-yellow-500 shadow-xl">
+                    <div class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Items in Shop</div>
+                    <div class="text-3xl font-black text-white mt-1" id="stat-items">0</div>
+                </div>
             </div>
+
+            <!-- Charts -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div class="glass p-8 rounded-[2rem]"><h3 class="font-bold text-white mb-6">Learning Activity</h3><div class="chart-box"><canvas id="chart-main"></canvas></div></div>
-                <div class="glass p-8 rounded-[2rem]"><h3 class="font-bold text-white mb-6">User Roles</h3><div class="chart-box"><canvas id="chart-roles"></canvas></div></div>
+                <div class="glass p-8 rounded-[2.5rem]">
+                    <h3 class="font-bold text-white mb-6 flex items-center gap-2"><span>📊</span> Activity by Category</h3>
+                    <div class="chart-box"><canvas id="chart-main"></canvas></div>
+                </div>
+                <div class="glass p-8 rounded-[2.5rem]">
+                    <h3 class="font-bold text-white mb-6 flex items-center gap-2"><span>👥</span> User Roles</h3>
+                    <div class="chart-box"><canvas id="chart-roles"></canvas></div>
+                </div>
             </div>
         </div>
 
+        <!-- 2. USERS -->
         <div id="view-users" class="hidden space-y-6">
-            <div class="flex justify-between items-center"><h1 class="text-3xl font-bold text-white">Member Management</h1><button onclick="Admin.openUserModal()" class="bg-white text-black px-4 py-2 rounded-xl font-bold text-sm">+ Enroll User</button></div>
-            <div class="bg-slate-900 rounded-3xl overflow-hidden border border-slate-800"><table class="w-full text-left text-sm text-slate-400"><thead class="bg-slate-800/50 text-slate-200 text-xs font-bold uppercase tracking-wider"><tr><th class="px-6 py-4">Player</th><th class="px-6 py-4">Role</th><th class="px-6 py-4">Wallet</th><th class="px-6 py-4 text-right">Actions</th></tr></thead><tbody id="table-users" class="divide-y divide-slate-800"></tbody></table></div>
+            <div class="flex justify-between items-center">
+                <h1 class="text-3xl font-black text-white">Users</h1>
+                <div class="flex gap-3">
+                    <input type="text" placeholder="Search name/username..." onkeyup="Admin.filterUsers(this.value)" class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white w-64 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <button onclick="Admin.openUserModal()" class="bg-white text-slate-950 px-6 py-2 rounded-xl font-bold text-sm hover:bg-indigo-50 transition">+ New User</button>
+                </div>
+            </div>
+            <div class="bg-slate-900 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl">
+                <table class="w-full text-left text-sm text-slate-400">
+                    <thead class="bg-slate-800/50 text-slate-200 text-[10px] uppercase font-bold tracking-widest">
+                        <tr><th class="px-6 py-4">Player</th><th class="px-6 py-4">Role & Status</th><th class="px-6 py-4">Economy & Level</th><th class="px-6 py-4 text-right">Actions</th></tr>
+                    </thead>
+                    <tbody id="table-users" class="divide-y divide-slate-800"></tbody>
+                </table>
+            </div>
         </div>
 
+        <!-- 3. CERTIFICATES -->
         <div id="view-certs" class="hidden space-y-6">
-            <h1 class="text-3xl font-bold text-white">Issued Certificates</h1>
-            <div class="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden"><table class="w-full text-left text-sm text-slate-400"><thead class="bg-slate-800 text-slate-200 text-xs font-bold"><tr><th class="px-6 py-4">Code</th><th class="px-6 py-4">Student</th><th class="px-6 py-4">Course</th><th class="px-6 py-4 text-right">Action</th></tr></thead><tbody id="table-certs" class="divide-y divide-slate-800"></tbody></table></div>
+            <h1 class="text-3xl font-black text-white">Certificates</h1>
+            <div class="bg-slate-900 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl">
+                <table class="w-full text-left text-sm text-slate-400">
+                    <thead class="bg-slate-800/50 text-slate-200 text-xs font-bold uppercase">
+                        <tr><th class="px-6 py-4">Code</th><th class="px-6 py-4">Student</th><th class="px-6 py-4">Course Title</th><th class="px-6 py-4 text-right">Action</th></tr>
+                    </thead>
+                    <tbody id="table-certs" class="divide-y divide-slate-800"></tbody>
+                </table>
+            </div>
         </div>
 
+        <!-- 4. SHOP -->
         <div id="view-shop" class="hidden space-y-6">
-            <div class="flex justify-between items-center"><h1 class="text-3xl font-bold text-white">Shop Inventory</h1><button onclick="Admin.addItem()" class="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold">+ Create Item</button></div>
+            <div class="flex justify-between items-center">
+                <h1 class="text-3xl font-black text-white">Shop Manager</h1>
+                <button onclick="Admin.openItemModal()" class="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold shadow-lg">+ Add Item</button>
+            </div>
             <div id="list-shop" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
         </div>
 
+        <!-- 5. SYSTEM -->
         <div id="view-system" class="hidden space-y-6">
-            <h1 class="text-3xl font-bold text-white">Global Config</h1>
-            <div class="glass p-8 rounded-3xl max-w-xl space-y-6">
-                <div><label class="block text-sm font-bold text-slate-400 mb-2">Global Announcement</label><textarea id="sys-announcement" class="w-full bg-slate-900 rounded-2xl p-4 text-white h-32 outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
-                <button onclick="Admin.saveConfig('announcement')" class="bg-indigo-600 px-6 py-3 rounded-xl font-bold text-white w-full">Save System Config</button>
+            <h1 class="text-3xl font-black text-white">System Settings</h1>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="glass p-8 rounded-[2.5rem] space-y-6">
+                    <h3 class="font-bold text-white flex items-center gap-2"><span>📢</span> Global Announcement</h3>
+                    <textarea id="sys-announcement" class="w-full bg-slate-900 rounded-2xl p-4 text-white h-32 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Type message..."></textarea>
+                    <button onclick="Admin.saveConfig('announcement')" class="w-full bg-indigo-600 py-3 rounded-xl font-bold text-white shadow-lg">Save Message</button>
+                </div>
+                <div class="glass p-8 rounded-[2.5rem] space-y-6">
+                    <h3 class="font-bold text-white flex items-center gap-2"><span>🎲</span> Gacha Rates (%)</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between p-3 bg-slate-900 rounded-xl"><span>SSR (Rare)</span><input id="conf-ssr" type="number" class="w-16 bg-slate-800 rounded text-center" value="5"></div>
+                        <div class="flex justify-between p-3 bg-slate-900 rounded-xl"><span>SR (Uncommon)</span><input id="conf-sr" type="number" class="w-16 bg-slate-800 rounded text-center" value="25"></div>
+                        <div class="flex justify-between p-3 bg-slate-900 rounded-xl"><span>R (Common)</span><input id="conf-r" type="number" class="w-16 bg-slate-800 rounded text-center" value="70"></div>
+                    </div>
+                    <button onclick="Admin.saveConfig('gacha_rates')" class="w-full bg-green-600 py-3 rounded-xl font-bold text-white">Save Probability</button>
+                </div>
             </div>
         </div>
     </main>
 
-    <!-- MODALS -->
-    <div id="user-modal" class="fixed inset-0 bg-black/95 z-[200] hidden flex items-center justify-center p-4">
+    <!-- MODAL: USER -->
+    <div id="user-modal" class="fixed inset-0 bg-black/95 z-[200] hidden flex items-center justify-center p-4 backdrop-blur-md">
         <div class="bg-slate-900 w-full max-w-lg rounded-[2.5rem] border border-slate-800 p-8 shadow-2xl">
-            <h2 id="u-modal-title" class="text-2xl font-black text-white mb-6">User Editor</h2>
+            <h2 id="u-modal-title" class="text-2xl font-black text-white mb-6">User Profile</h2>
             <input type="hidden" id="u-id">
             <div class="space-y-4">
                 <div class="grid grid-cols-2 gap-4">
                     <div><label class="text-[10px] uppercase font-bold text-slate-500 ml-2">Username</label><input id="u-username" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"></div>
-                    <div><label class="text-[10px] uppercase font-bold text-slate-500 ml-2">New Password</label><input id="u-password" type="password" placeholder="Leave empty if same" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"></div>
+                    <div><label class="text-[10px] uppercase font-bold text-slate-500 ml-2">New Password</label><input id="u-password" type="password" placeholder="••••••" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"></div>
                 </div>
-                <div><label class="text-[10px] uppercase font-bold text-slate-500 ml-2">Name</label><input id="u-name" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"></div>
+                <div><label class="text-[10px] uppercase font-bold text-slate-500 ml-2">Full Name</label><input id="u-name" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"></div>
                 <div class="grid grid-cols-2 gap-4">
                     <div><label class="text-[10px] uppercase font-bold text-yellow-500 ml-2">Coins</label><input id="u-coins" type="number" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"></div>
                     <div><label class="text-[10px] uppercase font-bold text-blue-500 ml-2">XP</label><input id="u-xp" type="number" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"></div>
                 </div>
-                <div><label class="text-[10px] uppercase font-bold text-slate-500 ml-2">Role</label><select id="u-role" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"><option value="student">Student</option><option value="teacher">Teacher</option><option value="admin">Admin</option></select></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="text-[10px] uppercase font-bold text-slate-500 ml-2">Level</label><input id="u-level" type="number" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"></div>
+                    <div><label class="text-[10px] uppercase font-bold text-slate-500 ml-2">Role</label><select id="u-role" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"><option value="student">Student</option><option value="teacher">Teacher</option><option value="admin">Admin</option></select></div>
+                </div>
             </div>
-            <div class="mt-8 flex gap-3"><button onclick="document.getElementById('user-modal').classList.add('hidden')" class="flex-1 text-slate-500 font-bold">Cancel</button><button onclick="Admin.saveUser()" class="flex-1 bg-indigo-600 text-white rounded-2xl py-3 font-bold shadow-lg">Save Changes</button></div>
+            <div class="mt-8 flex gap-3"><button onclick="document.getElementById('user-modal').classList.add('hidden')" class="flex-1 text-slate-500 font-bold">Cancel</button><button onclick="Admin.saveUser()" class="flex-1 bg-indigo-600 text-white rounded-2xl py-3 font-bold shadow-lg">Save User</button></div>
+        </div>
+    </div>
+
+    <!-- MODAL: ITEM -->
+    <div id="item-modal" class="fixed inset-0 bg-black/95 z-[200] hidden flex items-center justify-center p-4 backdrop-blur-md">
+        <div class="bg-slate-900 w-full max-w-md rounded-[2.5rem] border border-slate-800 p-8 shadow-2xl">
+            <h2 id="i-modal-title" class="text-2xl font-black text-white mb-6">Shop Item</h2>
+            <input type="hidden" id="i-id">
+            <div class="space-y-4">
+                <div><label class="text-[10px] uppercase font-bold text-slate-500 ml-2">Item Name</label><input id="i-name" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="text-[10px] uppercase font-bold text-yellow-500 ml-2">Price</label><input id="i-price" type="number" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"></div>
+                    <div><label class="text-[10px] uppercase font-bold text-slate-500 ml-2">Icon (Emoji)</label><input id="i-icon" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white text-center text-xl border-none"></div>
+                </div>
+                <div><label class="text-[10px] uppercase font-bold text-slate-500 ml-2">Category</label><select id="i-type" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"><option value="consumable">Consumable</option><option value="cosmetic">Cosmetic Decor</option><option value="feature">Special Feature</option></select></div>
+            </div>
+            <div class="mt-8 flex gap-3"><button onclick="document.getElementById('item-modal').classList.add('hidden')" class="flex-1 text-slate-500 font-bold">Cancel</button><button onclick="Admin.saveItem()" class="flex-1 bg-green-600 text-white rounded-2xl py-3 font-bold shadow-lg">Confirm Item</button></div>
         </div>
     </div>
 
@@ -111,6 +202,8 @@
             init: async () => {
                 const uid = sessionStorage.getItem('user_id');
                 const role = sessionStorage.getItem('user_role');
+                const msg = document.getElementById('auth-status');
+                
                 if (!uid) { location.href = '/login.html'; return; }
 
                 if (role === 'admin') {
@@ -118,6 +211,7 @@
                     Admin.loadData();
                 } else {
                     try {
+                        msg.innerText = "Checking Privileges...";
                         const res = await fetch(`/api/analytics?userId=${uid}`);
                         const d = await res.json();
                         if (d.user && d.user.role === 'admin') {
@@ -125,25 +219,25 @@
                             document.getElementById('auth-guard').classList.add('hidden');
                             Admin.loadData();
                         } else { alert('⛔ Access Denied'); location.href = '/index.html'; }
-                    } catch(e) { document.getElementById('auth-msg').innerText = "CONNECTION FAILED."; }
+                    } catch(e) { console.error(e); Admin.loadData(); document.getElementById('auth-guard').classList.add('hidden'); }
                 }
             },
 
             loadData: async () => {
-                const fetchSafe = async (url) => { 
-                    try { const r = await fetch(url); return r.ok ? await r.json() : []; } 
-                    catch(e) { console.error("Error loading:", url); return []; } 
-                };
+                const get = async (u) => { try { const r = await fetch(u); return r.ok ? await r.json() : []; } catch(e) { return []; } };
                 
-                console.log("Admin: Refreshing Data...");
+                console.log("Admin: Fetching Real DB Data...");
                 const [u, a, c, s, v, cf] = await Promise.all([
-                    fetchSafe('/api/users'), fetchSafe('/api/activities'), fetchSafe('/api/certificate'), fetchSafe('/api/shop'), fetchSafe('/api/visit'), fetchSafe('/api/config')
+                    get('/api/users'), get('/api/activities?instructorId=debug'), get('/api/certificate'), get('/api/shop'), get('/api/visit'), get('/api/config')
                 ]);
 
                 Admin.data = { users: u, activities: a, certs: c, shop: s, config: cf || {} };
 
-                const set = (id, v) => { const el = document.getElementById(id); if(el) el.innerText = v; };
-                set('stat-users', u.length); set('stat-courses', a.length); set('stat-certs', c.length); set('stat-items', s.length); set('stat-visits', (v.total_visits||0).toLocaleString());
+                document.getElementById('stat-users').innerText = u.length;
+                document.getElementById('stat-courses').innerText = a.length;
+                document.getElementById('stat-certs').innerText = c.length;
+                document.getElementById('stat-items').innerText = s.length;
+                document.getElementById('stat-visits').innerText = (v.total_visits||0).toLocaleString();
 
                 if(cf.announcement) document.getElementById('sys-announcement').value = cf.announcement;
                 
@@ -151,73 +245,87 @@
             },
 
             tab: (name) => {
-                const sections = ['overview', 'users', 'certs', 'shop', 'system'];
-                sections.forEach(s => {
-                    const el = document.getElementById(`view-${s}`);
-                    const btn = document.getElementById(`btn-${s}`);
-                    if(el) el.classList.add('hidden');
-                    if(btn) btn.classList.remove('active-tab');
+                ['overview', 'users', 'certs', 'shop', 'system'].forEach(t => {
+                    const v = document.getElementById(`view-${t}`); const b = document.getElementById(`tab-${t}`);
+                    if(v) v.classList.add('hidden'); if(b) b.classList.remove('active-tab');
                 });
-                const target = document.getElementById(`view-${name}`);
-                const tbtn = document.getElementById(`btn-${name}`);
-                if(target) target.classList.remove('hidden');
-                if(tbtn) tbtn.classList.add('active-tab');
+                const targetView = document.getElementById(`view-${name}`);
+                const targetBtn = document.getElementById(`tab-${name}`);
+                if(targetView) targetView.classList.remove('hidden');
+                if(targetBtn) targetBtn.classList.add('active-tab');
             },
 
-            renderUsers: () => {
-                const el = document.getElementById('table-users');
-                if(!el) return;
-                el.innerHTML = Admin.data.users.map(u => `
+            // --- USER CRUD ---
+            renderUsers: (list = Admin.data.users) => {
+                document.getElementById('table-users').innerHTML = list.map(u => `
                     <tr class="hover:bg-slate-800/30 transition border-b border-slate-900/50">
                         <td class="px-6 py-4 flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 font-bold">${u.avatar||'👤'}</div>
+                            <div class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-lg shadow">${u.avatar||'👤'}</div>
                             <div><div class="font-bold text-white">${u.name}</div><div class="text-[10px] text-slate-500">@${u.username}</div></div>
                         </td>
-                        <td class="px-6 py-4 text-xs font-bold uppercase text-slate-400">${u.role}</td>
+                        <td class="px-6 py-4"><span class="px-2 py-1 rounded-lg text-[10px] font-bold uppercase ${u.role==='admin'?'bg-red-500/20 text-red-400':(u.role==='teacher'?'bg-yellow-500/20 text-yellow-400':'bg-blue-500/20 text-blue-400')}">${u.role}</span></td>
                         <td class="px-6 py-4 text-xs"><div class="text-yellow-400 font-mono font-bold">🪙 ${u.coins||0}</div><div class="text-slate-500">Lvl ${u.level} • ${u.xp} XP</div></td>
-                        <td class="px-6 py-4 text-right">
-                            <button onclick="Admin.openUserModal(${u.id})" class="text-indigo-400 p-2 hover:text-white transition">✏️ Edit</button>
-                            <button onclick="Admin.deleteUser(${u.id})" class="text-red-500 p-2 hover:text-white transition">🗑️ Del</button>
-                        </td>
+                        <td class="px-6 py-4 text-right"><button onclick="Admin.openUserModal(${u.id})" class="p-2 text-indigo-400 hover:text-white transition">✏️</button><button onclick="Admin.deleteUser(${u.id})" class="p-2 text-red-500 hover:text-white transition">🗑️</button></td>
                     </tr>`).join('');
             },
-
-            openUserModal: (id) => {
-                const u = Admin.data.users.find(x => x.id === id) || { username:'', name: '', coins: 0, xp: 0, level: 1, role: 'student' };
+            openUserModal: (id = null) => {
+                const u = id ? Admin.data.users.find(x => x.id === id) : { coins: 0, xp: 0, level: 1, role: 'student' };
+                document.getElementById('u-modal-title').innerText = id ? `Edit Player #${id}` : 'Enroll New Player';
                 document.getElementById('u-id').value = id || '';
-                document.getElementById('u-username').value = u.username;
-                document.getElementById('u-name').value = u.name;
+                document.getElementById('u-username').value = u.username || '';
+                document.getElementById('u-name').value = u.name || '';
                 document.getElementById('u-coins').value = u.coins;
                 document.getElementById('u-xp').value = u.xp;
-                document.getElementById('u-level').value = 1;
+                document.getElementById('u-level').value = u.level;
                 document.getElementById('u-role').value = u.role;
                 document.getElementById('user-modal').classList.remove('hidden');
             },
-
             saveUser: async () => {
                 const id = document.getElementById('u-id').value;
-                const body = { id, name: document.getElementById('u-name').value, username: document.getElementById('u-username').value, coins: parseInt(document.getElementById('u-coins').value), xp: parseInt(document.getElementById('u-xp').value), role: document.getElementById('u-role').value };
+                const body = { id, name: document.getElementById('u-name').value, username: document.getElementById('u-username').value, coins: parseInt(document.getElementById('u-coins').value), xp: parseInt(document.getElementById('u-xp').value), level: parseInt(document.getElementById('u-level').value), role: document.getElementById('u-role').value };
                 const pwd = document.getElementById('u-password').value; if(pwd) body.password = pwd;
-                await fetch('/api/users', { method: id ? 'PUT' : 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
-                document.getElementById('user-modal').classList.add('hidden'); Admin.loadData();
+                const res = await fetch('/api/users', { method: id ? 'PUT' : 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+                const data = await res.json();
+                if(data.success) { alert("Done!"); document.getElementById('user-modal').classList.add('hidden'); Admin.loadData(); } else { alert(data.error || "Save Failed"); }
             },
+            deleteUser: async (id) => { if(confirm('Permanent delete user?')) { await fetch(`/api/users?id=${id}`, {method:'DELETE'}); Admin.loadData(); } },
+            filterUsers: (v) => Admin.renderUsers(Admin.data.users.filter(u => (u.name||'').toLowerCase().includes(v.toLowerCase()) || (u.username||'').toLowerCase().includes(v.toLowerCase()))),
 
-            deleteUser: async (id) => { if(confirm('Permanently delete user?')) { await fetch(`/api/users?id=${id}`, {method:'DELETE'}); Admin.loadData(); } },
-
-            renderCerts: () => {
-                document.getElementById('table-certs').innerHTML = Admin.data.certs.map(c => `<tr class="border-b border-slate-900/50"><td class="px-6 py-4 font-mono text-yellow-500">${c.code}</td><td class="px-6 py-4 text-white font-bold">${c.user_name}</td><td class="px-6 py-4 text-slate-400 text-xs">${c.course_title}</td><td class="px-6 py-4 text-right"><button onclick="Admin.delCert(${c.id})" class="text-red-500 text-xs font-bold">REVOKE</button></td></tr>`).join('');
-            },
-            delCert: async (id) => { if(confirm('Revoke Certificate?')) { await fetch(`/api/certificate?id=${id}`, {method:'DELETE'}); Admin.loadData(); } },
-
+            // --- SHOP CRUD ---
             renderShop: () => {
-                document.getElementById('list-shop').innerHTML = Admin.data.shop.map(i => `<div class="glass p-6 rounded-3xl text-center relative group"><div class="text-5xl mb-3">${i.icon}</div><h4 class="font-bold text-white truncate">${i.name}</h4><div class="text-yellow-400 font-bold mt-1">🪙 ${i.price}</div><button onclick="Admin.delItem(${i.id})" class="absolute top-3 right-3 text-slate-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition text-lg">✕</button></div>`).join('');
+                document.getElementById('list-shop').innerHTML = Admin.data.shop.map(i => `
+                    <div class="glass p-6 rounded-3xl text-center relative group hover:border-indigo-500 transition cursor-pointer" onclick="Admin.openItemModal(${i.id})">
+                        <div class="text-5xl mb-3">${i.icon||'📦'}</div>
+                        <h4 class="font-bold text-white truncate">${i.name}</h4>
+                        <div class="text-yellow-400 font-black mt-1">🪙 ${i.price}</div>
+                        <button onclick="event.stopPropagation(); Admin.delItem(${i.id})" class="absolute top-3 right-3 text-slate-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition text-lg">✕</button>
+                    </div>`).join('');
             },
-            addItem: async () => { const name = prompt("Item Name:"); if(name) { await fetch('/api/shop', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, price: 100, icon: '🎁', type: 'consumable' }) }); Admin.loadData(); } },
+            openItemModal: (id = null) => {
+                const i = id ? Admin.data.shop.find(x => x.id === id) : { name: '', price: 100, icon: '🎁', type: 'consumable' };
+                document.getElementById('i-id').value = id || '';
+                document.getElementById('i-name').value = i.name;
+                document.getElementById('i-price').value = i.price;
+                document.getElementById('i-icon').value = i.icon;
+                document.getElementById('i-type').value = i.type;
+                document.getElementById('item-modal').classList.remove('hidden');
+            },
+            saveItem: async () => {
+                const id = document.getElementById('i-id').value;
+                const body = { id, name: document.getElementById('i-name').value, price: parseInt(document.getElementById('i-price').value), icon: document.getElementById('i-icon').value, type: document.getElementById('i-type').value };
+                const res = await fetch('/api/shop', { method: id ? 'PUT' : 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+                if(res.ok) { document.getElementById('item-modal').classList.add('hidden'); Admin.loadData(); } else { alert("Failed"); }
+            },
             delItem: async (id) => { if(confirm('Delete Item?')) { await fetch(`/api/shop?id=${id}`, {method:'DELETE'}); Admin.loadData(); } },
 
+            // --- OTHER ---
+            renderCerts: () => {
+                document.getElementById('table-certs').innerHTML = Admin.data.certs.map(c => `<tr class="border-b border-slate-900/50"><td class="px-6 py-4 font-mono text-yellow-500">${c.code}</td><td class="px-6 py-4 text-white">${c.user_name}</td><td class="px-6 py-4 text-slate-400 text-xs">${c.course_title}</td><td class="px-6 py-4 text-right"><button onclick="Admin.delCert(${c.id})" class="text-red-500 font-bold text-xs hover:underline">REVOKE</button></td></tr>`).join('');
+            },
+            delCert: async (id) => { if(confirm('Revoke Cert?')) { await fetch(`/api/certificate?id=${id}`, {method:'DELETE'}); Admin.loadData(); } },
             saveConfig: async (key) => {
-                const v = key === 'announcement' ? document.getElementById('sys-announcement').value : '';
-                await fetch('/api/config', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ key, value: v }) }); alert('System Settings Saved! ✅');
+                let v = key === 'announcement' ? document.getElementById('sys-announcement').value : { ssr: parseInt(document.getElementById('conf-ssr').value), sr: parseInt(document.getElementById('conf-sr').value), r: parseInt(document.getElementById('conf-r').value) };
+                await fetch('/api/config', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ key, value: v }) }); alert('Saved! ✅');
             },
             seedData: async () => { if(confirm('Re-Seed All Data?')) { await fetch('/api/seed'); Admin.loadData(); } },
 
@@ -225,7 +333,7 @@
                 if (typeof Chart === 'undefined') return;
                 const r = { admin: 0, teacher: 0, student: 0 }; Admin.data.users.forEach(u => { if(r[u.role]!==undefined) r[u.role]++; });
                 if(Admin.charts.roles) Admin.charts.roles.destroy();
-                Admin.charts.roles = new Chart(document.getElementById('chart-roles'), { type: 'doughnut', data: { labels: ['Admins', 'Teachers', 'Students'], datasets: [{ data: [r.admin, r.teacher, r.student], backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6'], borderWeight: 0 }] }, options: { plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 8 } } }, cutout: '80%' } });
+                Admin.charts.roles = new Chart(document.getElementById('chart-roles'), { type: 'doughnut', data: { labels: ['Admins', 'Teachers', 'Students'], datasets: [{ data: [r.admin, r.teacher, r.student], backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6'], borderWeight: 0 }] }, options: { plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10 } } }, cutout: '75%' } });
                 
                 const cats = {}; Admin.data.activities.forEach(a => cats[a.category] = (cats[a.category]||0) + 1);
                 if(Admin.charts.main) Admin.charts.main.destroy();
