@@ -60,10 +60,21 @@ module.exports = async (req, res) => {
             return res.json({ success: true, message: "Base Data Seeded" });
         }
 
+        if (pathname === '/api/register' && method === 'POST') {
+            const { username, password, name, email, phone, school } = req.body;
+            await runQuery("INSERT INTO users (username, password, name, email, phone, school) VALUES ($1, $2, $3, $4, $5, $6)", 
+                [username, password, name, email, phone || '', school || '']);
+            return res.json({ success: true });
+        }
+
         if (pathname === '/api/check-db') {
             if (!db) return res.json({ status: "Error", message: "POSTGRES_URL missing" });
-            const result = await db.query('SELECT current_database(), now()');
-            return res.json({ status: "Connected ✅", db: result.rows[0].current_database, time: result.rows[0].now });
+            try {
+                const result = await db.query('SELECT current_database(), now()');
+                return res.json({ status: "Connected ✅", db: result.rows[0].current_database, time: result.rows[0].now });
+            } catch(e) {
+                return res.json({ status: "Error", message: e.message });
+            }
         }
 
         // --- 2. USERS & AUTH ---
@@ -97,10 +108,22 @@ module.exports = async (req, res) => {
         if (pathname === '/api/activities') {
             if (method === 'GET') {
                 const instructorId = url.searchParams.get("instructorId");
-                let q = "SELECT * FROM activities";
-                const params = [];
-                if (instructorId && instructorId !== 'debug') { q += " WHERE creator_id = $1"; params.push(instructorId); }
-                return res.json(await runQuery(q + " ORDER BY id DESC", params));
+                const studentId = parseInt(url.searchParams.get("studentId")) || 0;
+                
+                // Join with enrollments to see if THIS student has unlocked the course
+                let q = `
+                    SELECT a.*, COALESCE(e.id, 0) as is_enrolled 
+                    FROM activities a 
+                    LEFT JOIN enrollments e ON a.id = e.activity_id AND e.user_id = $1
+                `;
+                const params = [studentId];
+                
+                if (instructorId && instructorId !== 'debug') { 
+                    q += " WHERE a.creator_id = $2"; 
+                    params.push(parseInt(instructorId)); 
+                }
+                
+                return res.json(await runQuery(q + " ORDER BY a.id DESC", params));
             }
             if (method === 'POST') {
                 const b = req.body; const content = typeof b.content === 'object' ? JSON.stringify(b.content) : b.content;

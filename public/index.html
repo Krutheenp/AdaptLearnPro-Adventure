@@ -16,33 +16,19 @@
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        .course-node:hover .node-icon { transform: scale(1.15) rotate(5deg); }
     </style>
 </head>
 
 <body class="bg-slate-950">
 
-    <!-- GUEST / LOGIN SCREEN -->
-    <div id="guest-screen" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950 hidden">
-        <div class="text-center p-10 max-w-md w-full glass rounded-[2.5rem] border border-slate-800 shadow-2xl animate-fade-in mx-4">
-            <div class="text-7xl mb-6 animate-float">🛡️</div>
-            <h1 class="text-3xl font-black text-white mb-2">AdaptLearn Pro</h1>
-            <p class="text-slate-500 mb-8">Begin your learning adventure today.</p>
-            <a href="/login.html" class="block w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl shadow-lg transition transform hover:scale-105 active:scale-95 mb-4">
-                Enter Adventure
-            </a>
-            <div class="text-[10px] text-slate-600 uppercase tracking-widest font-bold">
-                System Online • <span id="visitor-count">...</span>
-            </div>
-        </div>
-    </div>
-
     <!-- APP LAYOUT -->
-    <div id="app-layout" class="flex h-screen overflow-hidden hidden">
+    <div id="app-layout" class="flex h-screen overflow-hidden">
         
-        <!-- SIDEBAR (Responsive) -->
-        <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-slate-900 border-r border-slate-800 flex flex-col z-50 transform -translate-x-full lg:translate-x-0 lg:static transition-transform duration-300 ease-in-out">
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-slate-900 border-r border-slate-800 flex flex-col z-50 transform -translate-x-full lg:translate-x-0 lg:static transition-transform duration-300 ease-in-out shadow-2xl">
             <div class="h-20 flex items-center px-6 border-b border-slate-800">
-                <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white text-xl shadow-lg mr-3">🧠</div>
+                <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white text-xl shadow-lg mr-3 shadow-indigo-900/20">🧠</div>
                 <span class="font-black text-white text-lg tracking-tight">AdaptLearn</span>
             </div>
 
@@ -57,7 +43,7 @@
                     <i class="fa-solid fa-store"></i><span class="font-bold text-sm">Item Shop</span>
                 </button>
                 <div class="border-t border-slate-800 my-4"></div>
-                <a href="/profile.html" class="w-full text-left px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition flex items-center gap-3">
+                <a href="/profile.html" class="w-full text-left px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition flex items-center gap-3 auth-only hidden">
                     <i class="fa-solid fa-user-astronaut"></i><span class="font-bold text-sm">My Profile</span>
                 </a>
                 
@@ -70,15 +56,24 @@
                 </a>
             </nav>
 
-            <div class="p-4 border-t border-slate-800">
-                <button onclick="Game.auth.logout()" class="w-full py-3 text-red-400 font-bold flex items-center justify-center gap-2 hover:bg-red-500/10 rounded-xl transition">
-                    <i class="fa-solid fa-right-from-bracket"></i><span>Logout</span>
-                </button>
+            <div class="p-4 border-t border-slate-800" id="sidebar-footer">
+                <!-- Logged in state -->
+                <div id="auth-footer" class="hidden">
+                    <button onclick="Game.auth.logout()" class="w-full py-3 text-red-400 font-bold flex items-center justify-center gap-2 hover:bg-red-500/10 rounded-xl transition">
+                        <i class="fa-solid fa-right-from-bracket"></i><span>Logout</span>
+                    </button>
+                </div>
+                <!-- Guest state -->
+                <div id="guest-footer" class="">
+                    <a href="/login.html" class="w-full py-3 bg-indigo-600 text-white font-bold flex items-center justify-center gap-2 rounded-xl transition shadow-lg hover:bg-indigo-500">
+                        <i class="fa-solid fa-key"></i><span>Sign In</span>
+                    </a>
+                </div>
             </div>
         </aside>
 
         <!-- MAIN CONTENT -->
-        <main class="flex-1 flex flex-col min-w-0 bg-slate-950 overflow-hidden">
+        <main class="flex-1 flex flex-col min-w-0 bg-slate-950 overflow-hidden relative">
             
             <!-- TOP NAVBAR -->
             <header class="h-16 lg:h-20 glass flex items-center justify-between px-4 lg:px-8 z-40 flex-shrink-0">
@@ -92,28 +87,25 @@
                         <span class="text-lg lg:text-xl">🪙</span>
                         <span class="font-black text-yellow-400 text-sm lg:text-base" id="hud-coins">0</span>
                     </div>
-                    <div class="hidden sm:flex items-center gap-2 bg-slate-900/80 px-4 py-2 rounded-2xl border border-slate-800 shadow-lg">
-                        <span class="text-xl">🔥</span>
-                        <span class="font-black text-orange-500" id="hud-streak">0</span>
-                    </div>
-                    <div class="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-slate-800 flex items-center justify-center text-xl lg:text-2xl border border-slate-700 shadow-xl cursor-pointer" onclick="location.href='/profile.html'" id="hud-avatar">🙂</div>
+                    <div id="hud-avatar" class="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-slate-800 flex items-center justify-center text-xl lg:text-2xl border border-slate-700 shadow-xl cursor-pointer" onclick="location.href='/profile.html'">🙂</div>
                 </div>
             </header>
 
             <!-- CONTENT AREA -->
             <div class="flex-1 overflow-y-auto p-4 lg:p-10 custom-scrollbar relative" id="content-scroll">
                 
-                <!-- DASHBOARD -->
+                <!-- DASHBOARD (Adventure Map) -->
                 <div id="view-dashboard" class="view-section space-y-8 max-w-7xl mx-auto">
+                    
                     <!-- Welcome Hero -->
-                    <div class="relative p-6 lg:p-10 rounded-[2.5rem] bg-gradient-to-br from-indigo-900/40 to-slate-900 border border-indigo-500/20 shadow-2xl overflow-hidden">
+                    <div id="welcome-hero" class="relative p-6 lg:p-10 rounded-[2.5rem] bg-gradient-to-br from-indigo-900/40 to-slate-900 border border-indigo-500/20 shadow-2xl overflow-hidden">
                         <div class="absolute -top-24 -right-24 w-64 h-64 bg-indigo-600/20 blur-[100px] rounded-full"></div>
                         <div class="relative z-10 flex flex-col md:flex-row items-center gap-6 lg:gap-10">
                             <div class="w-24 h-24 lg:w-32 lg:h-32 rounded-[2rem] bg-slate-800 flex items-center justify-center text-5xl lg:text-6xl border-4 border-indigo-500 shadow-2xl" id="dash-avatar">🙂</div>
                             <div class="flex-1 text-center md:text-left">
-                                <h3 class="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1" id="dash-role">Student</h3>
-                                <h2 class="text-3xl lg:text-4xl font-black text-white mb-4">Hi, <span id="dash-name" class="text-indigo-300">Hero</span>!</h2>
-                                <div class="max-w-md mx-auto md:mx-0">
+                                <h3 class="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1" id="dash-role">Guest</h3>
+                                <h2 class="text-3xl lg:text-4xl font-black text-white mb-4">Welcome to <span class="text-indigo-300">AdaptLearn</span></h2>
+                                <div id="auth-stats" class="hidden max-w-md mx-auto md:mx-0">
                                     <div class="flex justify-between text-[10px] font-black text-slate-500 uppercase mb-2">
                                         <span>Level <span id="dash-lvl" class="text-white">1</span></span>
                                         <span id="dash-xp-txt">0 / 100 XP</span>
@@ -121,6 +113,9 @@
                                     <div class="h-2.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700">
                                         <div id="dash-xp-bar" class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full w-0 transition-all duration-1000"></div>
                                     </div>
+                                </div>
+                                <div id="guest-msg" class="text-slate-400 text-sm max-w-lg mx-auto md:mx-0">
+                                    Browse our public courses below. Sign in to track your progress and earn certificates!
                                 </div>
                             </div>
                         </div>
@@ -132,7 +127,9 @@
                             <span class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider shadow-lg border border-indigo-400" id="map-label">🌌 Galactic Map</span>
                             <button onclick="Game.render.map(null)" class="hidden bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-700 border border-slate-600" id="map-back-btn">⬅ Back</button>
                         </div>
-                        <div id="map-content" class="relative z-10 w-full h-full p-10 min-h-[600px]"></div>
+                        <div id="map-content" class="relative z-10 w-full h-full p-6 lg:p-10 min-h-[600px] flex flex-col">
+                            <!-- Planets / Levels injected here -->
+                        </div>
                     </div>
                 </div>
 
@@ -166,7 +163,7 @@
         </main>
     </div>
 
-    <!-- OVERLAY FOR MOBILE SIDEBAR -->
+    <!-- MOBILE OVERLAYS -->
     <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden" onclick="Game.ui.toggleSidebar()"></div>
 
     <script>
@@ -175,18 +172,27 @@
 
             init: async () => {
                 const uid = sessionStorage.getItem('user_id');
-                if (!uid) { 
-                    document.getElementById('guest-screen').classList.remove('hidden');
-                    try {
-                        const res = await fetch('/api/visit');
-                        const data = await res.json();
-                        document.getElementById('visitor-count').innerText = `Visitors: ${data.total_visits || 0}`;
-                    } catch(e) {}
-                    return; 
+                const auth = sessionStorage.getItem('auth');
+
+                console.log("System Check: ID=" + uid + " Auth=" + auth);
+
+                // Initialize Analytics / Visits
+                fetch('/api/visit').catch(() => {});
+
+                if (auth === 'true' && uid) {
+                    // Logged in
+                    document.getElementById('auth-footer').classList.remove('hidden');
+                    document.getElementById('guest-footer').classList.add('hidden');
+                    document.getElementById('auth-stats').classList.remove('hidden');
+                    document.getElementById('guest-msg').classList.add('hidden');
+                    document.querySelectorAll('.auth-only').forEach(el => el.classList.remove('hidden'));
                 }
 
+                // Always allow entering the layout now
                 document.getElementById('app-layout').classList.remove('hidden');
-                await Game.api.loadAll(uid);
+                
+                // Fetch All Data (Pass uid or 0 for guest)
+                await Game.api.loadAll(uid || 0);
                 
                 Game.render.hud();
                 Game.render.dashboard();
@@ -201,15 +207,17 @@
                 },
                 tab: (name) => {
                     document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
-                    document.getElementById(`view-${name}`).classList.remove('hidden');
+                    const target = document.getElementById(`view-${name}`);
+                    if(target) target.classList.remove('hidden');
                     
-                    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active-tab'));
-                    document.getElementById(`nav-${name}`).classList.add('active-tab');
+                    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                    const navBtn = document.getElementById(`nav-${name}`);
+                    if(navBtn) navBtn.classList.add('active');
                     
                     const titles = { dashboard: 'Adventure Map', leaderboard: 'Hall of Fame', shop: 'Item Shop' };
                     document.getElementById('page-title').innerText = titles[name] || '';
 
-                    if(window.innerWidth < 1024) Game.ui.toggleSidebar(); // Close sidebar on mobile select
+                    if(window.innerWidth < 1024 && !document.getElementById('sidebar').classList.contains('-translate-x-full')) Game.ui.toggleSidebar();
 
                     if (name === 'leaderboard') Game.render.leaderboard();
                     if (name === 'shop') Game.render.shop();
@@ -224,24 +232,31 @@
             api: {
                 loadAll: async (uid) => {
                     try {
-                        // Pass studentId to activities to check enrollment status
-                        const [uRes, aRes] = await Promise.all([
-                            fetch(`/api/analytics?userId=${uid}`),
+                        const endpoints = [
                             fetch(`/api/activities?studentId=${uid}`)
-                        ]);
-                        const uData = await uRes.json();
-                        const aData = await aRes.json();
+                        ];
+                        
+                        if (uid > 0) {
+                            endpoints.push(fetch(`/api/analytics?userId=${uid}`));
+                        }
 
-                        Game.data.user = uData.user || { name: 'Unknown Hero', level: 1, coins: 0, streak: 0, role: 'student', avatar: '🙂' };
+                        const results = await Promise.all(endpoints);
+                        const aData = await results[0].json();
                         Game.data.activities = Array.isArray(aData) ? aData : [];
+
+                        if (uid > 0) {
+                            const uData = await results[1].json();
+                            Game.data.user = uData.user;
+                            if(Game.data.user.name) sessionStorage.setItem('user_name', Game.data.user.name);
+                        } else {
+                            Game.data.user = { name: 'Guest Explorer', level: 1, role: 'guest', avatar: '🕵️', coins: 0, xp: 0 };
+                        }
                         
-                        // Save name to session for certs
-                        if(Game.data.user.name) sessionStorage.setItem('user_name', Game.data.user.name);
-                        
-                        console.log("Real DB Data Loaded:", Game.data.user);
+                        console.log("Data Sync: OK");
                     } catch (e) {
-                        console.error("Critical Fetch Error", e);
-                        Game.data.user = { name: 'Offline Mode', level: 1, role: 'student', avatar: '🕵️' };
+                        console.error("Data Sync: Failed", e);
+                        Game.data.activities = [];
+                        Game.data.user = { name: 'Offline', role: 'guest', avatar: '📡' };
                     }
                 }
             },
@@ -250,23 +265,24 @@
                 hud: () => {
                     const u = Game.data.user;
                     document.getElementById('hud-coins').innerText = (u.coins || 0).toLocaleString();
-                    document.getElementById('hud-streak').innerText = u.streak || 0;
                     document.getElementById('hud-avatar').innerText = u.avatar || '🙂';
-
+                    
                     if (u.role === 'admin' || u.role === 'teacher') document.getElementById('menu-instructor').classList.remove('hidden');
                     if (u.role === 'admin') document.getElementById('menu-admin').classList.remove('hidden');
                 },
                 dashboard: () => {
                     const u = Game.data.user;
                     document.getElementById('dash-name').innerText = u.name;
-                    document.getElementById('dash-role').innerText = (u.role || 'student').toUpperCase();
-                    document.getElementById('dash-lvl').innerText = u.level || 1;
+                    document.getElementById('dash-role').innerText = (u.role || 'guest').toUpperCase();
                     document.getElementById('dash-avatar').innerText = u.avatar || '🙂';
                     
-                    const nextXP = (u.level || 1) * 100;
-                    const pct = Math.min(((u.xp || 0) / nextXP) * 100, 100);
-                    document.getElementById('dash-xp-bar').style.width = `${pct}%`;
-                    document.getElementById('dash-xp-txt').innerText = `${u.xp || 0} / ${nextXP} XP`;
+                    if (u.role !== 'guest') {
+                        document.getElementById('dash-lvl').innerText = u.level || 1;
+                        const nextXP = (u.level || 1) * 100;
+                        const pct = Math.min(((u.xp || 0) / nextXP) * 100, 100);
+                        document.getElementById('dash-xp-bar').style.width = `${pct}%`;
+                        document.getElementById('dash-xp-txt').innerText = `${u.xp || 0} / ${nextXP} XP`;
+                    }
                     
                     Game.render.map(null);
                 },
@@ -286,98 +302,83 @@
                         back.classList.add('hidden');
                         
                         const cats = [...new Set(acts.map(a => a.category || 'General'))];
-                        cats.forEach((cat, i) => {
+                        if (cats.length === 0) {
+                            container.innerHTML = '<div class="m-auto text-slate-600 font-bold uppercase tracking-widest">No Worlds Found</div>';
+                            return;
+                        }
+                        
+                        const grid = document.createElement('div');
+                        grid.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 m-auto";
+                        cats.forEach((cat) => {
                             const node = document.createElement('div');
-                            node.className = "lg:absolute w-40 h-40 bg-slate-800 border-4 border-slate-700 rounded-full flex flex-col items-center justify-center cursor-pointer hover:scale-110 hover:border-indigo-500 transition shadow-2xl z-20 mx-auto my-4 lg:my-0";
-                            node.style.left = window.innerWidth > 1024 ? `${20 + (i % 3) * 30}%` : 'auto';
-                            node.style.top = window.innerWidth > 1024 ? `${10 + Math.floor(i / 3) * 40}%` : 'auto';
-                            node.innerHTML = `<div class="text-5xl mb-2">🪐</div><div class="font-black text-white text-xs uppercase tracking-tighter">${cat}</div>`;
+                            node.className = "w-full max-w-[200px] aspect-square bg-slate-800 border-4 border-slate-700 rounded-full flex flex-col items-center justify-center cursor-pointer hover:scale-110 hover:border-indigo-500 transition shadow-2xl group";
+                            node.innerHTML = `<div class="text-6xl mb-2 group-hover:rotate-12 transition">🪐</div><div class="font-black text-white text-[10px] uppercase tracking-tighter">${cat}</div>`;
                             node.onclick = () => { Game.data.currentWorld = cat; Game.render.map(cat); };
-                            container.appendChild(node);
+                            grid.appendChild(node);
                         });
+                        container.appendChild(grid);
                         return;
                     }
 
+                    const path = document.createElement('div');
+                    path.className = "flex flex-col items-center gap-16 py-10";
                     acts.forEach((act, i) => {
                         const node = document.createElement('div');
-                        node.className = "lg:absolute w-24 h-24 bg-slate-800 border-4 border-indigo-500 rounded-3xl flex flex-col items-center justify-center text-3xl shadow-2xl hover:scale-110 transition cursor-pointer z-10 mx-auto my-6 lg:my-0 relative";
-                        node.style.left = window.innerWidth > 1024 ? `${25 + (i % 2 === 0 ? 0 : 40)}%` : 'auto';
-                        node.style.top = window.innerWidth > 1024 ? `${50 + (i * 150)}px` : 'auto';
+                        node.className = "course-node flex flex-col items-center relative group";
                         
                         const isLocked = (act.price > 0 && act.is_enrolled == 0);
-                        node.innerHTML = `<span>${isLocked ? '🔒' : (act.type==='video'?'📜':'🎮')}</span>`;
-                        node.onclick = () => location.href = `/learn.html?id=${act.id}`;
+                        const isGuest = Game.data.user.role === 'guest';
+
+                        node.innerHTML = `
+                            <div class="node-icon w-24 h-24 rounded-[2rem] bg-slate-800 border-4 ${isLocked?'border-slate-700':'border-indigo-500'} flex items-center justify-center text-4xl shadow-2xl cursor-pointer transition-transform duration-300">
+                                ${isLocked ? '🔒' : (act.type==='video'?'📜':'🎮')}
+                            </div>
+                            <div class="absolute -bottom-12 bg-slate-900 px-4 py-1.5 rounded-xl border border-slate-800 text-[10px] font-black text-white whitespace-nowrap shadow-2xl group-hover:border-indigo-500 transition">
+                                ${act.title} ${isLocked ? `<span class="text-yellow-500 ml-1">🪙${act.price}</span>` : ''}
+                            </div>
+                        `;
                         
-                        const title = document.createElement('div');
-                        title.className = "absolute -bottom-10 left-1/2 -translate-x-1/2 bg-slate-900 px-3 py-1 rounded-lg border border-slate-700 text-[10px] font-bold text-white whitespace-nowrap z-30 shadow-xl";
-                        title.innerText = act.title + (isLocked ? ` (🪙${act.price})` : '');
-                        node.appendChild(title);
-                        container.appendChild(node);
+                        node.onclick = () => {
+                            if (isGuest) {
+                                if (confirm('Login required to start learning. Go to login page?')) location.href = '/login.html';
+                            } else {
+                                location.href = `/learn.html?id=${act.id}`;
+                            }
+                        };
+                        path.appendChild(node);
                     });
-                    
-                    if(window.innerWidth > 1024) container.style.height = `${acts.length * 150 + 300}px`;
-                    else container.style.height = 'auto';
+                    container.appendChild(path);
                 },
                 leaderboard: async (type = 'students') => {
                     const box = document.getElementById('lb-list');
-                    const tabS = document.getElementById('lb-tab-students');
-                    const tabI = document.getElementById('lb-tab-instructors');
-                    
-                    tabS.className = `px-6 py-2.5 rounded-xl text-sm font-black transition ${type==='students'?'active-tab shadow-lg':'text-slate-500'}`;
-                    tabI.className = `px-6 py-2.5 rounded-xl text-sm font-black transition ${type==='instructors'?'active-tab shadow-lg':'text-slate-500'}`;
-                    
-                    box.innerHTML = '<div class="p-20 text-center text-slate-600 font-bold uppercase tracking-widest animate-pulse">Loading Rankings...</div>';
-                    
+                    box.innerHTML = '<div class="p-20 text-center text-slate-600 font-bold uppercase animate-pulse">Fetching Rankings...</div>';
                     try {
                         const res = await fetch('/api/leaderboard');
                         const data = await res.json();
                         const list = data[type] || [];
-
                         box.innerHTML = list.map((u, i) => `
                             <div class="flex items-center gap-4 p-6 hover:bg-slate-800/40 transition">
                                 <div class="w-10 text-xl font-black ${i<3?'text-yellow-500':'text-slate-600'}">#${i+1}</div>
                                 <div class="w-12 h-12 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl">${u.avatar||'👤'}</div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="font-bold text-white truncate text-lg">${u.name}</div>
-                                    <div class="text-[10px] text-indigo-400 font-black uppercase tracking-widest">${u.role}</div>
-                                </div>
-                                <div class="text-right">
-                                    <div class="text-yellow-400 font-black text-xl">${(type==='students'?(u.xp||0):(u.avg_rating||0)).toLocaleString()}</div>
-                                    <div class="text-[10px] text-slate-500 font-bold uppercase">${type==='students'?'XP':'Rating'}</div>
-                                </div>
-                            </div>
-                        `).join('') || '<div class="p-10 text-center text-slate-600">No data found</div>';
+                                <div class="flex-1 min-w-0"><div class="font-bold text-white truncate text-lg">${u.name}</div><div class="text-[10px] text-indigo-400 font-black uppercase tracking-widest">${u.role}</div></div>
+                                <div class="text-right"><div class="text-yellow-400 font-black text-xl">${(type==='students'?(u.xp||0):(u.avg_rating||0)).toLocaleString()}</div><div class="text-[10px] text-slate-500 font-bold uppercase">${type==='students'?'XP':'Rating'}</div></div>
+                            </div>`).join('') || '<div class="p-10 text-center text-slate-600">No data found</div>';
                     } catch(e) { box.innerHTML = '<div class="p-10 text-center text-red-500">Failed to load rankings</div>'; }
                 },
                 shop: async () => {
                     const shopEl = document.getElementById('shop-list');
                     const invEl = document.getElementById('user-inv');
-                    
+                    if (Game.data.user.role === 'guest') {
+                        shopEl.innerHTML = '<div class="col-span-full p-20 glass rounded-[2.5rem] text-center"><h3 class="text-xl font-bold text-white mb-2 text-yellow-500">Locked 🔒</h3><p class="text-slate-400">Please login to access the marketplace.</p></div>';
+                        invEl.innerHTML = '<div class="text-center py-10 text-slate-600 uppercase text-[10px] font-black">Login to use Backpack</div>';
+                        return;
+                    }
                     try {
-                        const [sRes, iRes] = await Promise.all([
-                            fetch('/api/shop'),
-                            fetch(`/api/inventory?userId=${sessionStorage.getItem('user_id')}`)
-                        ]);
+                        const [sRes, iRes] = await Promise.all([fetch('/api/shop'), fetch(`/api/inventory?userId=${sessionStorage.getItem('user_id')}`)]);
                         const items = await sRes.json();
                         const inventory = await iRes.json();
-
-                        shopEl.innerHTML = items.map(item => `
-                            <div class="glass p-6 rounded-[2rem] border border-slate-800 flex flex-col items-center text-center gap-2 group hover:border-indigo-500 transition shadow-2xl relative overflow-hidden">
-                                <div class="text-6xl mb-4 group-hover:scale-110 transition duration-300">${item.icon}</div>
-                                <h4 class="font-black text-white text-lg">${item.name}</h4>
-                                <p class="text-xs text-slate-500 h-10 overflow-hidden">${item.description || ''}</p>
-                                <button onclick="Game.api.buy(${item.id})" class="mt-4 w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-2xl shadow-xl active:scale-95 transition">
-                                    🪙 ${item.price.toLocaleString()}
-                                </button>
-                            </div>
-                        `).join('');
-
-                        invEl.innerHTML = inventory.map(i => `
-                            <div class="flex items-center gap-3 p-3 bg-slate-800/50 rounded-2xl border border-slate-700">
-                                <span class="text-2xl">${i.icon}</span>
-                                <span class="text-sm font-bold text-white truncate">${i.name}</span>
-                            </div>
-                        `).join('') || '<div class="text-center py-10 text-slate-600 font-bold uppercase text-xs">Empty Backpack</div>';
+                        shopEl.innerHTML = items.map(item => `<div class="glass p-8 rounded-[2.5rem] border border-slate-800 flex flex-col items-center text-center gap-2 group hover:border-indigo-500 transition shadow-2xl relative overflow-hidden"><div class="text-6xl mb-4 group-hover:scale-110 transition duration-300">${item.icon}</div><h4 class="font-black text-white text-lg">${item.name}</h4><button onclick="Game.api.buy(${item.id})" class="mt-4 w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-2xl transition shadow-xl">🪙 ${item.price}</button></div>`).join('');
+                        invEl.innerHTML = inventory.map(i => `<div class="flex items-center gap-3 p-3 bg-slate-800/50 rounded-2xl border border-slate-700"><span class="text-2xl">${i.icon}</span><span class="text-sm font-bold text-white truncate">${i.name}</span></div>`).join('') || '<div class="text-center py-10 text-slate-600 font-bold uppercase text-xs">Empty Backpack</div>';
                     } catch(e) {}
                 }
             },
@@ -385,17 +386,10 @@
                 buy: async (id) => {
                     if(!confirm('Purchase item?')) return;
                     try {
-                        const res = await fetch('/api/shop/buy', { 
-                            method: 'POST', 
-                            headers: {'Content-Type':'application/json'},
-                            body: JSON.stringify({ userId: sessionStorage.getItem('user_id'), itemId: id }) 
-                        });
+                        const res = await fetch('/api/shop/buy', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ userId: sessionStorage.getItem('user_id'), itemId: id }) });
                         const d = await res.json();
-                        if(d.success) { 
-                            alert('Purchased! 🎁'); 
-                            Game.init(); // Refresh data
-                        } else { alert(d.error || 'Insufficient coins'); }
-                    } catch(e) { alert('Transaction Failed'); }
+                        if(d.success) { alert('Purchased! 🎁'); Game.init(); } else { alert(d.error || 'Failed'); }
+                    } catch(e) {}
                 }
             }
         };
