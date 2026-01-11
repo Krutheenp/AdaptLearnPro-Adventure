@@ -392,8 +392,13 @@ module.exports = async (req, res) => {
             // GET Users
             if (method === 'GET') {
                 if (db) {
-                    const users = await runQuery("SELECT id, name, username, email, phone, bio, school, address, birthdate, social_links, role, level, xp, avatar FROM users ORDER BY id DESC");
-                    return res.json(users || []);
+                    try {
+                        const users = await runQuery("SELECT id, name, username, email, phone, bio, school, address, birthdate, social_links, role, level, xp, avatar, coins, status FROM users ORDER BY id DESC");
+                        return res.json(users || []);
+                    } catch(e) {
+                        console.error("Fetch Users Error:", e);
+                        return res.json([]);
+                    }
                 }
                 return res.json(MOCK_DB.users);
             }

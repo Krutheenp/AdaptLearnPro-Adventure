@@ -147,16 +147,36 @@
             },
 
             loadData: async () => {
-                const get = async (url) => { try { const r = await fetch(url); return r.ok ? await r.json() : []; } catch(e) { return []; } };
+                const get = async (url) => { 
+                    try { 
+                        const r = await fetch(url); 
+                        const d = await r.json();
+                        // Smart Unwrapping: If response is {success:true, data:[]}, extract data
+                        if (!Array.isArray(d) && d.data && Array.isArray(d.data)) return d.data;
+                        if (!Array.isArray(d) && d.instructors) return []; // Handle leaderboard object edge case
+                        return Array.isArray(d) ? d : []; 
+                    } catch(e) { console.error("Fetch Error:", url, e); return []; } 
+                };
                 
-                const [users, acts, certs, shop, visits] = await Promise.all([
-                    get('/api/users'), get('/api/activities'), get('/api/certificate?all=true'), get('/api/shop'), get('/api/visit')
+                console.log("Loading Admin Data...");
+
+                const [users, acts, certs, shop, visits, config] = await Promise.all([
+                    get('/api/users'), 
+                    get('/api/activities?instructorId=debug'), // Use debug mode to ensure all courses
+                    get('/api/certificate?all=true'), 
+                    get('/api/shop'), 
+                    fetch('/api/visit').then(r=>r.json()).catch(()=>({})),
+                    fetch('/api/config').then(r=>r.json()).catch(()=>({}))
                 ]);
 
-                Admin.data.users = Array.isArray(users) ? users : [];
-                Admin.data.activities = Array.isArray(acts) ? acts : [];
-                Admin.data.certs = Array.isArray(certs) ? certs : [];
-                Admin.data.shop = Array.isArray(shop) ? shop : [];
+                console.log("Users:", users);
+                console.log("Courses:", acts);
+
+                Admin.data.users = users;
+                Admin.data.activities = acts;
+                Admin.data.certs = certs;
+                Admin.data.shop = shop;
+                Admin.data.config = config;
 
                 const setTxt = (id, v) => { const el = document.getElementById(id); if(el) el.innerText = v; };
                 setTxt('stat-users', Admin.data.users.length);
