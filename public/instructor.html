@@ -3,152 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Instructor Studio - AdaptLearn</title>
+    <title>Instructor Studio - AdaptLearn Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #0f172a; color: white; }
+        body { font-family: 'Sarabun', sans-serif; background-color: #0f172a; color: #e2e8f0; overflow-x: hidden; }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
     </style>
 </head>
-<body class="bg-slate-900">
+<body class="bg-slate-950 min-h-screen">
 
-    <!-- Navbar -->
-    <nav class="border-b border-slate-700 bg-slate-800/80 backdrop-blur sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center gap-2 font-bold text-xl">
-                <span>🧙‍♂️</span> <span>Instructor Studio</span>
-            </div>
-            <a href="/index.html" class="text-sm text-slate-400 hover:text-white transition">Exit to App ➔</a>
+    <!-- Header -->
+    <nav class="sticky top-0 h-20 border-b border-slate-800 bg-slate-900/80 backdrop-blur z-50 flex items-center justify-between px-4 lg:px-10">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-yellow-500 rounded-xl flex items-center justify-center text-slate-950 text-xl shadow-lg shadow-yellow-500/20">🪄</div>
+            <span class="font-black text-white text-lg tracking-tight uppercase">Instructor Studio</span>
+        </div>
+        <div class="flex gap-4">
+            <a href="/index.html" class="text-xs font-bold text-slate-500 hover:text-white transition py-2 px-4 rounded-xl hover:bg-slate-800">Exit Studio</a>
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-4 py-8">
+    <main class="max-w-7xl mx-auto p-4 lg:p-10 space-y-10">
         
         <!-- Header & Filters -->
-        <div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
             <div>
-                <h1 class="text-3xl font-bold mb-1">My Courses</h1>
-                <p class="text-slate-400 text-sm">Manage your learning content.</p>
+                <h1 class="text-4xl font-black text-white tracking-tight">Curriculum Manager</h1>
+                <p class="text-slate-500 mt-1">Design your courses and manage learning modules.</p>
             </div>
-            <div class="flex gap-3">
-                <select onchange="CourseEditor.filter(this.value)" class="bg-slate-800 border border-slate-700 text-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
-                    <option value="all">All Subjects</option>
+            <div class="flex flex-wrap gap-3 w-full lg:w-auto">
+                <select onchange="CourseEditor.filter(this.value)" class="flex-1 lg:flex-none bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                    <option value="all">All Disciplines</option>
                     <option value="Mathematics">Mathematics</option>
                     <option value="Science">Science</option>
                     <option value="English">English</option>
                     <option value="Technology">Technology</option>
                 </select>
-                <button onclick="CourseEditor.new()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-lg font-bold shadow-lg transition flex items-center gap-2">
-                    <span>+</span> Create New
+                <button onclick="CourseEditor.new()" class="flex-1 lg:flex-none bg-white text-slate-950 px-8 py-3 rounded-2xl font-black text-sm hover:bg-indigo-50 transition active:scale-95 shadow-xl">
+                    + CREATE NEW
                 </button>
             </div>
         </div>
 
-        <!-- Course Grid -->
-        <div id="course-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div class="text-slate-500 text-center col-span-full py-12">Loading courses...</div>
+        <!-- Course List -->
+        <div id="course-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="col-span-full py-20 text-center text-slate-600 font-bold uppercase tracking-widest animate-pulse">Initializing Database...</div>
         </div>
+
     </main>
 
-    <!-- EDITOR MODAL (Full Screen) -->
-    <div id="editor-modal" class="fixed inset-0 bg-slate-900 z-[60] hidden flex flex-col">
-        <!-- Editor Header -->
-        <div class="h-16 border-b border-slate-700 flex items-center justify-between px-6 bg-slate-800">
-            <h2 class="font-bold text-lg">✏️ Course Editor</h2>
+    <!-- FULLSCREEN EDITOR MODAL -->
+    <div id="editor-modal" class="fixed inset-0 bg-slate-950 z-[100] hidden flex flex-col overflow-hidden">
+        <!-- Editor Nav -->
+        <div class="h-20 border-b border-slate-800 flex items-center justify-between px-4 lg:px-10 bg-slate-900/50 flex-shrink-0">
+            <h2 class="font-black text-xl text-white tracking-tight" id="editor-title">✏️ COURSE ARCHITECT</h2>
             <div class="flex gap-3">
-                <button onclick="CourseEditor.close()" class="text-slate-400 hover:text-white px-3">Cancel</button>
-                <button onclick="CourseEditor.save()" class="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-lg font-bold">Save Course</button>
+                <button onclick="CourseEditor.close()" class="text-slate-500 hover:text-white px-4 font-bold text-sm">CANCEL</button>
+                <button onclick="CourseEditor.save()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-2xl font-black text-sm shadow-2xl shadow-indigo-900/20 active:scale-95 transition">SAVE CURRICULUM</button>
             </div>
         </div>
 
-        <!-- Editor Content -->
-        <div class="flex-1 overflow-y-auto p-6 flex gap-8">
-            <!-- Left: Settings -->
-            <div class="w-1/3 space-y-6">
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Course Title</label>
-                    <input id="c-title" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white focus:border-indigo-500 outline-none" placeholder="Ex: Introduction to Python">
-                </div>
-                
-                <!-- Category & Type -->
-                <div class="grid grid-cols-2 gap-4">
+        <!-- Editor Workspace -->
+        <div class="flex-1 overflow-y-auto p-4 lg:p-10 flex flex-col lg:flex-row gap-10 custom-scrollbar">
+            <!-- Left: Metadata -->
+            <div class="w-full lg:w-[400px] space-y-8 flex-shrink-0">
+                <div class="glass p-8 rounded-[2.5rem] space-y-6 shadow-2xl border-slate-800">
+                    <h3 class="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-4">Core Metadata</h3>
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Subject</label>
-                        <select id="c-category" onchange="CourseEditor.updateIcon()" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white">
-                            <option value="Mathematics">🧮 Mathematics</option>
-                            <option value="Science">🧪 Science</option>
-                            <option value="English">📝 English</option>
-                            <option value="Technology">💻 Technology</option>
-                            <option value="General">🌍 General</option>
-                        </select>
+                        <label class="text-[10px] font-black text-slate-400 uppercase ml-2 mb-1 block">Course Name</label>
+                        <input id="c-title" class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-3.5 text-white focus:ring-2 focus:ring-indigo-500 outline-none transition">
                     </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Learning Style</label>
-                        <select id="c-type" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white">
-                            <option value="video">🎥 Video Lecture</option>
-                            <option value="game">🎮 Interactive Game</option>
-                            <option value="simulation">🔬 Simulation</option>
-                            <option value="reading">📖 Reading</option>
-                        </select>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-[10px] font-black text-slate-400 uppercase ml-2 mb-1 block">Category</label>
+                            <select id="c-category" class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3.5 text-white border-none"><option value="Mathematics">Mathematics</option><option value="Science">Science</option><option value="English">English</option><option value="Technology">Technology</option><option value="General">General</option></select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-black text-slate-400 uppercase ml-2 mb-1 block">Style</label>
+                            <select id="c-type" class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3.5 text-white border-none"><option value="video">🎥 Video</option><option value="game">🎮 Game</option><option value="simulation">🔬 Sim</option></select>
+                        </div>
                     </div>
-                </div>
-
-                <!-- Difficulty & Duration -->
-                <div class="grid grid-cols-2 gap-4">
-                     <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Difficulty</label>
-                        <select id="c-difficulty" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white">
-                            <option value="Easy">🟢 Easy</option>
-                            <option value="Medium">🟡 Medium</option>
-                            <option value="Hard">🔴 Hard</option>
-                        </select>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="text-[10px] font-black text-yellow-500 ml-2 mb-1 block uppercase">Price (Coin)</label><input id="c-price" type="number" class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-3.5 text-white border-none"></div>
+                        <div><label class="text-[10px] font-black text-blue-500 ml-2 mb-1 block uppercase">XP Reward</label><input id="c-credits" type="number" class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-3.5 text-white border-none"></div>
                     </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Duration</label>
-                        <input id="c-duration" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white" placeholder="e.g. 30m">
-                    </div>
-                </div>
-
-                <!-- Credits, Price, and Code -->
-                <div class="grid grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Credits (XP)</label>
-                        <input type="number" id="c-credits" value="100" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Price (Coins)</label>
-                        <input type="number" id="c-price" value="0" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white" placeholder="0 = Free">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Course Code</label>
-                        <input id="c-code" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white" placeholder="e.g. MATH101">
-                    </div>
-                </div>
-                
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Certificate Template</label>
-                    <select id="c-cert-theme" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white">
-                        <option value="classic">🏆 Classic Gold (Formal)</option>
-                        <option value="modern">🚀 Modern Tech (Clean)</option>
-                        <option value="fun">🎨 Creative Fun (Playful)</option>
-                    </select>
+                    <div><label class="text-[10px] font-black text-slate-400 uppercase ml-2 mb-1 block">Template</label><select id="c-cert-theme" class="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3.5 text-white border-none"><option value="classic">Classic Gold</option><option value="modern">Modern Dark</option><option value="fun">Playful Color</option></select></div>
                 </div>
             </div>
 
-            <!-- Right: Content Builder -->
-            <div class="w-2/3 bg-slate-800/50 rounded-2xl border border-slate-700 p-6 flex flex-col">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold text-slate-300">Course Curriculum</h3>
-                    <button onclick="CourseEditor.addUnit()" class="text-xs bg-indigo-600 px-4 py-2 rounded-lg font-bold text-white shadow hover:bg-indigo-500">+ Add Unit</button>
+            <!-- Right: Content -->
+            <div class="flex-1 space-y-6">
+                <div class="flex justify-between items-center px-4">
+                    <h3 class="text-xl font-black text-white tracking-tight">Units & Modules</h3>
+                    <button onclick="CourseEditor.addUnit()" class="bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 px-6 py-2 rounded-xl font-bold text-xs hover:bg-indigo-600 hover:text-white transition">+ NEW UNIT</button>
                 </div>
-                
-                <div id="unit-list" class="flex-1 overflow-y-auto space-y-6 pr-2">
-                    <!-- Units will be added here -->
-                    <div class="text-center text-slate-500 py-12 border-2 border-dashed border-slate-700 rounded-xl">
-                        Start by adding a Learning Unit above
-                    </div>
-                </div>
+                <div id="unit-list" class="space-y-10 pb-20"></div>
             </div>
         </div>
     </div>
@@ -156,417 +109,131 @@
     <script>
         const CourseEditor = {
             currentId: null,
-            curriculum: [], // Array of Units
+            curriculum: [],
             courses: [],
 
-            // ... (Init/RenderList/Filter same as before) ...
             init: async () => {
                 const uid = sessionStorage.getItem('user_id');
                 if(!uid) { location.href = '/login.html'; return; }
                 
                 try {
-                    // Fetch ALL courses to ensure visibility (temporary fix for ID mismatch)
-                    // In production, we should filter by ID, but for now let's show everything so you can edit.
                     const res = await fetch(`/api/activities`); 
-                    const data = await res.json();
-                    
-                    console.log(`Fetched All Courses:`, data); 
-                    CourseEditor.courses = data;
+                    CourseEditor.courses = await res.json();
                     CourseEditor.renderList();
-                } catch(e) { 
-                    console.error("Load Error:", e);
-                    document.getElementById('course-list').innerHTML = `<div class="col-span-full text-red-400 text-center">Failed to load courses.</div>`;
-                }
+                } catch(e) { console.error(e); }
             },
 
-            renderList: (filterCat = 'all') => {
-                const list = document.getElementById('course-list');
+            renderList: (filter = 'all') => {
+                const el = document.getElementById('course-list');
+                const list = filter === 'all' ? CourseEditor.courses : CourseEditor.courses.filter(c => c.category === filter);
                 
-                // Debug Log
-                console.log("Rendering Courses (RAW):", CourseEditor.courses);
+                if(list.length === 0) { el.innerHTML = '<div class="col-span-full py-20 text-center text-slate-700 font-bold uppercase tracking-widest border-2 border-dashed border-slate-900 rounded-[3rem]">No Courses Found</div>'; return; }
 
-                if (!CourseEditor.courses || CourseEditor.courses.length === 0) {
-                    list.innerHTML = `<div class="col-span-full text-center py-12 text-slate-500">No courses data found.</div>`;
-                    return;
-                }
+                const colors = { Mathematics: 'from-orange-500 to-red-600', Science: 'from-blue-500 to-indigo-600', English: 'from-pink-500 to-rose-600', Technology: 'from-emerald-500 to-teal-600', General: 'from-slate-600 to-slate-700' };
 
-                try {
-                    // DEBUG: Bypass filter for now
-                    const filtered = CourseEditor.courses; 
-                    
-                    list.innerHTML = filtered.map(c => {
-                        // Safe Accessors
-                        const title = c.title || 'Untitled';
-                        const cat = c.category || 'General';
-                        
-                        return `
-                        <div class="bg-slate-800 rounded-2xl overflow-hidden border border-slate-700 shadow-lg flex flex-col h-full">
-                            <div class="h-32 bg-slate-700 p-4 flex flex-col justify-between">
-                                <div class="flex justify-between">
-                                    <span class="bg-black/30 text-white text-[10px] px-2 py-1 rounded uppercase font-bold">${cat}</span>
-                                </div>
-                                <h3 class="text-lg font-bold text-white leading-tight truncate">${title}</h3>
+                el.innerHTML = list.map(c => `
+                    <div class="bg-slate-900 rounded-[2.5rem] overflow-hidden border border-slate-800 hover:border-indigo-500 transition shadow-2xl group flex flex-col">
+                        <div class="h-32 bg-gradient-to-br ${colors[c.category]||colors.General} p-8 flex flex-col justify-between relative overflow-hidden">
+                            <div class="absolute -top-10 -right-10 w-32 h-32 bg-white/10 blur-3xl rounded-full"></div>
+                            <span class="text-[10px] font-black uppercase text-white/60 tracking-[0.2em] relative z-10">${c.category}</span>
+                            <h3 class="text-xl font-black text-white truncate relative z-10" title="${c.title}">${c.title}</h3>
+                        </div>
+                        <div class="p-8 space-y-6 flex-1 bg-slate-900 flex flex-col justify-between">
+                            <div class="flex justify-between items-center text-xs font-black tracking-widest uppercase">
+                                <div class="text-yellow-400">🪙 ${c.price||0}</div>
+                                <div class="text-blue-400">⚡ ${c.credits||0} XP</div>
                             </div>
-                            <div class="p-4 bg-slate-800 flex-1">
-                                <div class="flex justify-between items-center mt-4">
-                                    <div class="text-xs text-slate-400">ID: ${c.id}</div>
-                                    <div class="flex gap-2">
-                                        <button onclick="CourseEditor.edit(${c.id})" class="px-3 py-1 bg-indigo-600 text-white rounded text-xs">Edit</button>
-                                        <button onclick="CourseEditor.delete(${c.id})" class="px-3 py-1 bg-red-600 text-white rounded text-xs">Del</button>
-                                    </div>
-                                </div>
+                            <div class="flex gap-3 pt-6 border-t border-slate-800">
+                                <button onclick="CourseEditor.edit(${c.id})" class="flex-1 py-3 bg-slate-800 hover:bg-white hover:text-slate-950 rounded-2xl font-black text-xs transition">EDIT</button>
+                                <button onclick="CourseEditor.delete(${c.id})" class="p-3 text-red-500 hover:bg-red-500/10 rounded-2xl transition"><i class="fa-solid fa-trash-can"></i></button>
                             </div>
-                        </div>`;
-                    }).join('');
-                } catch(e) {
-                    console.error("Render Error:", e);
-                    list.innerHTML = `<div class="col-span-full text-red-400">Error rendering list: ${e.message}</div>`;
-                }
+                        </div>
+                    </div>`).join('');
             },
 
             filter: (cat) => CourseEditor.renderList(cat),
-            updateIcon: () => {},
 
             new: () => {
                 CourseEditor.currentId = null;
                 CourseEditor.curriculum = [];
                 document.getElementById('c-title').value = '';
-                document.getElementById('c-duration').value = '';
+                document.getElementById('c-price').value = 0;
                 document.getElementById('c-credits').value = 100;
-                document.getElementById('c-code').value = '';
                 CourseEditor.renderCurriculum();
                 document.getElementById('editor-modal').classList.remove('hidden');
             },
 
-            edit: async (id) => {
+            edit: (id) => {
                 const c = CourseEditor.courses.find(x => x.id === id);
                 if(!c) return;
-
-                CourseEditor.currentId = c.id;
+                CourseEditor.currentId = id;
                 document.getElementById('c-title').value = c.title;
                 document.getElementById('c-category').value = c.category;
                 document.getElementById('c-type').value = c.type;
-                document.getElementById('c-duration').value = c.duration;
-                document.getElementById('c-credits').value = c.credits;
-                document.getElementById('c-price').value = c.price || 0; // New
-                document.getElementById('c-difficulty').value = c.difficulty;
-                document.getElementById('c-code').value = c.course_code || '';
+                document.getElementById('c-price').value = c.price || 0;
+                document.getElementById('c-credits').value = c.credits || 100;
                 document.getElementById('c-cert-theme').value = c.certificate_theme || 'classic';
-
                 try {
-                    const raw = typeof c.content === 'string' ? JSON.parse(c.content) : c.content;
-                    if (Array.isArray(raw) && raw.length > 0 && !raw[0].lessons) {
-                        CourseEditor.curriculum = [{ title: "Unit 1: Introduction", lessons: raw }];
-                    } else {
-                        CourseEditor.curriculum = raw || [];
-                    }
+                    let raw = typeof c.content === 'string' ? JSON.parse(c.content) : c.content;
+                    if(Array.isArray(raw) && raw.length > 0 && !raw[0].lessons) CourseEditor.curriculum = [{title:'Unit 1', lessons:raw}];
+                    else CourseEditor.curriculum = raw || [];
                 } catch(e) { CourseEditor.curriculum = []; }
-                
                 CourseEditor.renderCurriculum();
                 document.getElementById('editor-modal').classList.remove('hidden');
             },
 
             save: async () => {
-                const btn = document.querySelector('button[onclick="CourseEditor.save()"]');
-                const originalText = btn.innerText;
-                btn.innerText = "Saving...";
-                btn.disabled = true;
-
-                // 1. Prepare User Role & ID
-                let role = 'teacher';
+                const id = CourseEditor.currentId;
                 const uid = sessionStorage.getItem('user_id');
-                try {
-                    const uRes = await fetch(`/api/analytics?userId=${uid}`);
-                    const uData = await uRes.json();
-                    if(uData.user && uData.user.role) role = uData.user.role;
-                } catch(e) {}
-
-                // 2. Prepare Data Payload
                 const body = {
-                    title: document.getElementById('c-title').value.trim(),
-                    category: document.getElementById('c-category').value,
-                    type: document.getElementById('c-type').value,
-                    duration: document.getElementById('c-duration').value,
-                    difficulty: document.getElementById('c-difficulty').value,
-                    credits: parseInt(document.getElementById('c-credits').value) || 0,
-                    price: parseInt(document.getElementById('c-price').value) || 0,
-                    course_code: document.getElementById('c-code').value.trim(),
-                    certificate_theme: document.getElementById('c-cert-theme').value,
-                    
-                    // Content Logic: Ensure it's an Array of Units
-                    content: (CourseEditor.curriculum && CourseEditor.curriculum.length > 0) 
-                             ? CourseEditor.curriculum 
-                             : CourseEditor.modules, // Fallback
-
-                    creator_id: parseInt(uid) || null, // Ensure Int
-                    requester_id: uid, 
-                    requester_role: role 
+                    id, title: document.getElementById('c-title').value, category: document.getElementById('c-category').value, type: document.getElementById('c-type').value,
+                    price: parseInt(document.getElementById('c-price').value), credits: parseInt(document.getElementById('c-credits').value),
+                    certificate_theme: document.getElementById('c-cert-theme').value, content: CourseEditor.curriculum, creator_id: uid
                 };
-
-                if(!body.title) {
-                    alert('Please enter a course title.');
-                    btn.innerText = originalText;
-                    btn.disabled = false;
-                    return;
-                }
-
-                const method = CourseEditor.currentId ? 'PUT' : 'POST';
-                if(CourseEditor.currentId) body.id = CourseEditor.currentId;
-
-                console.log("Submitting Course:", body);
-                // DEBUG: Alert payload to verify structure
-                // alert("DEBUG PAYLOAD:\n" + JSON.stringify(body, null, 2));
-
-                try {
-                    const res = await fetch('/api/activities', {
-                        method: method,
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(body)
-                    });
-                    
-                    const result = await res.json();
-                    
-                    if(res.ok && result.success) {
-                        alert(`Course ${CourseEditor.currentId ? 'updated' : 'created'} successfully!`);
-                        location.reload();
-                    } else {
-                        throw new Error(result.error || result.details || 'Unknown server error');
-                    }
-                } catch(e) { 
-                    console.error("Save Failed:", e);
-                    alert(`Failed to save: ${e.message}`);
-                    btn.innerText = originalText;
-                    btn.disabled = false;
-                }
+                if(!body.title) return alert("Title required");
+                const res = await fetch('/api/activities', { method: id ? 'PUT' : 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+                if(res.ok) { alert("Curriculum Locked & Saved! 🔒"); location.reload(); }
             },
 
-
-            delete: async (id) => { if(!confirm('Delete?')) return; await fetch(`/api/activities?id=${id}&requester_id=${sessionStorage.getItem('user_id')}`, { method: 'DELETE' }); location.reload(); },
+            delete: async (id) => { if(confirm('Erase this course?')) { await fetch(`/api/activities?id=${id}`, {method:'DELETE'}); location.reload(); } },
             close: () => document.getElementById('editor-modal').classList.add('hidden'),
 
-            // --- HIERARCHICAL BUILDER ---
-            addUnit: () => {
-                CourseEditor.curriculum.push({ title: `Unit ${CourseEditor.curriculum.length + 1}`, lessons: [] });
+            addUnit: () => { CourseEditor.curriculum.push({ title: `Chapter ${CourseEditor.curriculum.length + 1}`, lessons: [] }); CourseEditor.renderCurriculum(); },
+            updateUnit: (ui, val) => { CourseEditor.curriculum[ui].title = val; },
+            removeUnit: (ui) => { CourseEditor.curriculum.splice(ui, 1); CourseEditor.renderCurriculum(); },
+
+            addLesson: (ui, type) => {
+                const l = { type, title: 'New Lesson', completed: false };
+                if (type === 'video') l.url = ''; else if (type === 'article') l.body = ''; else if (type === 'quiz') { l.question = 'Question?'; l.options = ['A','B','C','D']; l.correct = 0; } else l.url = '';
+                CourseEditor.curriculum[ui].lessons.push(l);
                 CourseEditor.renderCurriculum();
             },
-            
-            updateUnitTitle: (uIdx, val) => { CourseEditor.curriculum[uIdx].title = val; },
-            removeUnit: (uIdx) => { CourseEditor.curriculum.splice(uIdx, 1); CourseEditor.renderCurriculum(); },
-
-            addLesson: (uIdx, type) => {
-                const lesson = { type, title: 'New Lesson', completed: false };
-                if (type === 'video') lesson.url = '';
-                if (type === 'text') lesson.body = '';
-                if (type === 'quiz') { lesson.question = 'Question?'; lesson.options = ['A','B','C','D']; lesson.correct = 0; }
-                CourseEditor.curriculum[uIdx].lessons.push(lesson);
-                CourseEditor.renderCurriculum();
-            },
-
-            updateLesson: (uIdx, lIdx, field, val) => { CourseEditor.curriculum[uIdx].lessons[lIdx][field] = val; },
-            updateOption: (uIdx, lIdx, oIdx, val) => { CourseEditor.curriculum[uIdx].lessons[lIdx].options[oIdx] = val; },
-            removeLesson: (uIdx, lIdx) => { CourseEditor.curriculum[uIdx].lessons.splice(lIdx, 1); CourseEditor.renderCurriculum(); },
+            updateLesson: (ui, li, f, v) => { CourseEditor.curriculum[ui].lessons[li][f] = v; },
+            removeLesson: (ui, li) => { CourseEditor.curriculum[ui].lessons.splice(li, 1); CourseEditor.renderCurriculum(); },
 
             renderCurriculum: () => {
                 const box = document.getElementById('unit-list');
-                if(CourseEditor.curriculum.length === 0) { box.innerHTML = '<div class="text-center text-slate-500 py-12 border-2 border-dashed border-slate-700 rounded-xl">Start by adding a Unit</div>'; return; }
-
-                box.innerHTML = CourseEditor.curriculum.map((unit, uIdx) => `
-                    <div class="bg-slate-900 border border-slate-700 rounded-xl p-4">
-                        <!-- Unit Header -->
-                        <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-800">
-                            <input onchange="CourseEditor.updateUnitTitle(${uIdx}, this.value)" value="${unit.title}" class="bg-transparent font-bold text-lg text-white w-full focus:outline-none focus:border-b border-indigo-500" placeholder="Unit Title">
-                            <button onclick="CourseEditor.removeUnit(${uIdx})" class="text-slate-500 hover:text-red-400 px-2">🗑️</button>
+                if(CourseEditor.curriculum.length === 0) { box.innerHTML = '<div class="text-center py-20 text-slate-700 font-bold uppercase tracking-widest border-4 border-dashed border-slate-900 rounded-[3rem]">Add your first Chapter to start architecture</div>'; return; }
+                box.innerHTML = CourseEditor.curriculum.map((u, ui) => `
+                    <div class="glass p-8 rounded-[3rem] border-slate-800 shadow-2xl relative">
+                        <div class="flex justify-between items-center mb-8 pb-4 border-b border-slate-800/50">
+                            <input onchange="CourseEditor.updateUnit(${ui}, this.value)" value="${u.title}" class="bg-transparent text-2xl font-black text-white w-full outline-none focus:text-indigo-400 transition" placeholder="Chapter Title">
+                            <button onclick="CourseEditor.removeUnit(${ui})" class="text-slate-700 hover:text-red-500 p-2 transition"><i class="fa-solid fa-circle-xmark"></i></button>
                         </div>
-                        
-                        <!-- Lessons Container -->
-                        <div class="space-y-3 pl-4 border-l-2 border-slate-800">
-                            ${unit.lessons.map((l, lIdx) => {
-                                let inner = '';
-                                if(l.type === 'video') inner = `<input onchange="CourseEditor.updateLesson(${uIdx},${lIdx},'url',this.value)" value="${l.url}" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white mb-1" placeholder="Video URL">`;
-                                else if(l.type === 'text') inner = `<textarea onchange="CourseEditor.updateLesson(${uIdx},${lIdx},'body',this.value)" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white h-16" placeholder="Content...">${l.body}</textarea>`;
-                                else if(l.type === 'quiz') inner = `
-                                    <input onchange="CourseEditor.updateLesson(${uIdx},${lIdx},'question',this.value)" value="${l.question}" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white mb-1 font-bold" placeholder="Question">
-                                    <div class="grid grid-cols-2 gap-1">
-                                        ${l.options.map((opt, oIdx) => `<div class="flex items-center gap-1"><input type="radio" name="c-${uIdx}-${lIdx}" ${l.correct===oIdx?'checked':''} onchange="CourseEditor.updateLesson(${uIdx},${lIdx},'correct',${oIdx})"><input onchange="CourseEditor.updateOption(${uIdx},${lIdx},${oIdx},this.value)" value="${opt}" class="w-full bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-[10px] text-slate-300"></div>`).join('')}
-                                    </div>`;
-
-                                return `
-                                    <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700 group relative">
-                                        <div class="flex justify-between items-center mb-1">
-                                            <div class="flex items-center gap-2">
-                                                <span class="text-[10px] font-bold uppercase text-slate-400 bg-slate-900 px-1.5 rounded">${l.type}</span>
-                                                <input onchange="CourseEditor.updateLesson(${uIdx},${lIdx},'title',this.value)" value="${l.title}" class="bg-transparent font-bold text-sm text-white focus:outline-none w-48" placeholder="Lesson Title">
-                                            </div>
-                                            <button onclick="CourseEditor.removeLesson(${uIdx},${lIdx})" class="text-slate-600 hover:text-red-400">✕</button>
-                                        </div>
-                                        ${inner}
+                        <div class="space-y-4 pl-6 border-l-2 border-slate-800">
+                            ${u.lessons.map((l, li) => `
+                                <div class="bg-slate-950 p-6 rounded-3xl border border-slate-800 shadow-inner group">
+                                    <div class="flex justify-between items-center mb-4">
+                                        <div class="flex items-center gap-3"><span class="text-[8px] font-black uppercase text-indigo-500 border border-indigo-500/30 px-2 py-1 rounded-lg">${l.type}</span><input onchange="CourseEditor.updateLesson(${ui},${li},'title',this.value)" value="${l.title}" class="bg-transparent font-bold text-white outline-none focus:text-indigo-300" placeholder="Lesson Label"></div>
+                                        <button onclick="CourseEditor.removeLesson(${ui},${li})" class="text-slate-800 hover:text-red-500 transition opacity-0 group-hover:opacity-100"><i class="fa-solid fa-trash-can text-xs"></i></button>
                                     </div>
-                                `;
-                            }).join('')}
+                                    ${l.type==='video' ? `<input onchange="CourseEditor.updateLesson(${ui},${li},'url',this.value)" value="${l.url}" class="w-full bg-slate-900 rounded-xl px-4 py-2 text-xs text-slate-400 border-none" placeholder="Video URL (YouTube)">` : (l.type==='article' ? `<textarea onchange="CourseEditor.updateLesson(${ui},${li},'body',this.value)" class="w-full bg-slate-900 rounded-xl px-4 py-2 text-xs text-slate-400 border-none h-24 h-24">${l.body||''}</textarea>` : `<div class="text-xs text-slate-700 italic">Advanced config in future update</div>`)}
+                                </div>`).join('')}
                         </div>
-
-                        <!-- Add Lesson Buttons -->
-                        <div class="flex gap-2 flex-wrap">
-                        <button onclick="CourseEditor.addLesson(${uIdx}, 'video')" class="text-[10px] bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded text-slate-300">+ Video</button>
-                        <button onclick="CourseEditor.addLesson(${uIdx}, 'article')" class="text-[10px] bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded text-slate-300">+ Article</button>
-                        <button onclick="CourseEditor.addLesson(${uIdx}, 'quiz')" class="text-[10px] bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded text-slate-300">+ Quiz</button>
-                        <button onclick="CourseEditor.addLesson(${uIdx}, 'simulation')" class="text-[10px] bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded text-slate-300">+ Simulation</button>
-                        <button onclick="CourseEditor.addLesson(${uIdx}, 'file')" class="text-[10px] bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded text-slate-300">+ File</button>
-                    </div>
-                `).join('');
-            },
-
-            // --- UPLOAD HELPER ---
-            uploadMedia: async (fileInput, callback) => {
-                const file = fileInput.files[0];
-                if(!file) return;
-                
-                const btn = fileInput.previousElementSibling; // The button that was clicked
-                const originalText = btn.innerText;
-                btn.innerText = "⏳ Uploading...";
-                btn.disabled = true;
-
-                try {
-                    // Use Vercel Blob API via our proxy
-                    const res = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
-                        method: 'POST',
-                        body: file
-                    });
-                    const data = await res.json();
-                    
-                    if(data.success) {
-                        callback(data.url, file.type);
-                    } else {
-                        alert('Upload Failed');
-                    }
-                } catch(e) { console.error(e); alert('Upload Error'); }
-                
-                btn.innerText = originalText;
-                btn.disabled = false;
-                fileInput.value = ''; // Reset
-            },
-
-            insertTag: (uIdx, lIdx, url, type) => {
-                const textarea = document.getElementById(`editor-${uIdx}-${lIdx}`);
-                let tag = '';
-                if(type.startsWith('image')) tag = `<img src="${url}" class="rounded-xl shadow-lg my-4 max-w-full" />\n`;
-                else if(type.startsWith('audio')) tag = `<div class="my-4"><audio controls src="${url}" class="w-full"></audio></div>\n`;
-                else tag = `<a href="${url}" target="_blank" class="text-indigo-400 underline">Download File</a>\n`;
-                
-                const start = textarea.selectionStart;
-                const end = textarea.selectionEnd;
-                const text = textarea.value;
-                const newText = text.substring(0, start) + tag + text.substring(end);
-                
-                textarea.value = newText;
-                CourseEditor.updateLesson(uIdx, lIdx, 'body', newText);
-            },
-
-            addLesson: (uIdx, type) => {
-                const lesson = { type, title: 'New Lesson', completed: false };
-                if (type === 'video') lesson.url = '';
-                if (type === 'article') lesson.body = ''; // Rich Text
-                if (type === 'quiz') { lesson.question = 'Question?'; lesson.options = ['A','B','C','D']; lesson.correct = 0; }
-                if (type === 'simulation') lesson.url = '';
-                if (type === 'file') { lesson.url = ''; lesson.filename = 'Resource.pdf'; }
-                CourseEditor.curriculum[uIdx].lessons.push(lesson);
-                CourseEditor.renderCurriculum();
-            },
-
-            // Updated Render Logic inside renderCurriculum...
-            renderLessonContent: (l, uIdx, lIdx) => {
-                if(l.type === 'video') {
-                    // Preview Logic
-                    let previewHtml = '';
-                    if (l.url) {
-                        if (l.url.includes('youtube') || l.url.includes('youtu.be')) {
-                            let vidId = '';
-                            try { const u = new URL(l.url); vidId = u.searchParams.get('v') || u.pathname.slice(1); } catch(e){}
-                            if(vidId) previewHtml = `<iframe src="https://www.youtube.com/embed/${vidId}" class="w-full h-40 rounded-lg mt-2" frameborder="0"></iframe>`;
-                        } else {
-                            previewHtml = `<video src="${l.url}" controls class="w-full h-40 rounded-lg mt-2 bg-black"></video>`;
-                        }
-                    }
-
-                    return `
-                    <div class="space-y-2">
-                        <div class="flex gap-2 items-center">
-                            <input id="vid-input-${uIdx}-${lIdx}" onchange="CourseEditor.updateLesson(${uIdx},${lIdx},'url',this.value)" value="${l.url}" class="flex-1 bg-slate-800 border border-slate-700 rounded px-3 py-2 text-xs text-white" placeholder="Paste YouTube URL here">
-                            <button onclick="CourseEditor.updateLesson(${uIdx},${lIdx},'url', document.getElementById('vid-input-${uIdx}-${lIdx}').value); CourseEditor.renderCurriculum();" class="bg-indigo-600 hover:bg-indigo-500 px-3 py-2 rounded text-xs text-white font-bold">Embed</button>
-                            <button onclick="document.getElementById('vid-up-${uIdx}-${lIdx}').click()" class="bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded text-xs text-white">⬆ Upload</button>
-                            <input type="file" id="vid-up-${uIdx}-${lIdx}" class="hidden" accept="video/*" onchange="CourseEditor.uploadMedia(this, (url)=> { document.getElementById('vid-input-${uIdx}-${lIdx}').value = url; CourseEditor.updateLesson(${uIdx},${lIdx},'url',url); CourseEditor.renderCurriculum(); })">
-                        </div>
-                        ${previewHtml ? `<div class="bg-black/20 p-2 rounded">${previewHtml}</div>` : ''}
-                    </div>`;
-                }
-                
-                if(l.type === 'article') return `
-                    <div class="flex gap-2 mb-2">
-                        <button onclick="document.getElementById('img-up-${uIdx}-${lIdx}').click()" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-[10px] flex items-center gap-1">📷 Image</button>
-                        <input type="file" id="img-up-${uIdx}-${lIdx}" class="hidden" accept="image/*" onchange="CourseEditor.uploadMedia(this, (url, type)=> CourseEditor.insertTag(${uIdx},${lIdx},url,type))">
-                        
-                        <button onclick="document.getElementById('aud-up-${uIdx}-${lIdx}').click()" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-[10px] flex items-center gap-1">🎵 Audio</button>
-                        <input type="file" id="aud-up-${uIdx}-${lIdx}" class="hidden" accept="audio/*" onchange="CourseEditor.uploadMedia(this, (url, type)=> CourseEditor.insertTag(${uIdx},${lIdx},url,type))">
-                    </div>
-                    <textarea id="editor-${uIdx}-${lIdx}" onchange="CourseEditor.updateLesson(${uIdx},${lIdx},'body',this.value)" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white h-32" placeholder="Write article content here... (HTML supported)">${l.body}</textarea>`;
-                
-                if(l.type === 'quiz') return `
-                    <input onchange="CourseEditor.updateLesson(${uIdx},${lIdx},'question',this.value)" value="${l.question}" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white mb-1 font-bold" placeholder="Question">
-                    <div class="grid grid-cols-2 gap-1">
-                        ${l.options.map((opt, oIdx) => `<div class="flex items-center gap-1"><input type="radio" name="c-${uIdx}-${lIdx}" ${l.correct===oIdx?'checked':''} onchange="CourseEditor.updateLesson(${uIdx},${lIdx},'correct',${oIdx})"><input onchange="CourseEditor.updateOption(${uIdx},${lIdx},${oIdx},this.value)" value="${opt}" class="w-full bg-slate-800 border border-slate-700 rounded px-1 py-0.5 text-[10px] text-slate-300"></div>`).join('')}
-                    </div>`;
-
-                if(l.type === 'simulation') return `<input onchange="CourseEditor.updateLesson(${uIdx},${lIdx},'url',this.value)" value="${l.url}" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white mb-1" placeholder="Simulation Embed URL (e.g. PhET, Sketchfab)">`;
-
-                if(l.type === 'file') return `
-                    <div class="flex gap-2 items-center">
-                        <input onchange="CourseEditor.updateLesson(${uIdx},${lIdx},'filename',this.value)" value="${l.filename}" class="w-1/3 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white" placeholder="Display Name">
-                        <input onchange="CourseEditor.updateLesson(${uIdx},${lIdx},'url',this.value)" value="${l.url}" class="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white" placeholder="File URL">
-                        <button onclick="document.getElementById('file-up-${uIdx}-${lIdx}').click()" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-[10px]">⬆ Upload</button>
-                        <input type="file" id="file-up-${uIdx}-${lIdx}" class="hidden" onchange="CourseEditor.uploadMedia(this, (url)=> { document.querySelector('input[placeholder=\\'File URL\\'][value=\\'${l.url}\\']').value = url; CourseEditor.updateLesson(${uIdx},${lIdx},'url',url); })">
-                    </div>`;
-                
-                return '';
-            },
-
-            // ... (keep removeLesson, addUnit, updateUnitTitle etc)
-
-            renderCurriculum: () => {
-                const box = document.getElementById('unit-list');
-                if(CourseEditor.curriculum.length === 0) { box.innerHTML = '<div class="text-center text-slate-500 py-12 border-2 border-dashed border-slate-700 rounded-xl">Start by adding a Unit</div>'; return; }
-
-                box.innerHTML = CourseEditor.curriculum.map((unit, uIdx) => `
-                    <div class="bg-slate-900 border border-slate-700 rounded-xl p-4">
-                        <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-800">
-                            <input onchange="CourseEditor.updateUnitTitle(${uIdx}, this.value)" value="${unit.title}" class="bg-transparent font-bold text-lg text-white w-full focus:outline-none focus:border-b border-indigo-500" placeholder="Unit Title">
-                            <button onclick="CourseEditor.removeUnit(${uIdx})" class="text-slate-500 hover:text-red-400 px-2">🗑️</button>
-                        </div>
-                        <div class="space-y-3 pl-4 border-l-2 border-slate-800">
-                            ${unit.lessons.map((l, lIdx) => `
-                                <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700 group relative">
-                                    <div class="flex justify-between items-center mb-2">
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-[10px] font-bold uppercase text-slate-400 bg-slate-900 px-1.5 rounded">${l.type}</span>
-                                            <input onchange="CourseEditor.updateLesson(${uIdx},${lIdx},'title',this.value)" value="${l.title}" class="bg-transparent font-bold text-sm text-white focus:outline-none w-48" placeholder="Lesson Title">
-                                        </div>
-                                        <button onclick="CourseEditor.removeLesson(${uIdx},${lIdx})" class="text-slate-600 hover:text-red-400">✕</button>
-                                    </div>
-                                    ${CourseEditor.renderLessonContent(l, uIdx, lIdx)}
-                                </div>
-                            `).join('')}
-                        </div>
-                        <div class="flex gap-2 mt-4 ml-4 flex-wrap">
-                            <button onclick="CourseEditor.addLesson(${uIdx}, 'video')" class="text-[10px] bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded text-slate-300">+ Video</button>
-                            <button onclick="CourseEditor.addLesson(${uIdx}, 'article')" class="text-[10px] bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded text-slate-300">+ Article</button>
-                            <button onclick="CourseEditor.addLesson(${uIdx}, 'quiz')" class="text-[10px] bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded text-slate-300">+ Quiz</button>
-                            <button onclick="CourseEditor.addLesson(${uIdx}, 'simulation')" class="text-[10px] bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded text-slate-300">+ Simulation</button>
-                            <button onclick="CourseEditor.addLesson(${uIdx}, 'file')" class="text-[10px] bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded text-slate-300">+ File</button>
-                        </div>
-                    </div>
-                `).join('');
+                        <div class="flex gap-2 mt-8 ml-6"><button onclick="CourseEditor.addLesson(${ui},'video')" class="text-[10px] font-black text-slate-500 hover:text-white px-4 py-2 rounded-xl bg-slate-950 transition">+ VIDEO</button><button onclick="CourseEditor.addLesson(${ui},'article')" class="text-[10px] font-black text-slate-500 hover:text-white px-4 py-2 rounded-xl bg-slate-950 transition">+ TEXT</button><button onclick="CourseEditor.addLesson(${ui},'quiz')" class="text-[10px] font-black text-slate-500 hover:text-white px-4 py-2 rounded-xl bg-slate-950 transition">+ QUIZ</button></div>
+                    </div>`).join('');
             }
         };
-
         document.addEventListener('DOMContentLoaded', CourseEditor.init);
     </script>
 </body>

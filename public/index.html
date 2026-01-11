@@ -6,268 +6,210 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AdaptLearn Adventure</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #1a1a2e; color: #e2e8f0; overflow-x: hidden; }
+        body { font-family: 'Sarabun', sans-serif; background-color: #0f172a; color: #e2e8f0; overflow-x: hidden; }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
-        .glass-strong { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(16px); border-right: 1px solid rgba(255,255,255,0.05); }
-        .btn-game { background: linear-gradient(to bottom, #f59e0b, #d97706); border: 2px solid #78350f; box-shadow: 0 4px 0 #78350f; color: white; text-shadow: 1px 1px 0 #78350f; transition: all 0.1s; }
-        .btn-game:active { transform: translateY(4px); box-shadow: 0 0 0 #78350f; }
-        .fade-in { animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
+        .nav-item.active { background-color: #1e293b; color: white; border-left: 4px solid #ef4444; }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
     </style>
 </head>
 
-<body class="bg-slate-900 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+<body class="bg-slate-950">
 
-    <!-- LOGIN / GUEST SCREEN -->
-    <div id="guest-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900 hidden">
-        <div class="text-center p-8 max-w-md w-full glass rounded-3xl shadow-2xl border border-slate-700 fade-in">
-            <div class="text-6xl mb-6">🛡️</div>
-            <h1 class="text-3xl font-bold text-white mb-2">AdaptLearn Adventure</h1>
-            <p class="text-slate-400 mb-8">Please login to start your journey.</p>
-            <a href="/login.html" class="block w-full py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold rounded-xl shadow-lg transition transform hover:scale-105 active:scale-95 mb-4">
-                Login
+    <!-- GUEST / LOGIN SCREEN -->
+    <div id="guest-screen" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950 hidden">
+        <div class="text-center p-10 max-w-md w-full glass rounded-[2.5rem] border border-slate-800 shadow-2xl animate-fade-in mx-4">
+            <div class="text-7xl mb-6 animate-float">🛡️</div>
+            <h1 class="text-3xl font-black text-white mb-2">AdaptLearn Pro</h1>
+            <p class="text-slate-500 mb-8">Begin your learning adventure today.</p>
+            <a href="/login.html" class="block w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl shadow-lg transition transform hover:scale-105 active:scale-95 mb-4">
+                Enter Adventure
             </a>
-            <div class="text-xs text-slate-500">
-                v2.3.0 • Fixed • <span id="visitor-count">Loading visitors...</span>
+            <div class="text-[10px] text-slate-600 uppercase tracking-widest font-bold">
+                System Online • <span id="visitor-count">...</span>
             </div>
         </div>
     </div>
 
-    <!-- MAIN APP LAYOUT -->
-    <div id="app-layout" class="flex h-screen hidden">
+    <!-- APP LAYOUT -->
+    <div id="app-layout" class="flex h-screen overflow-hidden hidden">
         
-        <!-- SIDEBAR (Desktop) -->
-        <aside class="w-20 lg:w-64 glass-strong hidden md:flex flex-col z-40 transition-all duration-300">
-            <!-- Logo -->
-            <div class="h-20 flex items-center justify-center lg:justify-start lg:px-6 border-b border-slate-800">
-                <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white text-xl shadow-lg">🧠</div>
-                <span class="ml-3 font-bold text-lg text-white hidden lg:block tracking-wide">AdaptLearn</span>
+        <!-- SIDEBAR (Responsive) -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-slate-900 border-r border-slate-800 flex flex-col z-50 transform -translate-x-full lg:translate-x-0 lg:static transition-transform duration-300 ease-in-out">
+            <div class="h-20 flex items-center px-6 border-b border-slate-800">
+                <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white text-xl shadow-lg mr-3">🧠</div>
+                <span class="font-black text-white text-lg tracking-tight">AdaptLearn</span>
             </div>
 
-            <!-- Nav Menu -->
-            <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
-                <div onclick="Game.ui.tab('dashboard')" class="flex items-center gap-4 p-3 rounded-xl transition-all duration-200 text-slate-400 hover:bg-slate-800 hover:text-white cursor-pointer active nav-item" id="nav-dashboard">
-                    <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-800 text-xl"><i class="fa-solid fa-map"></i></div>
-                    <span class="hidden lg:block font-medium">Adventure</span>
-                </div>
-                <div onclick="Game.ui.tab('leaderboard')" class="flex items-center gap-4 p-3 rounded-xl transition-all duration-200 text-slate-400 hover:bg-slate-800 hover:text-white cursor-pointer nav-item" id="nav-leaderboard">
-                    <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-800 text-xl"><i class="fa-solid fa-trophy"></i></div>
-                    <span class="hidden lg:block font-medium">Leaderboard</span>
-                </div>
-                <div onclick="Game.ui.tab('shop')" class="flex items-center gap-4 p-3 rounded-xl transition-all duration-200 text-slate-400 hover:bg-slate-800 hover:text-white cursor-pointer nav-item" id="nav-shop">
-                    <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-800 text-xl"><i class="fa-solid fa-store"></i></div>
-                    <span class="hidden lg:block font-medium">Item Shop</span>
-                </div>
-                <div onclick="window.location.href='/profile.html'" class="flex items-center gap-4 p-3 rounded-xl transition-all duration-200 text-slate-400 hover:bg-slate-800 hover:text-white cursor-pointer nav-item">
-                    <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-800 text-xl"><i class="fa-solid fa-user-astronaut"></i></div>
-                    <span class="hidden lg:block font-medium">My Profile</span>
-                </div>
-                
-                <!-- Admin / Teacher Menu -->
-                <a href="/instructor.html" id="menu-instructor" class="flex items-center gap-4 p-3 rounded-xl transition-all duration-200 text-yellow-500 hover:bg-slate-800 cursor-pointer hidden">
-                    <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-800 text-xl"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
-                    <span class="hidden lg:block font-medium">Instructor Studio</span>
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto custom-scrollbar">
+                <button onclick="Game.ui.tab('dashboard')" class="w-full text-left px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition flex items-center gap-3 nav-item active" id="nav-dashboard">
+                    <i class="fa-solid fa-map"></i><span class="font-bold text-sm">Adventure Map</span>
+                </button>
+                <button onclick="Game.ui.tab('leaderboard')" class="w-full text-left px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition flex items-center gap-3 nav-item" id="nav-leaderboard">
+                    <i class="fa-solid fa-trophy"></i><span class="font-bold text-sm">Hall of Fame</span>
+                </button>
+                <button onclick="Game.ui.tab('shop')" class="w-full text-left px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition flex items-center gap-3 nav-item" id="nav-shop">
+                    <i class="fa-solid fa-store"></i><span class="font-bold text-sm">Item Shop</span>
+                </button>
+                <div class="border-t border-slate-800 my-4"></div>
+                <a href="/profile.html" class="w-full text-left px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition flex items-center gap-3">
+                    <i class="fa-solid fa-user-astronaut"></i><span class="font-bold text-sm">My Profile</span>
                 </a>
                 
-                <a href="/admin.html" id="menu-admin" class="flex items-center gap-4 p-3 rounded-xl transition-all duration-200 text-red-400 hover:bg-slate-800 cursor-pointer hidden">
-                    <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-800 text-xl"><i class="fa-solid fa-shield-halved"></i></div>
-                    <span class="hidden lg:block font-medium">Admin Panel</span>
+                <!-- Special Menus -->
+                <a href="/instructor.html" id="menu-instructor" class="hidden w-full text-left px-4 py-3 rounded-xl text-yellow-500 hover:bg-yellow-500/10 transition flex items-center gap-3">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i><span class="font-bold text-sm">Instructor Studio</span>
+                </a>
+                <a href="/admin.html" id="menu-admin" class="hidden w-full text-left px-4 py-3 rounded-xl text-red-500 hover:bg-red-500/10 transition flex items-center gap-3">
+                    <i class="fa-solid fa-shield-halved"></i><span class="font-bold text-sm">Admin Panel</span>
                 </a>
             </nav>
 
-            <!-- Bottom Action (Logout) -->
             <div class="p-4 border-t border-slate-800">
-                <button onclick="Game.auth.logout()" class="w-full flex items-center gap-4 p-3 rounded-xl transition-all duration-200 text-red-400 hover:bg-red-500/10 group">
-                    <div class="w-10 h-10 flex items-center justify-center rounded-lg bg-slate-800 text-xl group-hover:bg-red-500 group-hover:text-white"><i class="fa-solid fa-right-from-bracket"></i></div>
-                    <span class="hidden lg:block font-medium">Logout</span>
+                <button onclick="Game.auth.logout()" class="w-full py-3 text-red-400 font-bold flex items-center justify-center gap-2 hover:bg-red-500/10 rounded-xl transition">
+                    <i class="fa-solid fa-right-from-bracket"></i><span>Logout</span>
                 </button>
             </div>
         </aside>
 
-        <!-- MAIN CONTENT AREA -->
-        <main class="flex-1 flex flex-col relative overflow-hidden">
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 flex flex-col min-w-0 bg-slate-950 overflow-hidden">
             
-            <!-- Mobile Header -->
-            <header class="md:hidden h-16 glass flex items-center justify-between px-4 z-40">
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white">🧠</div>
-                    <span class="font-bold text-white">AdaptLearn</span>
+            <!-- TOP NAVBAR -->
+            <header class="h-16 lg:h-20 glass flex items-center justify-between px-4 lg:px-8 z-40 flex-shrink-0">
+                <div class="flex items-center gap-4">
+                    <button onclick="Game.ui.toggleSidebar()" class="lg:hidden w-10 h-10 flex items-center justify-center text-slate-400 text-xl"><i class="fa-solid fa-bars"></i></button>
+                    <h2 class="text-xl lg:text-2xl font-black text-white truncate" id="page-title">World Map</h2>
                 </div>
-                <div class="flex items-center gap-3">
-                    <div class="flex items-center gap-1 bg-slate-800 px-2 py-1 rounded-full border border-slate-700">
-                        <span>🪙</span><span class="text-xs font-bold text-yellow-400" id="mob-coins">0</span>
+                
+                <div class="flex items-center gap-2 lg:gap-6">
+                    <div class="flex items-center gap-2 bg-slate-900/80 px-3 lg:px-4 py-1.5 lg:py-2 rounded-2xl border border-slate-800 shadow-lg">
+                        <span class="text-lg lg:text-xl">🪙</span>
+                        <span class="font-black text-yellow-400 text-sm lg:text-base" id="hud-coins">0</span>
                     </div>
-                    <div id="mob-avatar-txt" class="w-8 h-8 rounded-full bg-slate-700 border border-slate-500 flex items-center justify-center" onclick="window.location.href='/profile.html'">🙂</div>
+                    <div class="hidden sm:flex items-center gap-2 bg-slate-900/80 px-4 py-2 rounded-2xl border border-slate-800 shadow-lg">
+                        <span class="text-xl">🔥</span>
+                        <span class="font-black text-orange-500" id="hud-streak">0</span>
+                    </div>
+                    <div class="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-slate-800 flex items-center justify-center text-xl lg:text-2xl border border-slate-700 shadow-xl cursor-pointer" onclick="location.href='/profile.html'" id="hud-avatar">🙂</div>
                 </div>
             </header>
 
-            <!-- Top HUD (Desktop) -->
-            <div class="hidden md:flex justify-between items-center px-8 py-4 z-30">
-                <div class="flex items-center gap-4">
-                    <h2 class="text-2xl font-bold text-white" id="page-title">World Map</h2>
-                </div>
-                <div class="flex items-center gap-6 glass px-6 py-2 rounded-2xl">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-yellow-500/20 text-yellow-400 flex items-center justify-center text-xl border border-yellow-500/50">🪙</div>
-                        <div>
-                            <div class="text-[10px] text-slate-400 uppercase font-bold">Coins</div>
-                            <div class="text-lg font-bold text-white leading-none" id="hud-coins">0</div>
-                        </div>
-                    </div>
-                    <div class="w-[1px] h-8 bg-slate-700"></div>
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center text-xl border border-orange-500/50">🔥</div>
-                        <div>
-                            <div class="text-[10px] text-slate-400 uppercase font-bold">Streak</div>
-                            <div class="text-lg font-bold text-white leading-none" id="hud-streak">0</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Content Scroll Area -->
-            <div class="flex-1 overflow-y-auto overflow-x-hidden relative custom-scrollbar p-4 md:p-8" id="content-area">
+            <!-- CONTENT AREA -->
+            <div class="flex-1 overflow-y-auto p-4 lg:p-10 custom-scrollbar relative" id="content-scroll">
                 
-                <!-- 1. DASHBOARD VIEW -->
-                <div id="view-dashboard" class="view-section fade-in space-y-8">
-                    <!-- Hero Section -->
-                    <div class="flex flex-col md:flex-row items-center gap-8 bg-gradient-to-r from-indigo-900/50 to-slate-900/50 p-8 rounded-3xl border border-indigo-500/30 relative overflow-hidden">
-                        <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 blur-[80px] rounded-full"></div>
-                        
-                        <div class="relative z-10">
-                            <div class="w-32 h-32 md:w-40 md:h-40 bg-slate-800 rounded-full border-4 border-indigo-500 flex items-center justify-center text-6xl shadow-2xl overflow-hidden">
-                                <span id="dash-avatar-txt">🙂</span>
-                            </div>
-                            <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap shadow-lg" id="dash-role">Student</div>
-                        </div>
-                        
-                        <div class="flex-1 text-center md:text-left z-10">
-                            <h2 class="text-3xl font-bold text-white mb-2">Welcome back, <span id="dash-name" class="text-indigo-400">Hero</span>!</h2>
-                            <p id="dash-welcome-msg" class="text-slate-400 mb-6 max-w-lg">Your journey continues.</p>
-                            
-                            <!-- Level Progress -->
-                            <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700 max-w-md">
-                                <div class="flex justify-between text-xs font-bold text-slate-400 mb-2">
-                                    <span>Level <span id="dash-lvl" class="text-white">1</span></span>
-                                    <span id="dash-xp-text">0 / 100 XP</span>
-                                </div>
-                                <div class="w-full h-3 bg-slate-700 rounded-full overflow-hidden">
-                                    <div id="dash-xp-bar" class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 w-0 transition-all duration-1000"></div>
+                <!-- DASHBOARD -->
+                <div id="view-dashboard" class="view-section space-y-8 max-w-7xl mx-auto">
+                    <!-- Welcome Hero -->
+                    <div class="relative p-6 lg:p-10 rounded-[2.5rem] bg-gradient-to-br from-indigo-900/40 to-slate-900 border border-indigo-500/20 shadow-2xl overflow-hidden">
+                        <div class="absolute -top-24 -right-24 w-64 h-64 bg-indigo-600/20 blur-[100px] rounded-full"></div>
+                        <div class="relative z-10 flex flex-col md:flex-row items-center gap-6 lg:gap-10">
+                            <div class="w-24 h-24 lg:w-32 lg:h-32 rounded-[2rem] bg-slate-800 flex items-center justify-center text-5xl lg:text-6xl border-4 border-indigo-500 shadow-2xl" id="dash-avatar">🙂</div>
+                            <div class="flex-1 text-center md:text-left">
+                                <h3 class="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1" id="dash-role">Student</h3>
+                                <h2 class="text-3xl lg:text-4xl font-black text-white mb-4">Hi, <span id="dash-name" class="text-indigo-300">Hero</span>!</h2>
+                                <div class="max-w-md mx-auto md:mx-0">
+                                    <div class="flex justify-between text-[10px] font-black text-slate-500 uppercase mb-2">
+                                        <span>Level <span id="dash-lvl" class="text-white">1</span></span>
+                                        <span id="dash-xp-txt">0 / 100 XP</span>
+                                    </div>
+                                    <div class="h-2.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700">
+                                        <div id="dash-xp-bar" class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full w-0 transition-all duration-1000"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Adventure Map Container -->
-                    <div class="relative min-h-[600px] bg-slate-900 rounded-3xl border border-slate-700 shadow-inner overflow-hidden" id="map-wrapper">
-                        <div class="absolute top-4 left-4 z-20 flex gap-2">
-                            <span class="bg-slate-800/80 backdrop-blur text-white px-4 py-2 rounded-lg text-sm font-bold border border-slate-600" id="map-title-badge">🗺️ All Worlds</span>
-                            <button onclick="Game.render.map(null)" class="bg-slate-700 text-white px-3 py-2 rounded-lg text-xs hover:bg-slate-600 hidden" id="map-back-btn">⬅️ Back</button>
+                    <!-- Adventure Map -->
+                    <div class="relative min-h-[600px] bg-slate-900/50 rounded-[3rem] border border-slate-800 shadow-inner overflow-hidden" id="map-container">
+                        <div class="absolute top-6 left-6 z-20 flex gap-2">
+                            <span class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider shadow-lg border border-indigo-400" id="map-label">🌌 Galactic Map</span>
+                            <button onclick="Game.render.map(null)" class="hidden bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-700 border border-slate-600" id="map-back-btn">⬅ Back</button>
                         </div>
-                        <div id="map-nodes" class="relative z-10 w-full h-full"></div>
+                        <div id="map-content" class="relative z-10 w-full h-full p-10 min-h-[600px]"></div>
                     </div>
                 </div>
 
-                <!-- 2. LEADERBOARD VIEW -->
-                <div id="view-leaderboard" class="view-section hidden fade-in max-w-3xl mx-auto">
-                    <div class="text-center mb-8">
-                        <h2 class="text-3xl font-bold text-white mb-4">🏆 Hall of Fame</h2>
-                        <!-- Tabs -->
-                        <div class="flex justify-center gap-4 bg-slate-800 p-1 rounded-xl inline-flex mx-auto">
-                            <button onclick="Game.render.leaderboard('students')" id="lb-tab-students" class="px-6 py-2 rounded-lg font-bold text-sm transition bg-indigo-600 text-white">Students</button>
-                            <button onclick="Game.render.leaderboard('instructors')" id="lb-tab-instructors" class="px-6 py-2 rounded-lg font-bold text-sm transition text-slate-400 hover:text-white">Instructors</button>
+                <!-- LEADERBOARD -->
+                <div id="view-leaderboard" class="view-section hidden max-w-3xl mx-auto space-y-8">
+                    <div class="text-center">
+                        <h1 class="text-4xl font-black text-white mb-6">Hall of Fame</h1>
+                        <div class="inline-flex p-1.5 bg-slate-900 rounded-2xl border border-slate-800 shadow-xl">
+                            <button onclick="Game.render.leaderboard('students')" id="lb-tab-students" class="px-6 py-2.5 rounded-xl text-sm font-black transition active-tab">Students</button>
+                            <button onclick="Game.render.leaderboard('instructors')" id="lb-tab-instructors" class="px-6 py-2.5 rounded-xl text-sm font-black transition text-slate-500 hover:text-white">Instructors</button>
                         </div>
                     </div>
-                    
-                    <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden" id="lb-container">
-                        <!-- List injected here -->
-                    </div>
+                    <div id="lb-list" class="bg-slate-900 rounded-[2.5rem] overflow-hidden border border-slate-800 shadow-2xl divide-y divide-slate-800"></div>
                 </div>
 
-                <!-- 3. SHOP VIEW -->
-                <div id="view-shop" class="view-section hidden fade-in">
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- SHOP -->
+                <div id="view-shop" class="view-section hidden max-w-6xl mx-auto space-y-10">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
                         <div class="lg:col-span-2 space-y-6">
-                            <h2 class="text-2xl font-bold text-white flex items-center gap-3"><span class="text-3xl">🏪</span> Marketplace</h2>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="shop-items"></div>
+                            <h2 class="text-3xl font-black text-white flex items-center gap-3"><span>🏪</span> Marketplace</h2>
+                            <div id="shop-list" class="grid grid-cols-1 sm:grid-cols-2 gap-6"></div>
                         </div>
-                        <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 h-fit">
-                            <h3 class="font-bold text-white mb-4 border-b border-slate-700 pb-2">🎒 Inventory</h3>
-                            <div id="user-inventory" class="space-y-2 text-sm text-slate-400">Empty...</div>
+                        <div class="space-y-6">
+                            <h2 class="text-2xl font-black text-white">🎒 Inventory</h2>
+                            <div id="user-inv" class="bg-slate-900 rounded-3xl p-6 border border-slate-800 min-h-[200px] flex flex-col gap-3"></div>
                         </div>
                     </div>
                 </div>
 
             </div>
-
-            <!-- Mobile Bottom Nav -->
-            <nav class="md:hidden h-16 glass-strong flex justify-around items-center px-2 z-50 fixed bottom-0 w-full border-t border-slate-800">
-                <button onclick="Game.ui.tab('dashboard')" class="p-2 text-slate-400 hover:text-indigo-400 active:text-indigo-500 flex flex-col items-center">
-                    <i class="fa-solid fa-map text-lg"></i><span class="text-[10px]">Map</span>
-                </button>
-                <button onclick="Game.ui.tab('leaderboard')" class="p-2 text-slate-400 hover:text-yellow-400 flex flex-col items-center">
-                    <i class="fa-solid fa-trophy text-lg"></i><span class="text-[10px]">Rank</span>
-                </button>
-                <button onclick="Game.ui.tab('shop')" class="p-2 text-slate-400 hover:text-blue-400 flex flex-col items-center">
-                    <i class="fa-solid fa-store text-lg"></i><span class="text-[10px]">Shop</span>
-                </button>
-                <button onclick="Game.auth.logout()" class="p-2 text-slate-400 hover:text-red-400 flex flex-col items-center">
-                    <i class="fa-solid fa-door-open text-lg"></i><span class="text-[10px]">Exit</span>
-                </button>
-            </nav>
-
         </main>
     </div>
 
-    <!-- JAVASCRIPT LOGIC -->
+    <!-- OVERLAY FOR MOBILE SIDEBAR -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden" onclick="Game.ui.toggleSidebar()"></div>
+
     <script>
         const Game = {
-            data: { user: null, activities: [], items: [], inventory: [], currentWorld: null },
-            
+            data: { user: null, activities: [], shop: [], inventory: [], currentWorld: null },
+
             init: async () => {
-                // Fetch Visitor Count (Always)
-                try {
-                    const res = await fetch('/api/visit');
-                    const data = await res.json();
-                    const el = document.getElementById('visitor-count');
-                    if(el) el.innerText = `Visitors: ${data.total_visits || 0}`;
-                } catch(e) {}
-
                 const uid = sessionStorage.getItem('user_id');
-                console.log("Checking Auth for ID:", uid);
-
-                if (!uid) {
+                if (!uid) { 
                     document.getElementById('guest-screen').classList.remove('hidden');
-                    return;
+                    try {
+                        const res = await fetch('/api/visit');
+                        const data = await res.json();
+                        document.getElementById('visitor-count').innerText = `Visitors: ${data.total_visits || 0}`;
+                    } catch(e) {}
+                    return; 
                 }
 
-                // Show Layout
                 document.getElementById('app-layout').classList.remove('hidden');
-                
-                // Fetch Data
                 await Game.api.loadAll(uid);
                 
-                // Render
                 Game.render.hud();
                 Game.render.dashboard();
             },
 
             ui: {
+                toggleSidebar: () => {
+                    const side = document.getElementById('sidebar');
+                    const over = document.getElementById('sidebar-overlay');
+                    side.classList.toggle('-translate-x-full');
+                    over.classList.toggle('hidden');
+                },
                 tab: (name) => {
                     document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
-                    const target = document.getElementById(`view-${name}`);
-                    if(target) target.classList.remove('hidden');
+                    document.getElementById(`view-${name}`).classList.remove('hidden');
                     
-                    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-                    const navBtn = document.getElementById(`nav-${name}`);
-                    if(navBtn) navBtn.classList.add('active');
+                    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active-tab'));
+                    document.getElementById(`nav-${name}`).classList.add('active-tab');
+                    
+                    const titles = { dashboard: 'Adventure Map', leaderboard: 'Hall of Fame', shop: 'Item Shop' };
+                    document.getElementById('page-title').innerText = titles[name] || '';
+
+                    if(window.innerWidth < 1024) Game.ui.toggleSidebar(); // Close sidebar on mobile select
 
                     if (name === 'leaderboard') Game.render.leaderboard();
                     if (name === 'shop') Game.render.shop();
@@ -276,33 +218,172 @@
             },
 
             auth: {
-                logout: () => { sessionStorage.clear(); window.location.href = '/login.html'; }
+                logout: () => { sessionStorage.clear(); location.href = '/login.html'; }
             },
 
             api: {
                 loadAll: async (uid) => {
                     try {
+                        // Pass studentId to activities to check enrollment status
                         const [uRes, aRes] = await Promise.all([
-                            fetch(`/api/analytics?userId=${uid}`), 
-                            fetch('/api/activities')
+                            fetch(`/api/analytics?userId=${uid}`),
+                            fetch(`/api/activities?studentId=${uid}`)
                         ]);
-                        
-                        const userData = await uRes.json();
-                        const actData = await aRes.json();
+                        const uData = await uRes.json();
+                        const aData = await aRes.json();
 
-                        // Fallback logic
-                        Game.data.user = userData.user || { name: 'Unknown Hero', level: 1, coins: 0, streak: 0, role: 'student', avatar: '🙂' };
-                        Game.data.activities = actData || [];
-                        console.log("Data Loaded:", Game.data.user);
-                    } catch (e) { 
-                        console.error("Load Error", e); 
-                        // OFFLINE MODE
-                        Game.data.user = { name: 'Offline Hero', level: 1, coins: 0, streak: 0, role: 'student', avatar: '🧙‍♂️' };
-                        Game.data.activities = [{ title: 'Offline Mission', type: 'game', category: 'General' }];
+                        Game.data.user = uData.user || { name: 'Unknown Hero', level: 1, coins: 0, streak: 0, role: 'student', avatar: '🙂' };
+                        Game.data.activities = Array.isArray(aData) ? aData : [];
+                        
+                        // Save name to session for certs
+                        if(Game.data.user.name) sessionStorage.setItem('user_name', Game.data.user.name);
+                        
+                        console.log("Real DB Data Loaded:", Game.data.user);
+                    } catch (e) {
+                        console.error("Critical Fetch Error", e);
+                        Game.data.user = { name: 'Offline Mode', level: 1, role: 'student', avatar: '🕵️' };
                     }
+                }
+            },
+
+            render: {
+                hud: () => {
+                    const u = Game.data.user;
+                    document.getElementById('hud-coins').innerText = (u.coins || 0).toLocaleString();
+                    document.getElementById('hud-streak').innerText = u.streak || 0;
+                    document.getElementById('hud-avatar').innerText = u.avatar || '🙂';
+
+                    if (u.role === 'admin' || u.role === 'teacher') document.getElementById('menu-instructor').classList.remove('hidden');
+                    if (u.role === 'admin') document.getElementById('menu-admin').classList.remove('hidden');
                 },
+                dashboard: () => {
+                    const u = Game.data.user;
+                    document.getElementById('dash-name').innerText = u.name;
+                    document.getElementById('dash-role').innerText = (u.role || 'student').toUpperCase();
+                    document.getElementById('dash-lvl').innerText = u.level || 1;
+                    document.getElementById('dash-avatar').innerText = u.avatar || '🙂';
+                    
+                    const nextXP = (u.level || 1) * 100;
+                    const pct = Math.min(((u.xp || 0) / nextXP) * 100, 100);
+                    document.getElementById('dash-xp-bar').style.width = `${pct}%`;
+                    document.getElementById('dash-xp-txt').innerText = `${u.xp || 0} / ${nextXP} XP`;
+                    
+                    Game.render.map(null);
+                },
+                map: (category) => {
+                    const container = document.getElementById('map-content');
+                    container.innerHTML = '';
+                    const label = document.getElementById('map-label');
+                    const back = document.getElementById('map-back-btn');
+
+                    let acts = Game.data.activities;
+                    if (category) {
+                        acts = acts.filter(a => (a.category || 'General') === category);
+                        label.innerText = `World: ${category}`;
+                        back.classList.remove('hidden');
+                    } else {
+                        label.innerText = `🌌 Galactic Map`;
+                        back.classList.add('hidden');
+                        
+                        const cats = [...new Set(acts.map(a => a.category || 'General'))];
+                        cats.forEach((cat, i) => {
+                            const node = document.createElement('div');
+                            node.className = "lg:absolute w-40 h-40 bg-slate-800 border-4 border-slate-700 rounded-full flex flex-col items-center justify-center cursor-pointer hover:scale-110 hover:border-indigo-500 transition shadow-2xl z-20 mx-auto my-4 lg:my-0";
+                            node.style.left = window.innerWidth > 1024 ? `${20 + (i % 3) * 30}%` : 'auto';
+                            node.style.top = window.innerWidth > 1024 ? `${10 + Math.floor(i / 3) * 40}%` : 'auto';
+                            node.innerHTML = `<div class="text-5xl mb-2">🪐</div><div class="font-black text-white text-xs uppercase tracking-tighter">${cat}</div>`;
+                            node.onclick = () => { Game.data.currentWorld = cat; Game.render.map(cat); };
+                            container.appendChild(node);
+                        });
+                        return;
+                    }
+
+                    acts.forEach((act, i) => {
+                        const node = document.createElement('div');
+                        node.className = "lg:absolute w-24 h-24 bg-slate-800 border-4 border-indigo-500 rounded-3xl flex flex-col items-center justify-center text-3xl shadow-2xl hover:scale-110 transition cursor-pointer z-10 mx-auto my-6 lg:my-0 relative";
+                        node.style.left = window.innerWidth > 1024 ? `${25 + (i % 2 === 0 ? 0 : 40)}%` : 'auto';
+                        node.style.top = window.innerWidth > 1024 ? `${50 + (i * 150)}px` : 'auto';
+                        
+                        const isLocked = (act.price > 0 && act.is_enrolled == 0);
+                        node.innerHTML = `<span>${isLocked ? '🔒' : (act.type==='video'?'📜':'🎮')}</span>`;
+                        node.onclick = () => location.href = `/learn.html?id=${act.id}`;
+                        
+                        const title = document.createElement('div');
+                        title.className = "absolute -bottom-10 left-1/2 -translate-x-1/2 bg-slate-900 px-3 py-1 rounded-lg border border-slate-700 text-[10px] font-bold text-white whitespace-nowrap z-30 shadow-xl";
+                        title.innerText = act.title + (isLocked ? ` (🪙${act.price})` : '');
+                        node.appendChild(title);
+                        container.appendChild(node);
+                    });
+                    
+                    if(window.innerWidth > 1024) container.style.height = `${acts.length * 150 + 300}px`;
+                    else container.style.height = 'auto';
+                },
+                leaderboard: async (type = 'students') => {
+                    const box = document.getElementById('lb-list');
+                    const tabS = document.getElementById('lb-tab-students');
+                    const tabI = document.getElementById('lb-tab-instructors');
+                    
+                    tabS.className = `px-6 py-2.5 rounded-xl text-sm font-black transition ${type==='students'?'active-tab shadow-lg':'text-slate-500'}`;
+                    tabI.className = `px-6 py-2.5 rounded-xl text-sm font-black transition ${type==='instructors'?'active-tab shadow-lg':'text-slate-500'}`;
+                    
+                    box.innerHTML = '<div class="p-20 text-center text-slate-600 font-bold uppercase tracking-widest animate-pulse">Loading Rankings...</div>';
+                    
+                    try {
+                        const res = await fetch('/api/leaderboard');
+                        const data = await res.json();
+                        const list = data[type] || [];
+
+                        box.innerHTML = list.map((u, i) => `
+                            <div class="flex items-center gap-4 p-6 hover:bg-slate-800/40 transition">
+                                <div class="w-10 text-xl font-black ${i<3?'text-yellow-500':'text-slate-600'}">#${i+1}</div>
+                                <div class="w-12 h-12 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl">${u.avatar||'👤'}</div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-bold text-white truncate text-lg">${u.name}</div>
+                                    <div class="text-[10px] text-indigo-400 font-black uppercase tracking-widest">${u.role}</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-yellow-400 font-black text-xl">${(type==='students'?(u.xp||0):(u.avg_rating||0)).toLocaleString()}</div>
+                                    <div class="text-[10px] text-slate-500 font-bold uppercase">${type==='students'?'XP':'Rating'}</div>
+                                </div>
+                            </div>
+                        `).join('') || '<div class="p-10 text-center text-slate-600">No data found</div>';
+                    } catch(e) { box.innerHTML = '<div class="p-10 text-center text-red-500">Failed to load rankings</div>'; }
+                },
+                shop: async () => {
+                    const shopEl = document.getElementById('shop-list');
+                    const invEl = document.getElementById('user-inv');
+                    
+                    try {
+                        const [sRes, iRes] = await Promise.all([
+                            fetch('/api/shop'),
+                            fetch(`/api/inventory?userId=${sessionStorage.getItem('user_id')}`)
+                        ]);
+                        const items = await sRes.json();
+                        const inventory = await iRes.json();
+
+                        shopEl.innerHTML = items.map(item => `
+                            <div class="glass p-6 rounded-[2rem] border border-slate-800 flex flex-col items-center text-center gap-2 group hover:border-indigo-500 transition shadow-2xl relative overflow-hidden">
+                                <div class="text-6xl mb-4 group-hover:scale-110 transition duration-300">${item.icon}</div>
+                                <h4 class="font-black text-white text-lg">${item.name}</h4>
+                                <p class="text-xs text-slate-500 h-10 overflow-hidden">${item.description || ''}</p>
+                                <button onclick="Game.api.buy(${item.id})" class="mt-4 w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-2xl shadow-xl active:scale-95 transition">
+                                    🪙 ${item.price.toLocaleString()}
+                                </button>
+                            </div>
+                        `).join('');
+
+                        invEl.innerHTML = inventory.map(i => `
+                            <div class="flex items-center gap-3 p-3 bg-slate-800/50 rounded-2xl border border-slate-700">
+                                <span class="text-2xl">${i.icon}</span>
+                                <span class="text-sm font-bold text-white truncate">${i.name}</span>
+                            </div>
+                        `).join('') || '<div class="text-center py-10 text-slate-600 font-bold uppercase text-xs">Empty Backpack</div>';
+                    } catch(e) {}
+                }
+            },
+            api: {
                 buy: async (id) => {
-                    if(!confirm('Confirm buy?')) return;
+                    if(!confirm('Purchase item?')) return;
                     try {
                         const res = await fetch('/api/shop/buy', { 
                             method: 'POST', 
@@ -311,165 +392,10 @@
                         });
                         const d = await res.json();
                         if(d.success) { 
-                            alert('Purchased!'); 
-                            Game.data.user.coins = d.new_balance; 
-                            Game.render.hud(); 
-                            Game.render.shop(); 
-                        } else { alert(d.error || 'Failed'); }
-                    } catch(e) { alert('Transaction Error'); }
-                }
-            },
-
-            render: {
-                hud: () => {
-                    const u = Game.data.user;
-                    if(!u) return;
-                    document.getElementById('hud-coins').innerText = (u.coins || 0).toLocaleString();
-                    document.getElementById('hud-streak').innerText = u.streak || 0;
-                    document.getElementById('mob-coins').innerText = (u.coins || 0);
-                    document.getElementById('mob-avatar-txt').innerText = u.avatar || '🙂';
-
-                    // Role-based Menu Access
-                    if (u.role === 'teacher' || u.role === 'admin') {
-                        document.getElementById('menu-instructor').classList.remove('hidden');
-                    }
-                    if (u.role === 'admin') {
-                        document.getElementById('menu-admin').classList.remove('hidden');
-                    }
-                },
-                dashboard: () => {
-                    const u = Game.data.user;
-                    document.getElementById('dash-name').innerText = u.name;
-                    document.getElementById('dash-role').innerText = (u.role || 'Student').toUpperCase();
-                    document.getElementById('dash-lvl').innerText = u.level;
-                    
-                    const nextXP = u.level * 100;
-                    const pct = Math.min(((u.xp || 0) / nextXP) * 100, 100);
-                    document.getElementById('dash-xp-bar').style.width = `${pct}%`;
-                    document.getElementById('dash-xp-text').innerText = `${u.xp || 0} / ${nextXP} XP`;
-                    document.getElementById('dash-avatar-txt').innerText = u.avatar || '🙂';
-                    
-                    Game.render.map(null);
-                },
-                map: (category) => {
-                    const container = document.getElementById('map-nodes');
-                    container.innerHTML = '';
-                    
-                    let acts = Game.data.activities;
-                    if(category) {
-                        acts = acts.filter(a => (a.category || 'General') === category);
-                        document.getElementById('map-title-badge').innerText = `🗺️ ${category}`;
-                        document.getElementById('map-back-btn').classList.remove('hidden');
-                    } else {
-                        document.getElementById('map-title-badge').innerText = `🌌 Galactic Map`;
-                        document.getElementById('map-back-btn').classList.add('hidden');
-                        
-                        const categories = [...new Set(acts.map(a => a.category || 'General'))];
-                        categories.forEach((cat, i) => {
-                            const top = 50 + (Math.floor(i/2) * 200);
-                            const left = i%2===0 ? '25%' : '65%';
-                            
-                            const planet = document.createElement('div');
-                            planet.className = "absolute w-40 h-40 bg-slate-800 border-4 border-slate-600 rounded-full flex flex-col items-center justify-center cursor-pointer hover:scale-110 hover:border-indigo-500 transition shadow-2xl z-20";
-                            planet.style.top = `${top}px`;
-                            planet.style.left = left;
-                            planet.innerHTML = `<div class="text-5xl mb-2">🪐</div><div class="font-bold text-white">${cat}</div>`;
-                            planet.onclick = () => { Game.data.currentWorld = cat; Game.render.map(cat); };
-                            container.appendChild(planet);
-                        });
-                        return;
-                    }
-
-                    acts.forEach((act, i) => {
-                        const top = 50 + (i * 150);
-                        const left = (i % 2 === 0) ? '20%' : '60%';
-                        
-                        const node = document.createElement('div');
-                        node.className = `absolute w-20 h-20 bg-slate-800 border-4 border-indigo-500 rounded-2xl flex flex-col items-center justify-center text-2xl shadow-lg hover:scale-110 transition cursor-pointer z-10`;
-                        node.style.top = `${top}px`;
-                        node.style.left = left;
-                        node.innerHTML = `<span class="filter drop-shadow-md">${act.type==='video'?'📜':'🎮'}</span>`;
-                        node.onclick = () => {
-                            console.log("Navigating to lesson:", act.id);
-                            window.location.href = `/learn.html?id=${act.id}`;
-                        };
-                        
-                        const label = document.createElement('div');
-                        label.className = "absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] font-bold text-white bg-slate-900 px-2 py-1 rounded whitespace-nowrap border border-slate-700";
-                        label.innerText = act.title;
-                        node.appendChild(label);
-
-                        container.appendChild(node);
-                    });
-                    
-                    container.style.height = `${acts.length * 150 + 200}px`;
-                },
-                leaderboard: async (type = 'students') => {
-                    // Update Tabs UI
-                    document.getElementById('lb-tab-students').className = `px-6 py-2 rounded-lg font-bold text-sm transition ${type==='students' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`;
-                    document.getElementById('lb-tab-instructors').className = `px-6 py-2 rounded-lg font-bold text-sm transition ${type==='instructors' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`;
-
-                    const box = document.getElementById('lb-container');
-                    box.innerHTML = '<div class="p-8 text-center text-slate-500">Loading rankings...</div>';
-                    
-                    try {
-                        const res = await fetch('/api/leaderboard');
-                        const data = await res.json();
-                        const list = data[type] || [];
-
-                        if(list.length === 0) {
-                            box.innerHTML = '<div class="p-8 text-center text-slate-500">No rankings available yet.</div>';
-                            return;
-                        }
-
-                        box.innerHTML = list.map((u, i) => {
-                            let statHtml = '';
-                            if (type === 'students') {
-                                statHtml = `<div class="text-yellow-400 font-mono text-right"><div class="font-bold">${(u.xp||0).toLocaleString()} XP</div><div class="text-[10px] text-slate-500">Level ${u.level||1}</div></div>`;
-                            } else {
-                                const stars = '⭐'.repeat(Math.round(u.avg_rating || 0));
-                                statHtml = `<div class="text-right"><div class="text-yellow-400 text-sm">${stars} (${Number(u.avg_rating).toFixed(1)})</div><div class="text-[10px] text-slate-500">${u.review_count||0} Reviews</div></div>`;
-                            }
-
-                            return `
-                            <div class="flex items-center gap-4 p-4 border-b border-slate-700 bg-slate-800/50 hover:bg-slate-700 transition">
-                                <div class="w-8 font-bold text-center ${i<3 ? 'text-yellow-500 text-xl' : 'text-slate-400'}">${i+1}</div>
-                                <div class="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center text-lg shadow-md border border-slate-500">${u.avatar||'👤'}</div>
-                                <div class="flex-1">
-                                    <div class="font-bold text-white">${u.name}</div>
-                                    <div class="text-[10px] text-indigo-400 uppercase font-bold tracking-wider">${u.role}</div>
-                                </div>
-                                ${statHtml}
-                            </div>
-                        `}).join('');
-                    } catch(e) { 
-                        console.error(e);
-                        box.innerHTML = '<div class="p-4 text-red-400 text-center">Failed to load rankings</div>'; 
-                    }
-                },
-                shop: async () => {
-                    const box = document.getElementById('shop-items');
-                    try {
-                        const res = await fetch('/api/shop');
-                        const data = await res.json();
-                        box.innerHTML = data.map(item => `
-                            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col items-center text-center gap-2 hover:border-indigo-500 transition shadow-lg relative overflow-hidden group">
-                                <div class="text-4xl mb-2 bg-slate-900 p-2 rounded-lg">${item.icon}</div>
-                                <h4 class="font-bold text-white relative z-10">${item.name}</h4>
-                                <div class="text-yellow-400 font-bold relative z-10">🪙 ${item.price}</div>
-                                <button onclick="Game.api.buy(${item.id})" class="w-full py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg mt-2 shadow-md active:scale-95 transition relative z-10">Buy Now</button>
-                            </div>
-                        `).join('');
-                    } catch(e) {}
-                    
-                    const invRes = await fetch(`/api/inventory?userId=${sessionStorage.getItem('user_id')}`);
-                    const invData = await invRes.json();
-                    const invBox = document.getElementById('user-inventory');
-                    if (invData.length) {
-                        invBox.innerHTML = invData.map(i => `<div class="flex gap-2 items-center p-2 bg-slate-700/50 rounded mb-2 border border-slate-600"><span class="text-lg">${i.icon}</span> <span class="text-slate-300 text-xs">${i.name}</span></div>`).join('');
-                    } else {
-                        invBox.innerText = "No items yet.";
-                    }
+                            alert('Purchased! 🎁'); 
+                            Game.init(); // Refresh data
+                        } else { alert(d.error || 'Insufficient coins'); }
+                    } catch(e) { alert('Transaction Failed'); }
                 }
             }
         };
