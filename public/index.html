@@ -223,26 +223,22 @@
                 const uid = sessionStorage.getItem('user_id');
                 const auth = sessionStorage.getItem('auth');
 
-                console.log("System Check: ID=" + uid + " Auth=" + auth);
+                console.log("🚀 Initializing System: ID=" + uid);
 
-                // Initialize Analytics / Visits
-                fetch('/api/visit').catch(() => {});
+                // Track Visit
+                fetch('/api/visit', { method: 'POST' }).catch(() => {});
 
+                // Set initial UI state
                 if (auth === 'true' && uid) {
-                    // Logged in
                     document.getElementById('auth-footer').classList.remove('hidden');
                     document.getElementById('guest-footer').classList.add('hidden');
-                    document.getElementById('auth-stats').classList.remove('hidden');
-                    document.getElementById('guest-msg').classList.add('hidden');
                     document.querySelectorAll('.auth-only').forEach(el => el.classList.remove('hidden'));
                 }
 
-                // Always allow entering the layout now
-                document.getElementById('app-layout').classList.remove('hidden');
+                // Fetch All Data
+                await Game.api.loadAll(uid || "0");
                 
-                // Fetch All Data (Pass uid or 0 for guest)
-                await Game.api.loadAll(uid || 0);
-                
+                // Final Render
                 Game.render.hud();
                 Game.render.dashboard();
             },
@@ -281,38 +277,32 @@
             api: {
                 loadAll: async (uid) => {
                     try {
-                        const endpoints = [
-                            fetch(`/api/activities?studentId=${uid}`)
-                        ];
+                        const results = await Promise.all([
+                            fetch(`/api/activities?studentId=${uid}`).then(r => r.json()),
+                            fetch(`/api/analytics?userId=${uid}`).then(r => r.json())
+                        ]);
                         
-                        if (uid && uid !== "0") {
-                            endpoints.push(fetch(`/api/analytics?userId=${uid}`));
-                        }
+                        Game.data.activities = Array.isArray(results[0]) ? results[0] : [];
+                        const uData = results[1];
 
-                        const results = await Promise.all(endpoints);
-                        const aData = await results[0].json();
-                        Game.data.activities = Array.isArray(aData) ? aData : [];
-
-                        if (uid && uid !== "0") {
-                            const uData = await results[1].json();
-                            if (uData && uData.user) {
-                                Game.data.user = uData.user;
-                                // Sync local data with fresh DB data
+                        if (uData && uData.user) {
+                            Game.data.user = uData.user;
+                            Game.data.certificates = uData.certificates || [];
+                            // Force sync session for safety
+                            if (Game.data.user.id) {
+                                sessionStorage.setItem('user_id', Game.data.user.id);
                                 sessionStorage.setItem('user_name', Game.data.user.name);
                                 sessionStorage.setItem('user_role', Game.data.user.role);
-                                sessionStorage.setItem('user_level', Game.data.user.level);
-                                sessionStorage.setItem('user_xp', Game.data.user.xp);
-                                sessionStorage.setItem('user_coins', Game.data.user.coins);
                             }
                         } else {
                             Game.data.user = { name: 'Guest Explorer', level: 1, role: 'guest', avatar: '🕵️', coins: 0, xp: 0 };
                         }
                         
-                        console.log("Data Sync: OK");
+                        console.log("✅ Data Sync Complete");
                     } catch (e) {
-                        console.error("Data Sync: Failed", e);
+                        console.error("❌ Data Sync Failed", e);
                         Game.data.activities = [];
-                        Game.data.user = { name: 'Offline', role: 'guest', avatar: '📡' };
+                        Game.data.user = { name: 'Offline Mode', role: 'guest', avatar: '📡', coins: 0, xp: 0 };
                     }
                 }
             },
@@ -320,15 +310,22 @@
             render: {
                 hud: () => {
                     const u = Game.data.user;
+                    if (!u) return;
                     document.getElementById('hud-coins').innerText = (u.coins || 0).toLocaleString();
                     document.getElementById('hud-avatar').innerText = u.avatar || '🙂';
                     
                     if (u.role === 'admin' || u.role === 'teacher') document.getElementById('menu-instructor').classList.remove('hidden');
                     if (u.role === 'admin') document.getElementById('menu-admin').classList.remove('hidden');
+                    
+                    if (u.role !== 'guest') {
+                        document.getElementById('auth-stats').classList.remove('hidden');
+                        document.getElementById('guest-msg').classList.add('hidden');
+                    }
                 },
                 dashboard: () => {
                     const u = Game.data.user;
-                    document.getElementById('dash-name').innerText = u.name;
+                    if (!u) return;
+                    document.getElementById('dash-name').innerText = u.name || 'Scholar';
                     document.getElementById('dash-role').innerText = (u.role || 'guest').toUpperCase();
                     document.getElementById('dash-avatar').innerText = u.avatar || '🙂';
                     document.getElementById('dash-lvl-badge').innerText = u.level || 1;
