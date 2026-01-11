@@ -98,36 +98,65 @@
                 <div id="view-dashboard" class="view-section space-y-8 max-w-7xl mx-auto">
                     
                     <!-- Welcome Hero -->
-                    <div id="welcome-hero" class="relative p-6 lg:p-10 rounded-[2.5rem] bg-gradient-to-br from-indigo-900/40 to-slate-900 border border-indigo-500/20 shadow-2xl overflow-hidden">
-                        <div class="absolute -top-24 -right-24 w-64 h-64 bg-indigo-600/20 blur-[100px] rounded-full"></div>
-                        <div class="relative z-10 flex flex-col md:flex-row items-center gap-6 lg:gap-10">
-                            <div class="w-24 h-24 lg:w-32 lg:h-32 rounded-[2rem] bg-slate-800 flex items-center justify-center text-5xl lg:text-6xl border-4 border-indigo-500 shadow-2xl" id="dash-avatar">🙂</div>
-                            <div class="flex-1 text-center md:text-left">
-                                <h3 class="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1" id="dash-role">Guest</h3>
-                                <h2 class="text-3xl lg:text-4xl font-black text-white mb-4">Welcome to <span class="text-indigo-300">AdaptLearn</span></h2>
-                                <div id="auth-stats" class="hidden max-w-md mx-auto md:mx-0">
-                                    <div class="flex justify-between text-[10px] font-black text-slate-500 uppercase mb-2">
-                                        <span>Level <span id="dash-lvl" class="text-white">1</span></span>
-                                        <span id="dash-xp-txt">0 / 100 XP</span>
+                    <div id="welcome-hero" class="relative p-8 lg:p-12 rounded-[3rem] bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900/20 border border-white/10 shadow-2xl overflow-hidden">
+                        <div class="absolute -top-24 -right-24 w-96 h-96 bg-indigo-600/10 blur-[120px] rounded-full"></div>
+                        <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-600/10 blur-[100px] rounded-full"></div>
+                        
+                        <div class="relative z-10 flex flex-col md:flex-row items-center gap-8 lg:gap-12">
+                            <div class="relative group">
+                                <div class="absolute inset-0 bg-indigo-500 blur-2xl opacity-20 group-hover:opacity-40 transition duration-500"></div>
+                                <div class="w-28 h-28 lg:w-40 lg:h-40 rounded-[2.5rem] bg-slate-800 flex items-center justify-center text-6xl lg:text-7xl border-4 border-indigo-500/50 shadow-2xl transform transition-transform group-hover:scale-105" id="dash-avatar">🙂</div>
+                                <div class="absolute -bottom-2 -right-2 bg-indigo-600 text-white w-10 h-10 rounded-2xl flex items-center justify-center border-4 border-slate-900 font-black text-xs" id="dash-lvl-badge">1</div>
+                            </div>
+                            
+                            <div class="flex-1 text-center md:text-left space-y-4">
+                                <div>
+                                    <h3 class="text-sm font-black text-indigo-400 uppercase tracking-[0.3em] mb-2" id="dash-role">Guest Explorer</h3>
+                                    <h2 class="text-4xl lg:text-6xl font-black text-white leading-tight">Welcome back, <br class="hidden lg:block"><span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-blue-400" id="dash-name">Scholar</span></h2>
+                                </div>
+                                
+                                <div id="auth-stats" class="hidden max-w-md bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-white/5 shadow-inner">
+                                    <div class="flex justify-between items-end mb-3">
+                                        <div class="flex flex-col">
+                                            <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Experience Points</span>
+                                            <span class="text-xl font-black text-white" id="dash-xp-txt">0 / 100 XP</span>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Next Level</span>
+                                            <div class="text-indigo-400 font-black" id="dash-next-lvl">Level 2</div>
+                                        </div>
                                     </div>
-                                    <div class="h-2.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700">
-                                        <div id="dash-xp-bar" class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full w-0 transition-all duration-1000"></div>
+                                    <div class="h-3 bg-slate-950 rounded-full overflow-hidden p-0.5 border border-white/5">
+                                        <div id="dash-xp-bar" class="h-full bg-gradient-to-r from-indigo-600 via-blue-500 to-indigo-400 rounded-full w-0 transition-all duration-1000 shadow-[0_0_15px_rgba(99,102,241,0.5)]"></div>
                                     </div>
                                 </div>
-                                <div id="guest-msg" class="text-slate-400 text-sm max-w-lg mx-auto md:mx-0">
-                                    Browse our public courses below. Sign in to track your progress and earn certificates!
+                                
+                                <div id="guest-msg" class="inline-flex items-center gap-4 bg-indigo-600/10 border border-indigo-500/20 px-6 py-4 rounded-2xl">
+                                    <span class="text-2xl">🚀</span>
+                                    <p class="text-slate-300 text-sm font-medium">Ready to start your adventure? <a href="/login.html" class="text-white font-black hover:underline ml-2">Sign in to track progress</a></p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Adventure Map -->
-                    <div class="relative min-h-[600px] bg-slate-900/50 rounded-[3rem] border border-slate-800 shadow-inner overflow-hidden" id="map-container">
-                        <div class="absolute top-6 left-6 z-20 flex gap-2">
-                            <span class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider shadow-lg border border-indigo-400" id="map-label">🌌 Galactic Map</span>
-                            <button onclick="Game.render.map(null)" class="hidden bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-700 border border-slate-600" id="map-back-btn">⬅ Back</button>
+                    <!-- Map Decoration -->
+                    <div class="flex items-center justify-between px-6">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-xl">🗺️</div>
+                            <div>
+                                <h3 class="text-xl font-black text-white" id="map-title-display">Adventure Map</h3>
+                                <p class="text-xs text-slate-500 font-bold uppercase tracking-widest" id="map-subtitle">Select a destination</p>
+                            </div>
                         </div>
-                        <div id="map-content" class="relative z-10 w-full h-full p-6 lg:p-10 min-h-[600px] flex flex-col">
+                        <div class="flex gap-2">
+                            <button onclick="Game.render.map(null)" id="map-back-btn" class="hidden px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-black border border-slate-700 transition">⬅ BACK TO GALAXY</button>
+                        </div>
+                    </div>
+
+                    <!-- Adventure Map -->
+                    <div class="relative min-h-[600px] bg-slate-900/30 rounded-[3.5rem] border border-white/5 shadow-2xl overflow-hidden backdrop-blur-sm" id="map-container">
+                        <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 pointer-events-none"></div>
+                        <div id="map-content" class="relative z-10 w-full h-full p-8 lg:p-12 min-h-[600px] flex flex-col items-center justify-center">
                             <!-- Planets / Levels injected here -->
                         </div>
                     </div>
@@ -236,7 +265,7 @@
                             fetch(`/api/activities?studentId=${uid}`)
                         ];
                         
-                        if (uid > 0) {
+                        if (uid && uid !== "0") {
                             endpoints.push(fetch(`/api/analytics?userId=${uid}`));
                         }
 
@@ -244,10 +273,17 @@
                         const aData = await results[0].json();
                         Game.data.activities = Array.isArray(aData) ? aData : [];
 
-                        if (uid > 0) {
+                        if (uid && uid !== "0") {
                             const uData = await results[1].json();
-                            Game.data.user = uData.user;
-                            if(Game.data.user.name) sessionStorage.setItem('user_name', Game.data.user.name);
+                            if (uData && uData.user) {
+                                Game.data.user = uData.user;
+                                // Sync local data with fresh DB data
+                                sessionStorage.setItem('user_name', Game.data.user.name);
+                                sessionStorage.setItem('user_role', Game.data.user.role);
+                                sessionStorage.setItem('user_level', Game.data.user.level);
+                                sessionStorage.setItem('user_xp', Game.data.user.xp);
+                                sessionStorage.setItem('user_coins', Game.data.user.coins);
+                            }
                         } else {
                             Game.data.user = { name: 'Guest Explorer', level: 1, role: 'guest', avatar: '🕵️', coins: 0, xp: 0 };
                         }
@@ -275,13 +311,14 @@
                     document.getElementById('dash-name').innerText = u.name;
                     document.getElementById('dash-role').innerText = (u.role || 'guest').toUpperCase();
                     document.getElementById('dash-avatar').innerText = u.avatar || '🙂';
+                    document.getElementById('dash-lvl-badge').innerText = u.level || 1;
                     
                     if (u.role !== 'guest') {
-                        document.getElementById('dash-lvl').innerText = u.level || 1;
                         const nextXP = (u.level || 1) * 100;
                         const pct = Math.min(((u.xp || 0) / nextXP) * 100, 100);
                         document.getElementById('dash-xp-bar').style.width = `${pct}%`;
                         document.getElementById('dash-xp-txt').innerText = `${u.xp || 0} / ${nextXP} XP`;
+                        document.getElementById('dash-next-lvl').innerText = `Level ${(u.level || 1) + 1}`;
                     }
                     
                     Game.render.map(null);
@@ -289,16 +326,19 @@
                 map: (category) => {
                     const container = document.getElementById('map-content');
                     container.innerHTML = '';
-                    const label = document.getElementById('map-label');
+                    const titleEl = document.getElementById('map-title-display');
+                    const subEl = document.getElementById('map-subtitle');
                     const back = document.getElementById('map-back-btn');
 
                     let acts = Game.data.activities;
                     if (category) {
                         acts = acts.filter(a => (a.category || 'General') === category);
-                        label.innerText = `World: ${category}`;
+                        titleEl.innerText = `World: ${category}`;
+                        subEl.innerText = `${acts.length} Adventure${acts.length>1?'s':''} available`;
                         back.classList.remove('hidden');
                     } else {
-                        label.innerText = `🌌 Galactic Map`;
+                        titleEl.innerText = `🌌 Galactic Map`;
+                        subEl.innerText = `Select a world to explore`;
                         back.classList.add('hidden');
                         
                         const cats = [...new Set(acts.map(a => a.category || 'General'))];

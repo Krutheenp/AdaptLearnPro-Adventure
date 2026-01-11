@@ -176,28 +176,18 @@
                 
                 try {
                     // Try Analytics first (Rich Data)
-                    let res = await fetch(`/api/analytics?userId=${uid}&includeRank=true`);
+                    let res = await fetch(`/api/analytics?userId=${uid}`);
                     let data = await res.json();
                     
-                    // Fallback if Analytics fails or user is null
-                    if(!res.ok || !data.user || !data.user.id) {
-                        console.warn("Analytics fetch failed, falling back to basic user fetch");
-                        res = await fetch('/api/users');
-                        const users = await res.json();
-                        App.user = users.find(u => String(u.id) === String(uid));
-                        // Mock empty analytics structure
-                        data = { user: App.user, rank: '-', certificates: [], activities: [] };
-                    } else {
-                        App.user = data.user;
+                    if(!res.ok || !data.user) {
+                        console.warn("User data not found in DB");
+                        alert('Your profile record is missing. Please contact admin.');
+                        return;
                     }
-
-                    if(App.user) {
-                        App.render(data);
-                        App.loadHistory(); // New
-                    } else {
-                        alert('User not found. Please login again.');
-                        location.href = '/login.html';
-                    }
+                    
+                    App.user = data.user;
+                    App.render(data);
+                    App.loadHistory(); 
                 } catch(e) {
                     console.error(e);
                     alert('Connection Error. Showing cached/demo data.');
