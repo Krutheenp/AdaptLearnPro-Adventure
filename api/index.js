@@ -59,10 +59,44 @@ module.exports = async (req, res) => {
         }
 
         if (pathname === '/api/seed') {
-            await db.query(`INSERT INTO users (username, password, role, name, level, xp, coins, avatar) VALUES ('admin', 'password123', 'admin', 'Super Admin', 99, 99999, 99999, '👑') ON CONFLICT (username) DO NOTHING`);
-            // Add some items
-            await db.query(`INSERT INTO items (name, price, icon, type) VALUES ('Streak Freeze', 50, '🧊', 'consumable'), ('Golden Frame', 500, '🖼️', 'cosmetic') ON CONFLICT DO NOTHING`);
-            return res.json({ success: true, message: "Admin and initial items seeded" });
+            try {
+                // 1. Seed Admins
+                await db.query(`INSERT INTO users (username, password, role, name, level, xp, coins, avatar) VALUES ('admin', 'password123', 'admin', 'Super Admin', 99, 99999, 99999, '👑') ON CONFLICT (username) DO NOTHING`);
+                await db.query(`INSERT INTO users (username, password, role, name, level, xp, coins, avatar) VALUES ('master', '1234', 'admin', 'Game Master', 80, 50000, 50000, '🧙‍♂️') ON CONFLICT (username) DO NOTHING`);
+
+                // 2. Seed Teachers
+                const teachers = [
+                    ['teacher1', '1234', 'teacher', 'ครูสมศรี ใจดี', 50, 15000, 10000, '👩‍🏫'],
+                    ['prof_oak', '1234', 'teacher', 'Prof. Oak', 65, 25000, 20000, '👨‍🔬']
+                ];
+                for (const t of teachers) { 
+                    await db.query(`INSERT INTO users (username, password, role, name, level, xp, coins, avatar) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (username) DO NOTHING`, t); 
+                }
+
+                // 3. Seed Students
+                const students = [
+                    ['student1', '1234', 'student', 'สมชาย ขยันเรียน', 15, 2500, 500, '👦'],
+                    ['araya', '1234', 'student', 'อารยา สมใจ', 22, 4800, 1200, '👩‍🎓'],
+                    ['winner', '1234', 'student', 'The Champion', 45, 12000, 8500, '🏆']
+                ];
+                for (const s of students) { 
+                    await db.query(`INSERT INTO users (username, password, role, name, level, xp, coins, avatar) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (username) DO NOTHING`, s); 
+                }
+
+                // 4. Seed Items
+                const items = [
+                    ['Streak Freeze', 'Protect your daily streak', 50, 'consumable', '🧊'],
+                    ['Golden Frame', 'Shining border for your profile', 500, 'cosmetic', '🖼️'],
+                    ['XP Potion', 'Instantly gain 500 XP', 200, 'consumable', '🧪']
+                ];
+                for (const i of items) { 
+                    await db.query(`INSERT INTO items (name, description, price, type, icon) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING`, i); 
+                }
+
+                return res.json({ success: true, message: "Database restored with full demo data" });
+            } catch (e) {
+                return res.status(500).json({ success: false, error: e.message });
+            }
         }
 
         // --- 2. AUTHENTICATION ---
