@@ -95,68 +95,88 @@
             <div class="flex-1 overflow-y-auto p-4 lg:p-10 custom-scrollbar relative" id="content-scroll">
                 
                 <!-- DASHBOARD (Adventure Map) -->
-                <div id="view-dashboard" class="view-section space-y-8 max-w-7xl mx-auto">
+                <div id="view-dashboard" class="view-section space-y-10 max-w-7xl mx-auto">
                     
                     <!-- Welcome Hero -->
-                    <div id="welcome-hero" class="relative p-8 lg:p-12 rounded-[3rem] bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900/20 border border-white/10 shadow-2xl overflow-hidden">
+                    <div id="welcome-hero" class="relative p-8 lg:p-12 rounded-[3.5rem] bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900/20 border border-white/10 shadow-2xl overflow-hidden">
                         <div class="absolute -top-24 -right-24 w-96 h-96 bg-indigo-600/10 blur-[120px] rounded-full"></div>
                         <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-600/10 blur-[100px] rounded-full"></div>
                         
-                        <div class="relative z-10 flex flex-col md:flex-row items-center gap-8 lg:gap-12">
+                        <div class="relative z-10 flex flex-col md:flex-row items-center gap-8 lg:gap-16">
                             <div class="relative group">
                                 <div class="absolute inset-0 bg-indigo-500 blur-2xl opacity-20 group-hover:opacity-40 transition duration-500"></div>
-                                <div class="w-28 h-28 lg:w-40 lg:h-40 rounded-[2.5rem] bg-slate-800 flex items-center justify-center text-6xl lg:text-7xl border-4 border-indigo-500/50 shadow-2xl transform transition-transform group-hover:scale-105" id="dash-avatar">🙂</div>
-                                <div class="absolute -bottom-2 -right-2 bg-indigo-600 text-white w-10 h-10 rounded-2xl flex items-center justify-center border-4 border-slate-900 font-black text-xs" id="dash-lvl-badge">1</div>
+                                <div class="w-32 h-32 lg:w-44 lg:h-44 rounded-[3rem] bg-slate-800 flex items-center justify-center text-7xl lg:text-8xl border-4 border-indigo-500/50 shadow-2xl transform transition-transform group-hover:scale-105" id="dash-avatar">🙂</div>
+                                <div class="absolute -bottom-2 -right-2 bg-indigo-600 text-white w-12 h-12 rounded-2xl flex items-center justify-center border-4 border-slate-900 font-black text-sm shadow-xl" id="dash-lvl-badge">1</div>
                             </div>
                             
-                            <div class="flex-1 text-center md:text-left space-y-4">
+                            <div class="flex-1 text-center md:text-left space-y-6">
                                 <div>
-                                    <h3 class="text-sm font-black text-indigo-400 uppercase tracking-[0.3em] mb-2" id="dash-role">Guest Explorer</h3>
-                                    <h2 class="text-4xl lg:text-6xl font-black text-white leading-tight">Welcome back, <br class="hidden lg:block"><span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-blue-400" id="dash-name">Scholar</span></h2>
+                                    <div class="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full mb-3">
+                                        <span class="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></span>
+                                        <span class="text-[10px] font-black text-indigo-400 uppercase tracking-widest" id="dash-role">Guest Explorer</span>
+                                    </div>
+                                    <h2 class="text-4xl lg:text-6xl font-black text-white leading-tight">Welcome back, <br class="hidden lg:block"><span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-blue-400 to-indigo-300" id="dash-name">Scholar</span></h2>
                                 </div>
                                 
-                                <div id="auth-stats" class="hidden max-w-md bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-white/5 shadow-inner">
-                                    <div class="flex justify-between items-end mb-3">
-                                        <div class="flex flex-col">
-                                            <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Experience Points</span>
-                                            <span class="text-xl font-black text-white" id="dash-xp-txt">0 / 100 XP</span>
+                                <div id="auth-stats" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
+                                    <div class="bg-white/5 backdrop-blur-md p-5 rounded-[2rem] border border-white/5 shadow-inner">
+                                        <div class="flex justify-between items-end mb-3">
+                                            <div class="flex flex-col">
+                                                <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Experience Points</span>
+                                                <span class="text-xl font-black text-white" id="dash-xp-txt">0 / 100 XP</span>
+                                            </div>
+                                            <div class="text-right">
+                                                <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Target</span>
+                                                <div class="text-indigo-400 font-black" id="dash-next-lvl">Level 2</div>
+                                            </div>
                                         </div>
-                                        <div class="text-right">
-                                            <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Next Level</span>
-                                            <div class="text-indigo-400 font-black" id="dash-next-lvl">Level 2</div>
+                                        <div class="h-2.5 bg-slate-950 rounded-full overflow-hidden p-0.5 border border-white/5">
+                                            <div id="dash-xp-bar" class="h-full bg-gradient-to-r from-indigo-600 via-blue-500 to-indigo-400 rounded-full w-0 transition-all duration-1000 shadow-[0_0_15px_rgba(99,102,241,0.5)]"></div>
                                         </div>
                                     </div>
-                                    <div class="h-3 bg-slate-950 rounded-full overflow-hidden p-0.5 border border-white/5">
-                                        <div id="dash-xp-bar" class="h-full bg-gradient-to-r from-indigo-600 via-blue-500 to-indigo-400 rounded-full w-0 transition-all duration-1000 shadow-[0_0_15px_rgba(99,102,241,0.5)]"></div>
+                                    <div class="flex gap-3">
+                                        <div class="flex-1 bg-white/5 backdrop-blur-md p-5 rounded-[2rem] border border-white/5 flex flex-col items-center justify-center text-center">
+                                            <span class="text-2xl mb-1">🪙</span>
+                                            <span class="text-lg font-black text-yellow-400" id="dash-coins">0</span>
+                                            <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Balance</span>
+                                        </div>
+                                        <div class="flex-1 bg-white/5 backdrop-blur-md p-5 rounded-[2rem] border border-white/5 flex flex-col items-center justify-center text-center">
+                                            <span class="text-2xl mb-1">🏆</span>
+                                            <span class="text-lg font-black text-blue-400" id="dash-certs">0</span>
+                                            <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Awards</span>
+                                        </div>
                                     </div>
                                 </div>
                                 
-                                <div id="guest-msg" class="inline-flex items-center gap-4 bg-indigo-600/10 border border-indigo-500/20 px-6 py-4 rounded-2xl">
-                                    <span class="text-2xl">🚀</span>
-                                    <p class="text-slate-300 text-sm font-medium">Ready to start your adventure? <a href="/login.html" class="text-white font-black hover:underline ml-2">Sign in to track progress</a></p>
+                                <div id="guest-msg" class="inline-flex items-center gap-4 bg-white/5 border border-white/10 px-8 py-5 rounded-[2rem] backdrop-blur-sm">
+                                    <span class="text-3xl animate-bounce">🚀</span>
+                                    <div>
+                                        <p class="text-white font-bold text-lg">Ready to start your adventure?</p>
+                                        <p class="text-slate-400 text-sm">Sign in to track progress and earn certificates! <a href="/login.html" class="text-indigo-400 font-black hover:underline ml-1">Login Now</a></p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Map Decoration -->
-                    <div class="flex items-center justify-between px-6">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-xl">🗺️</div>
+                    <!-- Map Header -->
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 px-4">
+                        <div class="flex items-center gap-5">
+                            <div class="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-2xl shadow-xl">🌌</div>
                             <div>
-                                <h3 class="text-xl font-black text-white" id="map-title-display">Adventure Map</h3>
-                                <p class="text-xs text-slate-500 font-bold uppercase tracking-widest" id="map-subtitle">Select a destination</p>
+                                <h3 class="text-2xl font-black text-white tracking-tight" id="map-title-display">Galactic Discovery</h3>
+                                <p class="text-xs text-slate-500 font-bold uppercase tracking-[0.2em]" id="map-subtitle">Exploring the unknown</p>
                             </div>
                         </div>
-                        <div class="flex gap-2">
-                            <button onclick="Game.render.map(null)" id="map-back-btn" class="hidden px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-black border border-slate-700 transition">⬅ BACK TO GALAXY</button>
+                        <div class="flex gap-3">
+                            <button onclick="Game.render.map(null)" id="map-back-btn" class="hidden px-8 py-3 bg-slate-800 hover:bg-white hover:text-slate-950 text-white rounded-2xl text-xs font-black border border-slate-700 transition shadow-xl">⬅ RETURN TO GALAXY</button>
                         </div>
                     </div>
 
                     <!-- Adventure Map -->
-                    <div class="relative min-h-[600px] bg-slate-900/30 rounded-[3.5rem] border border-white/5 shadow-2xl overflow-hidden backdrop-blur-sm" id="map-container">
-                        <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 pointer-events-none"></div>
-                        <div id="map-content" class="relative z-10 w-full h-full p-8 lg:p-12 min-h-[600px] flex flex-col items-center justify-center">
+                    <div class="relative min-h-[650px] bg-slate-900/30 rounded-[4rem] border border-white/5 shadow-2xl overflow-hidden backdrop-blur-md group/map" id="map-container">
+                        <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30 pointer-events-none group-hover/map:opacity-50 transition-opacity duration-1000"></div>
+                        <div id="map-content" class="relative z-10 w-full h-full p-8 lg:p-16 min-h-[650px] flex flex-col items-center justify-center">
                             <!-- Planets / Levels injected here -->
                         </div>
                     </div>
@@ -319,6 +339,8 @@
                         document.getElementById('dash-xp-bar').style.width = `${pct}%`;
                         document.getElementById('dash-xp-txt').innerText = `${u.xp || 0} / ${nextXP} XP`;
                         document.getElementById('dash-next-lvl').innerText = `Level ${(u.level || 1) + 1}`;
+                        document.getElementById('dash-coins').innerText = (u.coins || 0).toLocaleString();
+                        document.getElementById('dash-certs').innerText = (Game.data.certificates || []).length;
                     }
                     
                     Game.render.map(null);
@@ -330,29 +352,40 @@
                     const subEl = document.getElementById('map-subtitle');
                     const back = document.getElementById('map-back-btn');
 
-                    let acts = Game.data.activities;
+                    let acts = Game.data.activities || [];
                     if (category) {
                         acts = acts.filter(a => (a.category || 'General') === category);
-                        titleEl.innerText = `World: ${category}`;
-                        subEl.innerText = `${acts.length} Adventure${acts.length>1?'s':''} available`;
+                        titleEl.innerText = `Sector: ${category}`;
+                        subEl.innerText = `${acts.length} Destination${acts.length>1?'s':''} Found`;
                         back.classList.remove('hidden');
                     } else {
                         titleEl.innerText = `🌌 Galactic Map`;
-                        subEl.innerText = `Select a world to explore`;
+                        subEl.innerText = `Select a star system to explore`;
                         back.classList.add('hidden');
                         
                         const cats = [...new Set(acts.map(a => a.category || 'General'))];
                         if (cats.length === 0) {
-                            container.innerHTML = '<div class="m-auto text-slate-600 font-bold uppercase tracking-widest">No Worlds Found</div>';
+                            container.innerHTML = '<div class="m-auto text-slate-600 font-bold uppercase tracking-[0.3em] animate-pulse">Initializing Galactic Data...</div>';
                             return;
                         }
                         
                         const grid = document.createElement('div');
-                        grid.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 m-auto";
+                        grid.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12 m-auto w-full max-w-5xl";
                         cats.forEach((cat) => {
+                            const count = acts.filter(a => (a.category || 'General') === cat).length;
                             const node = document.createElement('div');
-                            node.className = "w-full max-w-[200px] aspect-square bg-slate-800 border-4 border-slate-700 rounded-full flex flex-col items-center justify-center cursor-pointer hover:scale-110 hover:border-indigo-500 transition shadow-2xl group";
-                            node.innerHTML = `<div class="text-6xl mb-2 group-hover:rotate-12 transition">🪐</div><div class="font-black text-white text-[10px] uppercase tracking-tighter">${cat}</div>`;
+                            node.className = "relative group/planet cursor-pointer transition-all duration-500 hover:-translate-y-4";
+                            node.innerHTML = `
+                                <div class="absolute inset-0 bg-indigo-500/20 blur-3xl opacity-0 group-hover/planet:opacity-100 transition-opacity"></div>
+                                <div class="relative aspect-square bg-slate-800/50 border-4 border-slate-700 rounded-full flex flex-col items-center justify-center shadow-2xl group-hover/planet:border-indigo-500 overflow-hidden">
+                                    <div class="text-7xl mb-4 group-hover/planet:scale-125 transition-transform duration-700">🪐</div>
+                                    <div class="text-center">
+                                        <div class="font-black text-white text-xs uppercase tracking-[0.2em] mb-1">${cat}</div>
+                                        <div class="text-[10px] text-indigo-400 font-bold uppercase">${count} ADVENTURES</div>
+                                    </div>
+                                    <div class="absolute inset-0 bg-gradient-to-t from-indigo-900/40 to-transparent opacity-0 group-hover/planet:opacity-100 transition-opacity"></div>
+                                </div>
+                            `;
                             node.onclick = () => { Game.data.currentWorld = cat; Game.render.map(cat); };
                             grid.appendChild(node);
                         });
@@ -361,26 +394,35 @@
                     }
 
                     const path = document.createElement('div');
-                    path.className = "flex flex-col items-center gap-16 py-10";
+                    path.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 w-full";
                     acts.forEach((act, i) => {
                         const node = document.createElement('div');
-                        node.className = "course-node flex flex-col items-center relative group";
-                        
-                        const isLocked = (act.price > 0 && act.is_enrolled == 0);
+                        const isLocked = (act.price > 0 && parseInt(act.is_enrolled) === 0);
                         const isGuest = Game.data.user.role === 'guest';
 
+                        node.className = "group/course relative bg-slate-900/80 border border-white/5 rounded-[2.5rem] p-8 hover:border-indigo-500/50 transition-all duration-500 overflow-hidden";
                         node.innerHTML = `
-                            <div class="node-icon w-24 h-24 rounded-[2rem] bg-slate-800 border-4 ${isLocked?'border-slate-700':'border-indigo-500'} flex items-center justify-center text-4xl shadow-2xl cursor-pointer transition-transform duration-300">
-                                ${isLocked ? '🔒' : (act.type==='video'?'📜':'🎮')}
-                            </div>
-                            <div class="absolute -bottom-12 bg-slate-900 px-4 py-1.5 rounded-xl border border-slate-800 text-[10px] font-black text-white whitespace-nowrap shadow-2xl group-hover:border-indigo-500 transition">
-                                ${act.title} ${isLocked ? `<span class="text-yellow-500 ml-1">🪙${act.price}</span>` : ''}
+                            <div class="absolute -top-10 -right-10 w-32 h-32 bg-indigo-600/10 blur-3xl rounded-full group-hover/course:bg-indigo-600/20 transition-colors"></div>
+                            <div class="relative z-10 flex flex-col items-center text-center gap-6">
+                                <div class="w-24 h-24 rounded-3xl bg-slate-800 flex items-center justify-center text-5xl shadow-2xl group-hover/course:scale-110 transition-transform duration-500 border-2 border-white/5">
+                                    ${isLocked ? '🔒' : (act.type==='video'?'🎥':'📜')}
+                                </div>
+                                <div>
+                                    <h4 class="text-xl font-black text-white mb-2 leading-tight">${act.title}</h4>
+                                    <div class="flex items-center justify-center gap-3">
+                                        <span class="px-3 py-1 bg-white/5 rounded-full text-[10px] font-black text-slate-400 uppercase">${act.type}</span>
+                                        ${act.price > 0 ? `<span class="text-yellow-400 font-black text-xs">🪙 ${act.price}</span>` : '<span class="text-green-400 font-black text-xs uppercase">FREE</span>'}
+                                    </div>
+                                </div>
+                                <button class="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${isLocked ? 'bg-slate-800 text-slate-400' : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-900/20'}">
+                                    ${isLocked ? 'Unlock Entry' : 'Start Mission'}
+                                </button>
                             </div>
                         `;
                         
                         node.onclick = () => {
                             if (isGuest) {
-                                if (confirm('Login required to start learning. Go to login page?')) location.href = '/login.html';
+                                if (confirm('Access denied. Authentication required. Relocate to login page?')) location.href = '/login.html';
                             } else {
                                 location.href = `/learn.html?id=${act.id}`;
                             }
