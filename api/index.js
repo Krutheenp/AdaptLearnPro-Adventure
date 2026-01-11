@@ -64,7 +64,7 @@ module.exports = async (req, res) => {
                 `CREATE TABLE IF NOT EXISTS user_items (id SERIAL PRIMARY KEY, user_id INT REFERENCES users(id) ON DELETE CASCADE, item_id INT REFERENCES items(id) ON DELETE CASCADE, acquired_at TEXT)`,
                 `CREATE TABLE IF NOT EXISTS certificates (id SERIAL PRIMARY KEY, user_id INT REFERENCES users(id) ON DELETE CASCADE, user_name TEXT, course_title TEXT, issue_date TEXT, code TEXT)`,
                 `CREATE TABLE IF NOT EXISTS system_config (key TEXT PRIMARY KEY, value TEXT)`,
-                `CREATE TABLE IF NOT EXISTS site_visits (id SERIAL PRIMARY KEY, ip_address TEXT, visit_time TEXT)`,
+                `CREATE TABLE IF NOT EXISTS site_visits (id SERIAL PRIMARY KEY, ip_address TEXT, user_agent TEXT, visit_time TEXT)`,
                 `CREATE TABLE IF NOT EXISTS login_history (id SERIAL PRIMARY KEY, user_id INT REFERENCES users(id) ON DELETE CASCADE, login_time TEXT, ip_address TEXT, device_info TEXT)`,
                 `CREATE TABLE IF NOT EXISTS reviews (id SERIAL PRIMARY KEY, user_id INT, activity_id INT, rating INT, comment TEXT, created_at TEXT)`
             ];
@@ -73,19 +73,27 @@ module.exports = async (req, res) => {
         }
 
         if (pathname === '/api/seed') {
-            if (!db) return res.json({ success: false });
-            // 1. Seed Admin
-            await db.query(`INSERT INTO users (username, password, role, name, level, xp, coins, avatar) VALUES ('admin', 'password123', 'admin', 'Super Admin', 99, 99999, 99999, '👑') ON CONFLICT (username) DO NOTHING`);
-            // 2. Seed Teachers
-            await db.query(`INSERT INTO users (username, password, role, name, level, xp, avatar) VALUES ('teacher1', '1234', 'teacher', 'ครูสมศรี ใจดี', 50, 5000, '👩‍🏫') ON CONFLICT (username) DO NOTHING`);
-            // 3. Seed Items
-            const items = [
-                ['Streak Freeze', 'Protect your daily streak', 50, 'consumable', '🧊'],
-                ['Golden Frame', 'Shining border for your profile', 500, 'cosmetic', '🖼️'],
-                ['XP Potion', 'Instantly gain 500 XP', 200, 'consumable', '🧪']
-            ];
-            for (const i of items) { await db.query(`INSERT INTO items (name, description, price, type, icon) VALUES ($1, $2, $3, $4, $5)`, i); }
-            return res.json({ success: true, message: "Admin and sample data seeded" });
+            if (!db) return res.json({ success: false, error: "No DB" });
+            const logs = [];
+            try {
+                // 1. Seed Admin
+                await db.query(`INSERT INTO users (username, password, role, name, level, xp, coins, avatar) VALUES ('admin', 'password123', 'admin', 'Super Admin', 99, 99999, 99999, '👑') ON CONFLICT (username) DO NOTHING`);
+                logs.push("Admin Seeded");
+                // 2. Seed Teachers
+                await db.query(`INSERT INTO users (username, password, role, name, level, xp, avatar) VALUES ('teacher1', '1234', 'teacher', 'ครูสมศรี ใจดี', 50, 5000, '👩‍🏫') ON CONFLICT (username) DO NOTHING`);
+                logs.push("Teacher Seeded");
+                // 3. Seed Items
+                const items = [
+                    ['Streak Freeze', 'Protect your daily streak', 50, 'consumable', '🧊'],
+                    ['Golden Frame', 'Shining border for your profile', 500, 'cosmetic', '🖼️'],
+                    ['XP Potion', 'Instantly gain 500 XP', 200, 'consumable', '🧪']
+                ];
+                for (const i of items) { await db.query(`INSERT INTO items (name, description, price, type, icon) VALUES ($1, $2, $3, $4, $5)`, i); }
+                logs.push("Items Seeded");
+                return res.json({ success: true, message: "Seeding complete", logs });
+            } catch (e) {
+                return res.status(500).json({ success: false, error: e.message, logs });
+            }
         }
 
         // --- AUTH & SYSTEM ---
