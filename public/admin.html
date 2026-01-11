@@ -11,6 +11,7 @@
         body { font-family: 'Sarabun', sans-serif; background-color: #0f172a; color: #cbd5e1; }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
         .active-tab { background-color: #1e293b !important; color: white !important; font-weight: bold; border-left: 4px solid #ef4444; }
+        .chart-box { position: relative; height: 250px; width: 100%; }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden bg-slate-950">
@@ -19,13 +20,13 @@
     <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col z-50">
         <div class="h-20 flex items-center px-6 border-b border-slate-800">
             <div class="w-10 h-10 bg-red-600 rounded-xl flex items-center justify-center text-white text-xl shadow-lg mr-3">🛡️</div>
-            <span class="font-bold text-white text-lg">Admin Center</span>
+            <span class="font-bold text-white text-lg tracking-tight">Control Center</span>
         </div>
         <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
             <button onclick="Admin.tab('overview')" class="w-full text-left px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition flex items-center gap-3 active-tab" id="btn-overview">📊 Overview</button>
             <button onclick="Admin.tab('users')" class="w-full text-left px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition flex items-center gap-3" id="btn-users">👥 Members</button>
             <button onclick="Admin.tab('certs')" class="w-full text-left px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition flex items-center gap-3" id="btn-certs">🏅 Certificates</button>
-            <button onclick="Admin.tab('shop')" class="w-full text-left px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition flex items-center gap-3" id="btn-shop">🛍️ Shop</button>
+            <button onclick="Admin.tab('shop')" class="w-full text-left px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition flex items-center gap-3" id="btn-shop">🛍️ Shop Items</button>
             <button onclick="Admin.tab('system')" class="w-full text-left px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 transition flex items-center gap-3" id="btn-system">⚙️ Settings</button>
             <div class="border-t border-slate-800 my-4"></div>
             <a href="/instructor.html" class="w-full text-left px-4 py-3 rounded-xl text-yellow-500 hover:bg-yellow-500/10 transition flex items-center gap-3">🪄 Instructor Studio</a>
@@ -35,55 +36,63 @@
 
     <!-- Main Content -->
     <main class="flex-1 overflow-y-auto p-8 relative">
-        <!-- Auth Guard -->
+        <!-- Auth Guard Loader -->
         <div id="auth-guard" class="absolute inset-0 bg-slate-950 z-[100] flex flex-col items-center justify-center">
             <div class="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p class="text-white font-bold tracking-widest">VERIFYING ACCESS...</p>
+            <p class="text-white font-bold tracking-widest" id="auth-msg">VERIFYING ACCESS...</p>
+            <button onclick="Admin.loadData()" class="mt-4 text-xs text-slate-500 underline">Bypass Loader</button>
         </div>
 
         <!-- VIEWS -->
         <div id="view-overview" class="space-y-8">
             <div class="flex justify-between items-center"><h1 class="text-4xl font-black text-white">System Dashboard</h1><button onclick="Admin.seedData()" class="bg-indigo-600 px-6 py-2 rounded-xl font-bold text-sm text-white">🌱 Seed Data</button></div>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div class="glass p-6 rounded-3xl"><div class="text-slate-400 text-xs font-bold uppercase">Total Users</div><div class="text-3xl font-black text-white mt-1" id="stat-users">0</div></div>
-                <div class="glass p-6 rounded-3xl"><div class="text-slate-400 text-xs font-bold uppercase">Courses</div><div class="text-3xl font-black text-white mt-1" id="stat-courses">0</div></div>
-                <div class="glass p-6 rounded-3xl"><div class="text-slate-400 text-xs font-bold uppercase">Visits</div><div class="text-3xl font-black text-white mt-1" id="stat-visits">0</div></div>
-                <div class="glass p-6 rounded-3xl"><div class="text-slate-400 text-xs font-bold uppercase">Shop</div><div class="text-3xl font-black text-white mt-1" id="stat-items">0</div></div>
+                <div class="glass p-6 rounded-[2rem] border-l-4 border-l-blue-500"><div class="text-slate-400 text-xs font-bold uppercase">Users</div><div class="text-3xl font-black text-white mt-1" id="stat-users">0</div></div>
+                <div class="glass p-6 rounded-[2rem] border-l-4 border-l-purple-500"><div class="text-slate-400 text-xs font-bold uppercase">Courses</div><div class="text-3xl font-black text-white mt-1" id="stat-courses">0</div></div>
+                <div class="glass p-6 rounded-[2rem] border-l-4 border-l-green-500"><div class="text-slate-400 text-xs font-bold uppercase">Visits</div><div class="text-3xl font-black text-white mt-1" id="stat-visits">0</div></div>
+                <div class="glass p-6 rounded-[2rem] border-l-4 border-l-yellow-500"><div class="text-slate-400 text-xs font-bold uppercase">Shop</div><div class="text-3xl font-black text-white mt-1" id="stat-items">0</div></div>
             </div>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div class="glass p-8 rounded-3xl"><h3 class="font-bold text-white mb-6">Learning Analytics</h3><canvas id="chart-main"></canvas></div>
-                <div class="glass p-8 rounded-3xl"><h3 class="font-bold text-white mb-6">User Roles</h3><canvas id="chart-roles"></canvas></div>
+                <div class="glass p-8 rounded-[2rem]"><h3 class="font-bold text-white mb-6">Learning Activity</h3><div class="chart-box"><canvas id="chart-main"></canvas></div></div>
+                <div class="glass p-8 rounded-[2rem]"><h3 class="font-bold text-white mb-6">User Roles</h3><div class="chart-box"><canvas id="chart-roles"></canvas></div></div>
             </div>
         </div>
 
         <div id="view-users" class="hidden space-y-6">
-            <div class="flex justify-between items-center"><h1 class="text-3xl font-bold text-white">User Management</h1><button onclick="Admin.openUserModal()" class="bg-white text-black px-4 py-2 rounded-xl font-bold text-sm">+ Create Member</button></div>
-            <div class="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden"><table class="w-full text-left text-sm text-slate-400"><thead class="bg-slate-800 text-slate-200 text-xs uppercase font-bold"><tr><th class="px-6 py-4">Name</th><th class="px-6 py-4">Role</th><th class="px-6 py-4">Stats</th><th class="px-6 py-4 text-right">Actions</th></tr></thead><tbody id="table-users" class="divide-y divide-slate-800"></tbody></table></div>
+            <div class="flex justify-between items-center"><h1 class="text-3xl font-bold text-white">Member Management</h1><button onclick="Admin.openUserModal()" class="bg-white text-black px-4 py-2 rounded-xl font-bold text-sm">+ Enroll User</button></div>
+            <div class="bg-slate-900 rounded-3xl overflow-hidden border border-slate-800"><table class="w-full text-left text-sm text-slate-400"><thead class="bg-slate-800/50 text-slate-200 text-xs font-bold uppercase tracking-wider"><tr><th class="px-6 py-4">Player</th><th class="px-6 py-4">Role</th><th class="px-6 py-4">Wallet</th><th class="px-6 py-4 text-right">Actions</th></tr></thead><tbody id="table-users" class="divide-y divide-slate-800"></tbody></table></div>
         </div>
 
         <div id="view-certs" class="hidden space-y-6">
             <h1 class="text-3xl font-bold text-white">Issued Certificates</h1>
-            <div class="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden"><table class="w-full text-left text-sm text-slate-400"><thead class="bg-slate-800 text-slate-200 text-xs uppercase font-bold"><tr><th class="px-6 py-4">Code</th><th class="px-6 py-4">Student</th><th class="px-6 py-4">Course</th><th class="px-6 py-4 text-right">Action</th></tr></thead><tbody id="table-certs" class="divide-y divide-slate-800"></tbody></table></div>
+            <div class="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden"><table class="w-full text-left text-sm text-slate-400"><thead class="bg-slate-800 text-slate-200 text-xs font-bold"><tr><th class="px-6 py-4">Code</th><th class="px-6 py-4">Student</th><th class="px-6 py-4">Course</th><th class="px-6 py-4 text-right">Action</th></tr></thead><tbody id="table-certs" class="divide-y divide-slate-800"></tbody></table></div>
         </div>
 
         <div id="view-shop" class="hidden space-y-6">
-            <div class="flex justify-between items-center"><h1 class="text-3xl font-bold text-white">Shop Manager</h1><button onclick="Admin.addItem()" class="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold">+ New Item</button></div>
+            <div class="flex justify-between items-center"><h1 class="text-3xl font-bold text-white">Shop Inventory</h1><button onclick="Admin.addItem()" class="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold">+ Create Item</button></div>
             <div id="list-shop" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
         </div>
 
         <div id="view-system" class="hidden space-y-6">
-            <h1 class="text-3xl font-bold text-white">Global Settings</h1>
-            <div class="glass p-8 rounded-3xl max-w-xl"><label class="block text-sm font-bold text-slate-400 mb-2">Website Announcement</label><textarea id="sys-announcement" class="w-full bg-slate-900 rounded-2xl p-4 text-white h-32 mb-4 outline-none focus:ring-2 focus:ring-indigo-500"></textarea><button onclick="Admin.saveConfig('announcement')" class="bg-indigo-600 px-6 py-2 rounded-xl font-bold text-white">Save Message</button></div>
+            <h1 class="text-3xl font-bold text-white">Global Config</h1>
+            <div class="glass p-8 rounded-3xl max-w-xl space-y-6">
+                <div><label class="block text-sm font-bold text-slate-400 mb-2">Global Announcement</label><textarea id="sys-announcement" class="w-full bg-slate-900 rounded-2xl p-4 text-white h-32 outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
+                <button onclick="Admin.saveConfig('announcement')" class="bg-indigo-600 px-6 py-3 rounded-xl font-bold text-white w-full">Save System Config</button>
+            </div>
         </div>
     </main>
 
-    <!-- USER MODAL -->
+    <!-- MODALS -->
     <div id="user-modal" class="fixed inset-0 bg-black/95 z-[200] hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 w-full max-w-md rounded-[2.5rem] border border-slate-800 p-8 shadow-2xl">
-            <h2 id="u-modal-title" class="text-2xl font-black text-white mb-6">Member Details</h2>
+        <div class="bg-slate-900 w-full max-w-lg rounded-[2.5rem] border border-slate-800 p-8 shadow-2xl">
+            <h2 id="u-modal-title" class="text-2xl font-black text-white mb-6">User Editor</h2>
             <input type="hidden" id="u-id">
             <div class="space-y-4">
-                <div><label class="text-[10px] uppercase font-bold text-slate-500 ml-2">Display Name</label><input id="u-name" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="text-[10px] uppercase font-bold text-slate-500 ml-2">Username</label><input id="u-username" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"></div>
+                    <div><label class="text-[10px] uppercase font-bold text-slate-500 ml-2">New Password</label><input id="u-password" type="password" placeholder="Leave empty if same" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"></div>
+                </div>
+                <div><label class="text-[10px] uppercase font-bold text-slate-500 ml-2">Name</label><input id="u-name" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"></div>
                 <div class="grid grid-cols-2 gap-4">
                     <div><label class="text-[10px] uppercase font-bold text-yellow-500 ml-2">Coins</label><input id="u-coins" type="number" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"></div>
                     <div><label class="text-[10px] uppercase font-bold text-blue-500 ml-2">XP</label><input id="u-xp" type="number" class="w-full bg-slate-800 rounded-2xl px-4 py-3 text-white border-none"></div>
@@ -104,7 +113,6 @@
                 const role = sessionStorage.getItem('user_role');
                 if (!uid) { location.href = '/login.html'; return; }
 
-                // Super fast track for cached admins
                 if (role === 'admin') {
                     document.getElementById('auth-guard').classList.add('hidden');
                     Admin.loadData();
@@ -116,23 +124,29 @@
                             sessionStorage.setItem('user_role', 'admin');
                             document.getElementById('auth-guard').classList.add('hidden');
                             Admin.loadData();
-                        } else { alert('⛔ Restricted Area'); location.href = '/index.html'; }
-                    } catch(e) { location.href = '/login.html'; }
+                        } else { alert('⛔ Access Denied'); location.href = '/index.html'; }
+                    } catch(e) { document.getElementById('auth-msg').innerText = "CONNECTION FAILED."; }
                 }
             },
 
             loadData: async () => {
-                const get = async (u) => { try { const r = await fetch(u); return r.ok ? await r.json() : []; } catch(e) { return []; } };
+                const fetchSafe = async (url) => { 
+                    try { const r = await fetch(url); return r.ok ? await r.json() : []; } 
+                    catch(e) { console.error("Error loading:", url); return []; } 
+                };
+                
+                console.log("Admin: Refreshing Data...");
                 const [u, a, c, s, v, cf] = await Promise.all([
-                    get('/api/users'), get('/api/activities'), get('/api/certificate'), get('/api/shop'), get('/api/visit'), get('/api/config')
+                    fetchSafe('/api/users'), fetchSafe('/api/activities'), fetchSafe('/api/certificate'), fetchSafe('/api/shop'), fetchSafe('/api/visit'), fetchSafe('/api/config')
                 ]);
+
                 Admin.data = { users: u, activities: a, certs: c, shop: s, config: cf || {} };
-                document.getElementById('stat-users').innerText = u.length;
-                document.getElementById('stat-courses').innerText = a.length;
-                document.getElementById('stat-certs').innerText = c.length;
-                document.getElementById('stat-items').innerText = s.length;
-                document.getElementById('stat-visits').innerText = (v.total_visits||0).toLocaleString();
+
+                const set = (id, v) => { const el = document.getElementById(id); if(el) el.innerText = v; };
+                set('stat-users', u.length); set('stat-courses', a.length); set('stat-certs', c.length); set('stat-items', s.length); set('stat-visits', (v.total_visits||0).toLocaleString());
+
                 if(cf.announcement) document.getElementById('sys-announcement').value = cf.announcement;
+                
                 Admin.renderUsers(); Admin.renderCerts(); Admin.renderShop(); Admin.renderCharts();
             },
 
@@ -151,62 +165,74 @@
             },
 
             renderUsers: () => {
-                document.getElementById('table-users').innerHTML = Admin.data.users.map(u => `
+                const el = document.getElementById('table-users');
+                if(!el) return;
+                el.innerHTML = Admin.data.users.map(u => `
                     <tr class="hover:bg-slate-800/30 transition border-b border-slate-900/50">
-                        <td class="px-6 py-4 font-bold text-white">${u.name}<div class="text-[10px] text-slate-500">@${u.username}</div></td>
-                        <td class="px-6 py-4"><span class="px-2 py-1 rounded-lg text-[10px] uppercase bg-slate-800 text-slate-400">${u.role}</span></td>
-                        <td class="px-6 py-4 text-xs"><div class="text-yellow-400">🪙 ${u.coins||0}</div><div class="text-slate-500">Lvl ${u.level}</div></td>
-                        <td class="px-6 py-4 text-right"><button onclick="Admin.openUserModal(${u.id})" class="p-2 text-indigo-400 hover:text-white transition">✏️</button><button onclick="Admin.deleteUser(${u.id})" class="p-2 text-red-500 hover:text-white transition">🗑️</button></td>
+                        <td class="px-6 py-4 flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 font-bold">${u.avatar||'👤'}</div>
+                            <div><div class="font-bold text-white">${u.name}</div><div class="text-[10px] text-slate-500">@${u.username}</div></div>
+                        </td>
+                        <td class="px-6 py-4 text-xs font-bold uppercase text-slate-400">${u.role}</td>
+                        <td class="px-6 py-4 text-xs"><div class="text-yellow-400 font-mono font-bold">🪙 ${u.coins||0}</div><div class="text-slate-500">Lvl ${u.level} • ${u.xp} XP</div></td>
+                        <td class="px-6 py-4 text-right">
+                            <button onclick="Admin.openUserModal(${u.id})" class="text-indigo-400 p-2 hover:text-white transition">✏️ Edit</button>
+                            <button onclick="Admin.deleteUser(${u.id})" class="text-red-500 p-2 hover:text-white transition">🗑️ Del</button>
+                        </td>
                     </tr>`).join('');
             },
 
             openUserModal: (id) => {
-                const u = Admin.data.users.find(x => x.id === id) || { coins: 0, xp: 0, level: 1, role: 'student' };
+                const u = Admin.data.users.find(x => x.id === id) || { username:'', name: '', coins: 0, xp: 0, level: 1, role: 'student' };
                 document.getElementById('u-id').value = id || '';
-                document.getElementById('u-name').value = u.name || '';
+                document.getElementById('u-username').value = u.username;
+                document.getElementById('u-name').value = u.name;
                 document.getElementById('u-coins').value = u.coins;
                 document.getElementById('u-xp').value = u.xp;
-                document.getElementById('u-level').value = u.level;
+                document.getElementById('u-level').value = 1;
                 document.getElementById('u-role').value = u.role;
                 document.getElementById('user-modal').classList.remove('hidden');
             },
 
             saveUser: async () => {
-                const body = { id: document.getElementById('u-id').value, name: document.getElementById('u-name').value, coins: parseInt(document.getElementById('u-coins').value), xp: parseInt(document.getElementById('u-xp').value), level: parseInt(document.getElementById('u-level').value), role: document.getElementById('u-role').value };
-                await fetch('/api/users', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+                const id = document.getElementById('u-id').value;
+                const body = { id, name: document.getElementById('u-name').value, username: document.getElementById('u-username').value, coins: parseInt(document.getElementById('u-coins').value), xp: parseInt(document.getElementById('u-xp').value), role: document.getElementById('u-role').value };
+                const pwd = document.getElementById('u-password').value; if(pwd) body.password = pwd;
+                await fetch('/api/users', { method: id ? 'PUT' : 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
                 document.getElementById('user-modal').classList.add('hidden'); Admin.loadData();
             },
 
-            deleteUser: async (id) => { if(confirm('Delete user permanent?')) { await fetch(`/api/users?id=${id}`, {method:'DELETE'}); Admin.loadData(); } },
+            deleteUser: async (id) => { if(confirm('Permanently delete user?')) { await fetch(`/api/users?id=${id}`, {method:'DELETE'}); Admin.loadData(); } },
 
             renderCerts: () => {
-                document.getElementById('table-certs').innerHTML = Admin.data.certs.map(c => `<tr><td class="px-6 py-4 font-mono text-yellow-500">${c.code}</td><td class="px-6 py-4 text-white">${c.user_name}</td><td class="px-6 py-4 text-slate-400">${c.course_title}</td><td class="px-6 py-4 text-right"><button onclick="Admin.delCert(${c.id})" class="text-red-500">Revoke</button></td></tr>`).join('');
+                document.getElementById('table-certs').innerHTML = Admin.data.certs.map(c => `<tr class="border-b border-slate-900/50"><td class="px-6 py-4 font-mono text-yellow-500">${c.code}</td><td class="px-6 py-4 text-white font-bold">${c.user_name}</td><td class="px-6 py-4 text-slate-400 text-xs">${c.course_title}</td><td class="px-6 py-4 text-right"><button onclick="Admin.delCert(${c.id})" class="text-red-500 text-xs font-bold">REVOKE</button></td></tr>`).join('');
             },
-            delCert: async (id) => { if(confirm('Revoke Cert?')) { await fetch(`/api/certificate?id=${id}`, {method:'DELETE'}); Admin.loadData(); } },
+            delCert: async (id) => { if(confirm('Revoke Certificate?')) { await fetch(`/api/certificate?id=${id}`, {method:'DELETE'}); Admin.loadData(); } },
 
             renderShop: () => {
-                document.getElementById('list-shop').innerHTML = Admin.data.shop.map(i => `<div class="glass p-6 rounded-3xl text-center relative group"><div class="text-5xl mb-3">${i.icon}</div><h4 class="font-bold text-white">${i.name}</h4><div class="text-yellow-400 font-bold mt-1">🪙 ${i.price}</div><button onclick="Admin.delItem(${i.id})" class="absolute top-3 right-3 text-red-500 opacity-0 group-hover:opacity-100 transition">✕</button></div>`).join('');
+                document.getElementById('list-shop').innerHTML = Admin.data.shop.map(i => `<div class="glass p-6 rounded-3xl text-center relative group"><div class="text-5xl mb-3">${i.icon}</div><h4 class="font-bold text-white truncate">${i.name}</h4><div class="text-yellow-400 font-bold mt-1">🪙 ${i.price}</div><button onclick="Admin.delItem(${i.id})" class="absolute top-3 right-3 text-slate-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition text-lg">✕</button></div>`).join('');
             },
-            addItem: async () => { const name = prompt("Name:"); if(name) { await fetch('/api/shop', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, price: 100, icon: '🎁', type: 'consumable' }) }); Admin.loadData(); } },
+            addItem: async () => { const name = prompt("Item Name:"); if(name) { await fetch('/api/shop', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name, price: 100, icon: '🎁', type: 'consumable' }) }); Admin.loadData(); } },
             delItem: async (id) => { if(confirm('Delete Item?')) { await fetch(`/api/shop?id=${id}`, {method:'DELETE'}); Admin.loadData(); } },
 
             saveConfig: async (key) => {
-                let v = key === 'announcement' ? document.getElementById('sys-announcement').value : '';
-                await fetch('/api/config', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ key, value: v }) }); alert('Saved! ✅');
+                const v = key === 'announcement' ? document.getElementById('sys-announcement').value : '';
+                await fetch('/api/config', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ key, value: v }) }); alert('System Settings Saved! ✅');
             },
-            seedData: async () => { if(confirm('Refresh Seed All Data?')) { await fetch('/api/seed'); Admin.loadData(); } },
+            seedData: async () => { if(confirm('Re-Seed All Data?')) { await fetch('/api/seed'); Admin.loadData(); } },
 
             renderCharts: () => {
                 if (typeof Chart === 'undefined') return;
                 const r = { admin: 0, teacher: 0, student: 0 }; Admin.data.users.forEach(u => { if(r[u.role]!==undefined) r[u.role]++; });
                 if(Admin.charts.roles) Admin.charts.roles.destroy();
-                Admin.charts.roles = new Chart(document.getElementById('chart-roles'), { type: 'doughnut', data: { labels: ['Admin', 'Teacher', 'Student'], datasets: [{ data: [r.admin, r.teacher, r.student], backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6'], borderWeight: 0 }] }, options: { plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } }, cutout: '75%' } });
+                Admin.charts.roles = new Chart(document.getElementById('chart-roles'), { type: 'doughnut', data: { labels: ['Admins', 'Teachers', 'Students'], datasets: [{ data: [r.admin, r.teacher, r.student], backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6'], borderWeight: 0 }] }, options: { plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 8 } } }, cutout: '80%' } });
                 
                 const cats = {}; Admin.data.activities.forEach(a => cats[a.category] = (cats[a.category]||0) + 1);
                 if(Admin.charts.main) Admin.charts.main.destroy();
-                Admin.charts.main = new Chart(document.getElementById('chart-main'), { type: 'bar', data: { labels: Object.keys(cats), datasets: [{ label: 'Courses', data: Object.values(cats), backgroundColor: '#6366f1', borderRadius: 8 }] }, options: { scales: { y: { beginAtZero: true, grid: { color: '#1e293b' } } }, plugins: { legend: { display: false } } } });
+                Admin.charts.main = new Chart(document.getElementById('chart-main'), { type: 'bar', data: { labels: Object.keys(cats), datasets: [{ label: 'Courses', data: Object.values(cats), backgroundColor: '#6366f1', borderRadius: 12 }] }, options: { scales: { y: { beginAtZero: true, grid: { color: '#1e293b' } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } } });
             }
         };
+        window.Admin = Admin;
         document.addEventListener('DOMContentLoaded', Admin.init);
     </script>
 </body>
