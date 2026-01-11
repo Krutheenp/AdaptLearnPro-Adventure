@@ -159,6 +159,26 @@
                         </div>
                     </div>
 
+                    <!-- Global Network Statistics -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 px-4">
+                        <div class="bg-indigo-950/30 backdrop-blur-md p-6 rounded-3xl border border-white/5 flex flex-col items-center justify-center text-center group hover:border-indigo-500/30 transition-all duration-500">
+                            <span class="text-indigo-500 text-xs font-black uppercase tracking-[0.2em] mb-2">Network Visits</span>
+                            <span class="text-2xl font-black text-white" id="net-visits">0</span>
+                        </div>
+                        <div class="bg-indigo-950/30 backdrop-blur-md p-6 rounded-3xl border border-white/5 flex flex-col items-center justify-center text-center group hover:border-blue-500/30 transition-all duration-500">
+                            <span class="text-blue-400 text-xs font-black uppercase tracking-[0.2em] mb-2">Total Explorers</span>
+                            <span class="text-2xl font-black text-white" id="net-users">0</span>
+                        </div>
+                        <div class="bg-indigo-950/30 backdrop-blur-md p-6 rounded-3xl border border-white/5 flex flex-col items-center justify-center text-center group hover:border-purple-500/30 transition-all duration-500">
+                            <span class="text-purple-400 text-xs font-black uppercase tracking-[0.2em] mb-2">Missions Built</span>
+                            <span class="text-2xl font-black text-white" id="net-missions">0</span>
+                        </div>
+                        <div class="bg-indigo-950/30 backdrop-blur-md p-6 rounded-3xl border border-white/5 flex flex-col items-center justify-center text-center group hover:border-green-500/30 transition-all duration-500">
+                            <span class="text-green-400 text-xs font-black uppercase tracking-[0.2em] mb-2">Issued Awards</span>
+                            <span class="text-2xl font-black text-white" id="net-certs">0</span>
+                        </div>
+                    </div>
+
                     <!-- Map Header -->
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 px-4">
                         <div class="flex items-center gap-5">
@@ -306,32 +326,32 @@
             api: {
                 loadAll: async (uid) => {
                     try {
-                        const results = await Promise.all([
+                        const [aRes, uRes, sRes] = await Promise.all([
                             fetch(`/api/activities?studentId=${uid}`).then(r => r.json()),
-                            fetch(`/api/analytics?userId=${uid}`).then(r => r.json())
+                            fetch(`/api/analytics?userId=${uid}`).then(r => r.json()),
+                            fetch('/api/stats').then(r => r.json())
                         ]);
                         
-                        Game.data.activities = Array.isArray(results[0]) ? results[0] : [];
-                        const uData = results[1];
-
+                        Game.data.activities = aRes || [];
+                        Game.data.globalStats = sRes || { users: 0, activities: 0, certificates: 0, visits: 0 };
+                        
+                        const uData = uRes;
                         if (uData && uData.user) {
                             Game.data.user = uData.user;
                             Game.data.certificates = uData.certificates || [];
-                            // Force sync session for safety
-                            if (Game.data.user.id) {
-                                sessionStorage.setItem('user_id', Game.data.user.id);
-                                sessionStorage.setItem('user_name', Game.data.user.name);
-                                sessionStorage.setItem('user_role', Game.data.user.role);
-                            }
+                            sessionStorage.setItem('user_id', Game.data.user.id);
+                            sessionStorage.setItem('user_name', Game.data.user.name);
+                            sessionStorage.setItem('user_role', Game.data.user.role);
+                            sessionStorage.setItem('user_xp', Game.data.user.xp);
+                            sessionStorage.setItem('user_coins', Game.data.user.coins);
                         } else {
-                            Game.data.user = { name: 'Guest Explorer', level: 1, role: 'guest', avatar: '🕵️', coins: 0, xp: 0 };
+                            Game.data.user = { name: 'Guest Scholar', level: 1, role: 'guest', avatar: '🕵️', coins: 0, xp: 0 };
                         }
-                        
-                        console.log("✅ Data Sync Complete");
+                        console.log("📊 System Sync Complete");
                     } catch (e) {
-                        console.error("❌ Data Sync Failed", e);
+                        console.error("❌ System Sync Error", e);
                         Game.data.activities = [];
-                        Game.data.user = { name: 'Offline Mode', role: 'guest', avatar: '📡', coins: 0, xp: 0 };
+                        Game.data.user = { name: 'Offline Mode', role: 'guest', avatar: '📡' };
                     }
                 }
             },
@@ -353,12 +373,22 @@
                 },
                 dashboard: () => {
                     const u = Game.data.user;
+                    const s = Game.data.globalStats;
+                    
                     if (!u) return;
                     document.getElementById('dash-name').innerText = u.name || 'Scholar';
                     document.getElementById('dash-role').innerText = (u.role || 'guest').toUpperCase();
                     document.getElementById('dash-avatar').innerText = u.avatar || '🙂';
                     document.getElementById('dash-lvl-badge').innerText = u.level || 1;
                     
+                    // Render Global Stats
+                    if (s) {
+                        document.getElementById('net-visits').innerText = (s.visits || 0).toLocaleString();
+                        document.getElementById('net-users').innerText = (s.users || 0).toLocaleString();
+                        document.getElementById('net-missions').innerText = (s.activities || 0).toLocaleString();
+                        document.getElementById('net-certs').innerText = (s.certificates || 0).toLocaleString();
+                    }
+
                     if (u.role !== 'guest') {
                         const nextXP = (u.level || 1) * 100;
                         const pct = Math.min(((u.xp || 0) / nextXP) * 100, 100);
