@@ -76,21 +76,55 @@ module.exports = async (req, res) => {
             if (!db) return res.json({ success: false, error: "No DB" });
             const logs = [];
             try {
-                // 1. Seed Admin
-                await db.query(`INSERT INTO users (username, password, role, name, level, xp, coins, avatar) VALUES ('admin', 'password123', 'admin', 'Super Admin', 99, 99999, 99999, '👑') ON CONFLICT (username) DO NOTHING`);
-                logs.push("Admin Seeded");
+                // 1. Seed Admins
+                const admins = [
+                    ['admin', 'password123', 'admin', 'Super Admin', 99, 99999, 99999, '👑'],
+                    ['master', '1234', 'admin', 'Game Master', 80, 50000, 50000, '🧙‍♂️']
+                ];
+                for (const a of admins) { 
+                    await db.query(`INSERT INTO users (username, password, role, name, level, xp, coins, avatar) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (username) DO NOTHING`, a); 
+                }
+                logs.push("Admins Seeded");
+
                 // 2. Seed Teachers
-                await db.query(`INSERT INTO users (username, password, role, name, level, xp, avatar) VALUES ('teacher1', '1234', 'teacher', 'ครูสมศรี ใจดี', 50, 5000, '👩‍🏫') ON CONFLICT (username) DO NOTHING`);
-                logs.push("Teacher Seeded");
-                // 3. Seed Items
+                const teachers = [
+                    ['teacher1', '1234', 'teacher', 'ครูสมศรี ใจดี', 50, 15000, 10000, '👩‍🏫'],
+                    ['prof_oak', '1234', 'teacher', 'Prof. Oak', 65, 25000, 20000, '👨‍🔬'],
+                    ['art_sensei', '1234', 'teacher', 'ครูศิลป์', 40, 8000, 5000, '🎨']
+                ];
+                for (const t of teachers) { 
+                    await db.query(`INSERT INTO users (username, password, role, name, level, xp, coins, avatar) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (username) DO NOTHING`, t); 
+                }
+                logs.push("Teachers Seeded");
+
+                // 3. Seed Students (For Leaderboard & Charts)
+                const students = [
+                    ['student1', '1234', 'student', 'สมชาย ขยันเรียน', 15, 2500, 500, '👦'],
+                    ['araya', '1234', 'student', 'อารยา สมใจ', 22, 4800, 1200, '👩‍🎓'],
+                    ['mana', '1234', 'student', 'มานะ มานี', 10, 1200, 300, '👦'],
+                    ['winner', '1234', 'student', 'The Champion', 45, 12000, 8500, '🏆'],
+                    ['novice', '1234', 'student', 'ผู้เล่นใหม่', 2, 150, 50, '👶'],
+                    ['gamer', '1234', 'student', 'Pro Player', 30, 7500, 3400, '🕹️'],
+                    ['scholar', '1234', 'student', 'นักปราชญ์', 38, 9200, 4100, '📖']
+                ];
+                for (const s of students) { 
+                    await db.query(`INSERT INTO users (username, password, role, name, level, xp, coins, avatar) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (username) DO NOTHING`, s); 
+                }
+                logs.push("Students Seeded");
+
+                // 4. Seed Items
                 const items = [
                     ['Streak Freeze', 'Protect your daily streak', 50, 'consumable', '🧊'],
                     ['Golden Frame', 'Shining border for your profile', 500, 'cosmetic', '🖼️'],
-                    ['XP Potion', 'Instantly gain 500 XP', 200, 'consumable', '🧪']
+                    ['XP Potion', 'Instantly gain 500 XP', 200, 'consumable', '🧪'],
+                    ['Diamond Trophy', 'Rare decoration', 2000, 'cosmetic', '💎']
                 ];
-                for (const i of items) { await db.query(`INSERT INTO items (name, description, price, type, icon) VALUES ($1, $2, $3, $4, $5)`, i); }
+                for (const i of items) { 
+                    await db.query(`INSERT INTO items (name, description, price, type, icon) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING`, i); 
+                }
                 logs.push("Items Seeded");
-                return res.json({ success: true, message: "Seeding complete", logs });
+
+                return res.json({ success: true, message: "Database Seeded with Diverse Users", logs });
             } catch (e) {
                 return res.status(500).json({ success: false, error: e.message, logs });
             }
