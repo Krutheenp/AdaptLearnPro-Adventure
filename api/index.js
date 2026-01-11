@@ -1,828 +1,151 @@
-// Vercel API Handler - Bulletproof & Debuggable
+// Vercel API Handler - Production Grade
 const { Pool } = require('pg');
 
-// 1. Mock Data (Fallback)
+// 1. Mock Data (Fallback if DB is unavailable)
 const MOCK_DB = {
-    users: [
-        { id: 99, username: 'demo', password: 'demo', name: 'Demo Hero', role: 'student', level: 5, xp: 5000, coins: 500, streak: 7, avatar: '🧙‍♂️' },
-        { id: 1, username: 'admin', password: '123', name: 'Super Admin', role: 'admin', level: 99, xp: 99999, coins: 9999, avatar: '👑' }
-    ],
-    activities: [
-        { id: 1, title: 'Math Adventure', type: 'game', difficulty: 'Easy', duration: '15m', category: 'Mathematics', credits: 3 },
-        { id: 2, title: 'Science Lab', type: 'simulation', difficulty: 'Medium', duration: '30m', category: 'Science', credits: 5 }
-    ]
+    users: [{ id: 1, name: 'Admin', role: 'admin', coins: 9999, level: 99, avatar: '👑' }],
+    activities: [{ id: 1, title: 'Welcome Course', category: 'General', price: 0 }]
 };
 
-// 2. Global Pool (Lazy Init)
+// 2. Global Pool for Connection Reuse
 let pool = null;
-
-// Helper: Safe DB Connect
 function getPool() {
     if (!pool && process.env.POSTGRES_URL) {
-        console.log("Initializing DB Connection...");
         pool = new Pool({
             connectionString: process.env.POSTGRES_URL,
             ssl: { rejectUnauthorized: false },
-            connectionTimeoutMillis: 5000 // Fail fast
+            max: 10, // Limit connections in serverless
+            idleTimeoutMillis: 30000,
+            connectionTimeoutMillis: 5000,
         });
     }
     return pool;
 }
 
 module.exports = async (req, res) => {
-    // Global Error Handler Wrapper
+    // Standard Headers
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') return res.status(200).end();
+
+    const { method } = req;
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const pathname = url.pathname;
+    const db = getPool();
+
+    // Helper: Safe Query
+    const runQuery = async (text, params) => {
+        if (!db) return null;
+        try {
+            const result = await db.query(text, params);
+            return result.rows;
+        } catch (e) {
+            console.error("DB Query Error:", e.message);
+            throw e;
+        }
+    };
+
     try {
-        // CORS Headers
-        res.setHeader('Content-Type', 'application/json');
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-        if (req.method === 'OPTIONS') return res.status(200).end();
-
-        const { method } = req;
-        const url = new URL(req.url, `http://${req.headers.host}`);
-        const pathname = url.pathname;
-        const db = getPool();
-
-        // Helper: Run Query
-        const runQuery = async (text, params) => {
-            if (!db) return null;
-            try {
-                const result = await db.query(text, params);
-                return result.rows;
-            } catch (e) {
-                console.error("SQL Error:", e.message);
-                return null;
-            }
-        };
-
-        // --- DEBUG ENDPOINT (Check Status) ---
+        // --- AUTH & SYSTEM ---
         if (pathname === '/api/check-db') {
-            if (!db) return res.json({ status: "Mock Mode", reason: "Missing POSTGRES_URL" });
-            try {
-                const start = Date.now();
-                await db.query('SELECT 1');
-                return res.json({ status: "Connected ✅", latency: `${Date.now() - start}ms` });
-            } catch (e) {
-                return res.json({ status: "Connection Error ❌", error: e.message, stack: e.stack });
-            }
+            if (!db) return res.json({ status: "Offline", reason: "Missing POSTGRES_URL" });
+            await db.query('SELECT 1');
+            return res.json({ status: "Connected ✅", environment: "Production" });
         }
 
-        // --- INIT DATABASE (Comprehensive Schema & Migration) ---
-        if (pathname === '/api/init') {
-            if (!db) return res.json({ success: true, message: "Mock Init OK (No DB Config)" });
-
-            const schema = [
-                // 1. Users
-                `CREATE TABLE IF NOT EXISTS users (
-                    id SERIAL PRIMARY KEY, 
-                    username TEXT UNIQUE NOT NULL, 
-                    password TEXT NOT NULL, 
-                    role TEXT DEFAULT 'student', 
-                    name TEXT, 
-                    level INT DEFAULT 1, 
-                    xp INT DEFAULT 0, 
-                    coins INT DEFAULT 0, 
-                    streak INT DEFAULT 0, 
-                    avatar TEXT DEFAULT '🙂', 
-                    status TEXT DEFAULT 'active',
-                    email TEXT, phone TEXT, bio TEXT, school TEXT, address TEXT, birthdate TEXT, social_links TEXT, last_login TEXT
-                )`,
-                `CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)`,
-
-                // 2. Activities (Courses)
-                `CREATE TABLE IF NOT EXISTS activities (
-                    id SERIAL PRIMARY KEY, 
-                    title TEXT, 
-                    type TEXT, 
-                    difficulty TEXT, 
-                    duration TEXT, 
-                    content TEXT, 
-                    category TEXT DEFAULT 'General', 
-                    credits INT DEFAULT 1, 
-                    price INT DEFAULT 0,
-                    course_code TEXT, 
-                    certificate_theme TEXT DEFAULT 'classic', 
-                    description TEXT,
-                    thumbnail TEXT,
-                    creator_id INT REFERENCES users(id) ON DELETE SET NULL
-                )`,
-                `CREATE INDEX IF NOT EXISTS idx_activities_category ON activities(category)`,
-
-                // 3. Enrollments (Purchases)
-                `CREATE TABLE IF NOT EXISTS enrollments (
-                    id SERIAL PRIMARY KEY, 
-                    user_id INT REFERENCES users(id) ON DELETE CASCADE, 
-                    activity_id INT REFERENCES activities(id) ON DELETE CASCADE, 
-                    enrolled_at TEXT
-                )`,
-                `CREATE UNIQUE INDEX IF NOT EXISTS idx_enrollments_unique ON enrollments(user_id, activity_id)`,
-
-                // 4. Progress
-                `CREATE TABLE IF NOT EXISTS user_progress (
-                    id SERIAL PRIMARY KEY, 
-                    user_id INT REFERENCES users(id) ON DELETE CASCADE, 
-                    activity_id INT REFERENCES activities(id) ON DELETE CASCADE, 
-                    score INT DEFAULT 0, 
-                    status TEXT, 
-                    completed_at TEXT
-                )`,
-
-                // 5. Shop & Items
-                `CREATE TABLE IF NOT EXISTS items (
-                    id SERIAL PRIMARY KEY, 
-                    name TEXT, 
-                    description TEXT, 
-                    price INT, 
-                    type TEXT, 
-                    icon TEXT
-                )`,
-                `CREATE TABLE IF NOT EXISTS user_items (
-                    id SERIAL PRIMARY KEY, 
-                    user_id INT REFERENCES users(id) ON DELETE CASCADE, 
-                    item_id INT REFERENCES items(id) ON DELETE CASCADE, 
-                    acquired_at TEXT
-                )`,
-
-                // 6. Certificates & Portfolio
-                `CREATE TABLE IF NOT EXISTS certificates (
-                    id SERIAL PRIMARY KEY, 
-                    user_id INT REFERENCES users(id) ON DELETE CASCADE, 
-                    user_name TEXT, 
-                    course_title TEXT, 
-                    issue_date TEXT, 
-                    code TEXT
-                )`,
-                `CREATE TABLE IF NOT EXISTS portfolios (
-                    id SERIAL PRIMARY KEY, 
-                    user_id INT REFERENCES users(id) ON DELETE CASCADE, 
-                    title TEXT, 
-                    description TEXT, 
-                    media_url TEXT, 
-                    type TEXT, 
-                    created_at TEXT
-                )`,
-
-                // 7. System & Logs
-                `CREATE TABLE IF NOT EXISTS system_config (key TEXT PRIMARY KEY, value TEXT)`,
-                `CREATE TABLE IF NOT EXISTS site_visits (id SERIAL PRIMARY KEY, ip_address TEXT, user_agent TEXT, visit_time TEXT)`,
-                `CREATE TABLE IF NOT EXISTS login_history (id SERIAL PRIMARY KEY, user_id INT REFERENCES users(id) ON DELETE CASCADE, login_time TEXT, ip_address TEXT, device_info TEXT)`,
-                `CREATE TABLE IF NOT EXISTS reviews (id SERIAL PRIMARY KEY, user_id INT, activity_id INT, rating INT, comment TEXT, created_at TEXT)`,
-                `CREATE TABLE IF NOT EXISTS teacher_skills (id SERIAL PRIMARY KEY, user_id INT, skill_name TEXT, proficiency INT)`
-            ];
-
-            let logs = [];
-            for (const query of schema) {
-                try {
-                    await db.query(query);
-                    logs.push("OK: " + query.substring(0, 30) + "...");
-                } catch (e) {
-                    logs.push("ERR: " + e.message);
-                }
-            }
-
-            // --- AUTO MIGRATIONS (Add missing columns safely) ---
-            const migrations = [
-                "ALTER TABLE users ADD COLUMN status TEXT DEFAULT 'active'",
-                "ALTER TABLE activities ADD COLUMN price INT DEFAULT 0",
-                "ALTER TABLE activities ADD COLUMN certificate_theme TEXT DEFAULT 'classic'",
-                "ALTER TABLE activities ADD COLUMN description TEXT",
-                "ALTER TABLE activities ADD COLUMN thumbnail TEXT",
-                "ALTER TABLE activities ADD COLUMN course_code TEXT"
-            ];
-
-            for (const mig of migrations) {
-                try { await db.query(mig); logs.push("MIGRATED: " + mig); } catch(e) {}
-            }
-
-            return res.json({ success: true, logs });
-        }
-
-        // --- SHOP MANAGEMENT (Admin) ---
-        if (pathname === '/api/shop') {
-            // GET Items
-            if (method === 'GET') {
-                if (db) {
-                    const items = await runQuery("SELECT * FROM items ORDER BY price ASC");
-                    return res.json(items || []);
-                }
-                return res.json(MOCK_DB.items || []);
-            }
-            // POST Add Item
-            if (method === 'POST') {
-                const { name, price, icon, type, description } = req.body;
-                if(db) await runQuery("INSERT INTO items (name, price, icon, type, description) VALUES ($1, $2, $3, $4, $5)", [name, price, icon, type, description || '']);
-                return res.json({ success: true });
-            }
-            // DELETE Item
-            if (method === 'DELETE') {
-                const id = url.searchParams.get("id");
-                if(db) await runQuery("DELETE FROM items WHERE id = $1", [id]);
-                return res.json({ success: true });
-            }
-        }
-
-        // --- SYSTEM CONFIG (Gacha Rates etc.) ---
         if (pathname === '/api/config') {
             if (method === 'GET') {
-                if(db) {
-                    try {
-                        const rows = await runQuery("SELECT * FROM system_config");
-                        const config = {};
-                        if(rows) rows.forEach(r => config[r.key] = r.value);
-                        return res.json(config);
-                    } catch(e) {
-                        return res.json({}); // Return empty if table missing
-                    }
-                }
-                return res.json({});
+                const rows = await runQuery("SELECT * FROM system_config");
+                const config = {};
+                rows?.forEach(r => {
+                    try { config[r.key] = JSON.parse(r.value); } catch(e) { config[r.key] = r.value; }
+                });
+                return res.json(config);
             }
             if (method === 'POST') {
                 const { key, value } = req.body;
-                if(db) {
-                    try {
-                        await runQuery("INSERT INTO system_config (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2", [key, JSON.stringify(value)]);
-                        return res.json({ success: true });
-                    } catch(e) {
-                        return res.status(500).json({ error: "Config Save Error", details: e.message });
-                    }
-                }
+                await runQuery("INSERT INTO system_config (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2", [key, JSON.stringify(value)]);
                 return res.json({ success: true });
             }
         }
 
-        // --- ENROLL / UNLOCK COURSE ---
+        // --- USERS ---
+        if (pathname === '/api/users') {
+            if (method === 'GET') {
+                const rows = await runQuery("SELECT id, username, name, role, level, xp, coins, avatar, status FROM users ORDER BY id DESC");
+                return res.json(rows || MOCK_DB.users);
+            }
+            if (method === 'POST' || method === 'PUT') {
+                const b = req.body;
+                if (method === 'POST') {
+                    await runQuery("INSERT INTO users (username, password, name, role, email) VALUES ($1, $2, $3, $4, $5)", [b.username, b.password, b.name, b.role || 'student', b.email]);
+                } else {
+                    const fields = []; const vals = []; let i = 1;
+                    const allowed = ['name', 'role', 'level', 'xp', 'coins', 'avatar', 'status', 'password'];
+                    allowed.forEach(f => { if(b[f] !== undefined) { fields.push(`${f} = $${i++}`); vals.push(b[f]); } });
+                    if(fields.length > 0) { vals.push(b.id); await runQuery(`UPDATE users SET ${fields.join(', ')} WHERE id = $${i}`, vals); }
+                }
+                return res.json({ success: true });
+            }
+            if (method === 'DELETE') {
+                await runQuery("DELETE FROM users WHERE id = $1", [url.searchParams.get("id")]);
+                return res.json({ success: true });
+            }
+        }
+
+        // --- ACTIVITIES ---
+        if (pathname === '/api/activities') {
+            const studentId = url.searchParams.get("studentId") || 0;
+            const instructorId = url.searchParams.get("instructorId");
+            
+            let query = `
+                SELECT a.*, COALESCE(e.id, 0) as is_enrolled 
+                FROM activities a 
+                LEFT JOIN enrollments e ON a.id = e.activity_id AND e.user_id = $1
+            `;
+            const params = [studentId];
+
+            if (instructorId && instructorId !== 'debug') {
+                query += " WHERE a.creator_id = $2";
+                params.push(instructorId);
+            }
+            query += " ORDER BY a.id DESC";
+
+            const rows = await runQuery(query, params);
+            return res.json(rows || []);
+        }
+
+        // --- ACTIONS ---
         if (pathname === '/api/enroll' && method === 'POST') {
             const { userId, activityId } = req.body;
-            if (!db) return res.json({ success: true, message: "Mock Enroll" });
-
-            try {
-                // 1. Check if already enrolled
-                const check = await runQuery("SELECT id FROM enrollments WHERE user_id=$1 AND activity_id=$2", [userId, activityId]);
-                if (check.length > 0) return res.json({ success: true, message: "Already enrolled" });
-
-                // 2. Get Course Price
-                const course = await runQuery("SELECT price FROM activities WHERE id=$1", [activityId]);
-                if (!course.length) return res.status(404).json({ error: "Course not found" });
-                const price = course[0].price || 0;
-
-                // 3. Check User Balance & Deduct
-                if (price > 0) {
-                    const user = await runQuery("SELECT coins FROM users WHERE id=$1", [userId]);
-                    if ((user[0]?.coins || 0) < price) return res.status(400).json({ error: "Insufficient coins" });
-                    
-                    await runQuery("UPDATE users SET coins = coins - $1 WHERE id=$2", [price, userId]);
-                }
-
-                // 4. Enroll
-                await runQuery("INSERT INTO enrollments (user_id, activity_id, enrolled_at) VALUES ($1, $2, $3)", [userId, activityId, new Date().toISOString()]);
-                
-                return res.json({ success: true });
-            } catch (e) {
-                return res.status(500).json({ error: e.message });
-            }
-        }
-
-        // --- SEED DATABASE ---
-        if (pathname === '/api/seed') {
-            if (!db) return res.json({ success: true, message: "Mock Seed OK" });
-
-            try {
-                // 1. Seed Admin
-                await db.query(`INSERT INTO users (username, password, role, name, level, xp, avatar) 
-                    VALUES ('admin', 'password123', 'admin', 'Super Admin', 99, 99999, '👑') 
-                    ON CONFLICT (username) DO NOTHING`);
-
-                // 2. Seed Items
-                const items = [
-                    { name: 'Streak Freeze', price: 50, icon: '🧊', type: 'consumable', desc: 'Prevent streak reset' },
-                    { name: 'Golden Frame', price: 500, icon: '🖼️', type: 'cosmetic', desc: 'Shiny profile frame' },
-                    { name: 'XP Boost (1h)', price: 100, icon: '⚡', type: 'consumable', desc: 'Double XP for 1 hour' }
-                ];
-                for (const i of items) {
-                    await db.query(`INSERT INTO items (name, price, icon, type, description) 
-                        VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING`, 
-                        [i.name, i.price, i.icon, i.type, i.desc]);
-                }
-
-                // 3. Seed Activities (if empty)
-                const actCount = await db.query("SELECT COUNT(*) FROM activities");
-                if (parseInt(actCount.rows[0].count) === 0) {
-                    const courses = [
-                        { title: "คณิตศาสตร์: สมการเชิงเส้น", type: "video", difficulty: "Medium", duration: "45m", category: "Mathematics", credits: 3 },
-                        { title: "วิทยาศาสตร์: ระบบสุริยะ", type: "game", difficulty: "Easy", duration: "30m", category: "Science", credits: 3 },
-                        { title: "Python Programming 101", type: "simulation", difficulty: "Medium", duration: "2h", category: "Technology", credits: 4 }
-                    ];
-                    for (const c of courses) {
-                        await db.query(`INSERT INTO activities (title, type, difficulty, duration, category, credits) VALUES ($1, $2, $3, $4, $5, $6)`, 
-                            [c.title, c.type, c.difficulty, c.duration, c.category, c.credits]);
-                    }
-                }
-
-                return res.json({ success: true, message: "Database Seeded Successfully" });
-            } catch (e) {
-                return res.status(500).json({ error: "Seed failed", details: e.message });
-            }
-        }
-
-        // --- UPLOAD (Vercel Blob) ---
-        if (pathname === '/api/upload' && method === 'POST') {
-            try {
-                const { put } = require('@vercel/blob');
-                // Vercel handles multipart/form-data automatically in some cases, 
-                // but for Serverless we often use simpler approaches or libraries.
-                // Assuming client sends raw or handled by vercel.
-                // For simplicity, let's assume we use the Vercel Blob token from Env.
-                const filename = url.searchParams.get('filename') || `upload_${Date.now()}.png`;
-                
-                // Read body as buffer
-                const chunks = [];
-                for await (const chunk of req) { chunks.push(chunk); }
-                const buffer = Buffer.concat(chunks);
-
-                const blob = await put(filename, buffer, {
-                    access: 'public',
-                });
-                return res.json({ success: true, url: blob.url });
-            } catch (e) {
-                return res.status(500).json({ error: "Upload failed", details: e.message });
-            }
-        }
-
-        // --- VISITOR COUNT ---
-        if (pathname === '/api/visit') {
-            if (db) {
-                const ip = req.headers['x-forwarded-for'] || 'unknown';
-                const ua = req.headers['user-agent'] || 'unknown';
-                await runQuery('INSERT INTO site_visits (ip_address, user_agent, visit_time) VALUES ($1, $2, $3)', [ip, ua, new Date().toISOString()]);
-                const rows = await runQuery('SELECT COUNT(*) as total FROM site_visits');
-                return res.json({ total_visits: rows?.[0]?.total || 0 });
-            }
-            return res.json({ total_visits: 999 });
-        }
-
-        // --- LOGIN ---
-        if (pathname === '/api/login' && method === 'POST') {
-            const { username, password } = req.body;
-            // 1. DB Login
-            const rows = await runQuery('SELECT * FROM users WHERE username = $1 AND password = $2', [username, password]);
-            if (rows && rows.length > 0) {
-                const user = rows[0];
-                if (db) {
-                    const ip = req.headers['x-forwarded-for'] || 'unknown';
-                    const ua = req.headers['user-agent'] || 'unknown';
-                    // Async Log (don't await to speed up login)
-                    runQuery('INSERT INTO login_history (user_id, login_time, ip_address, device_info) VALUES ($1, $2, $3, $4)', [user.id, new Date().toISOString(), ip, ua]).catch(console.error);
-                }
-                return res.json({ success: true, ...user });
-            }
-            // 2. Mock Login
-            const mockUser = MOCK_DB.users.find(u => u.username === username && u.password === password);
-            if (mockUser) return res.json({ success: true, ...mockUser });
+            const course = await runQuery("SELECT price FROM activities WHERE id = $1", [activityId]);
+            const user = await runQuery("SELECT coins FROM users WHERE id = $1", [userId]);
             
-            return res.status(401).json({ success: false, message: "Invalid credentials" });
-        }
-
-        // --- REGISTER ---
-        if (pathname === '/api/register' && method === 'POST') {
-            const { username, password, name, email } = req.body;
-            if (!db) return res.json({ success: true, message: "Mock Register OK" });
-            
-            const existing = await runQuery('SELECT id FROM users WHERE username = $1', [username]);
-            if (existing && existing.length > 0) return res.status(400).json({ error: "Username taken" });
-
-            await runQuery(
-                `INSERT INTO users (username, password, name, email, role, level, xp, coins, streak, avatar) 
-                 VALUES ($1, $2, $3, $4, 'student', 1, 0, 0, 0, '🙂')`,
-                [username, password, name, email || '']
-            );
-            return res.json({ success: true });
-        }
-
-        // --- ANALYTICS (Profile Data) ---
-        if (pathname === '/api/analytics') {
-            const userId = url.searchParams.get("userId");
-            if (!userId) return res.status(400).json({ error: "Missing User ID" });
-
-            if (db) {
-                // 1. User Info
-                const userRes = await runQuery("SELECT id, name, username, email, phone, bio, school, address, birthdate, social_links, role, level, xp, avatar, cover_image, coins, streak FROM users WHERE id = $1", [userId]);
-                const user = userRes?.[0] || {};
-
-                // 2. Progress
-                const progress = await runQuery(`
-                    SELECT p.*, a.title, a.type, a.difficulty 
-                    FROM user_progress p 
-                    JOIN activities a ON p.activity_id = a.id 
-                    WHERE p.user_id = $1 
-                    ORDER BY p.completed_at DESC
-                `, [userId]);
-
-                // 3. Certificates
-                let certs = await runQuery("SELECT * FROM certificates WHERE user_id = $1 ORDER BY id DESC", [userId]);
-                if (!certs.length && user.name) {
-                    certs = await runQuery("SELECT * FROM certificates WHERE user_name = $1 ORDER BY id DESC", [user.name]);
-                }
-
-                // 4. Portfolios
-                const portfolios = await runQuery("SELECT * FROM portfolios WHERE user_id = $1 ORDER BY created_at DESC", [userId]);
-
-                // 5. Teacher Skills
-                let skills = [];
-                if (user.role === 'teacher' || user.role === 'admin') {
-                    skills = await runQuery("SELECT * FROM teacher_skills WHERE user_id = $1", [userId]);
-                }
-
-                // 6. Rank
-                const allUsers = await runQuery("SELECT id, xp FROM users ORDER BY xp DESC");
-                const rank = allUsers ? (allUsers.findIndex(u => String(u.id) === String(userId)) + 1) : 0;
-
-                return res.json({
-                    user,
-                    total_score: progress?.reduce((sum, p) => sum + (p.score || 0), 0) || 0,
-                    completed_count: progress?.filter(p => p.status === 'completed').length || 0,
-                    activities: progress || [],
-                    certificates: certs || [],
-                    portfolios: portfolios || [],
-                    skills: skills || [],
-                    rank,
-                    total_users: allUsers?.length || 0
-                });
-            }
-            // Mock Fallback
-            return res.json({ user: MOCK_DB.users[0], activities: [], rank: 1 });
-        }
-
-        // --- USER MANAGEMENT ---
-        if (pathname === '/api/users') {
-            // GET Users
-            if (method === 'GET') {
-                if (db) {
-                    try {
-                        const users = await runQuery("SELECT id, name, username, email, phone, bio, school, address, birthdate, social_links, role, level, xp, avatar, coins, status FROM users ORDER BY id DESC");
-                        return res.json(users || []);
-                    } catch(e) {
-                        console.error("Fetch Users Error:", e);
-                        return res.json([]);
-                    }
-                }
-                return res.json(MOCK_DB.users);
-            }
-            // PUT (Update Profile)
-            if (method === 'PUT') {
-                const body = req.body;
-                if (!db) return res.json({ success: true, message: "Mock Update OK" });
-                
-                if (body.id) {
-                    let fields = [];
-                    let values = [];
-                    let idx = 1;
-
-                    const cols = ['name', 'email', 'phone', 'bio', 'school', 'address', 'birthdate', 'social_links', 'avatar', 'cover_image', 'role'];
-                    cols.forEach(col => {
-                        if (body[col] !== undefined) {
-                            fields.push(`${col} = $${idx++}`);
-                            values.push(body[col]);
-                        }
-                    });
-
-                    if (fields.length > 0) {
-                        values.push(body.id);
-                        await runQuery(`UPDATE users SET ${fields.join(", ")} WHERE id = $${idx}`, values);
-                        return res.json({ success: true });
-                    }
-                }
-                return res.json({ success: true }); // No fields to update
-            }
-        }
-
-        // --- SHOP & INVENTORY ---
-        if (pathname === '/api/shop') {
-            if (db) {
-                const items = await runQuery("SELECT * FROM items ORDER BY price ASC");
-                return res.json(items || []);
-            }
-            return res.json(MOCK_DB.items || []);
-        }
-
-        if (pathname === '/api/shop/buy' && method === 'POST') {
-            const { userId, itemId } = req.body;
-            if (!db) return res.json({ success: true, new_balance: 9999 });
-
-            const uRes = await runQuery("SELECT coins FROM users WHERE id = $1", [userId]);
-            const iRes = await runQuery("SELECT price FROM items WHERE id = $1", [itemId]);
-
-            if (uRes?.[0] && iRes?.[0]) {
-                const coins = uRes[0].coins;
-                const price = iRes[0].price;
-
-                if (coins >= price) {
-                    await runQuery("UPDATE users SET coins = coins - $1 WHERE id = $2", [price, userId]);
-                    await runQuery("INSERT INTO user_items (user_id, item_id, acquired_at) VALUES ($1, $2, $3)", [userId, itemId, new Date().toISOString()]);
-                    return res.json({ success: true, new_balance: coins - price });
-                }
-                return res.status(400).json({ error: "Not enough coins" });
-            }
-            return res.status(404).json({ error: "User or Item not found" });
-        }
-
-        if (pathname === '/api/inventory') {
-            const userId = url.searchParams.get("userId");
-            if (db && userId) {
-                const items = await runQuery(`
-                    SELECT i.*, ui.acquired_at 
-                    FROM user_items ui 
-                    JOIN items i ON ui.item_id = i.id 
-                    WHERE ui.user_id = $1 
-                    ORDER BY ui.acquired_at DESC
-                `, [userId]);
-                return res.json(items || []);
-            }
-            return res.json([]);
-        }
-
-        // --- CERTIFICATES & PORTFOLIO ---
-        if (pathname === '/api/certificate') {
-            // POST: Issue New
-            if (method === 'POST') {
-                const body = req.body;
-                const code = "CERT-" + Math.random().toString(36).substr(2, 9).toUpperCase();
-                const date = new Date().toLocaleDateString('th-TH');
-                
-                if (db) {
-                    let userId = body.userId;
-                    if (!userId && body.userName) {
-                        const u = await runQuery("SELECT id FROM users WHERE name = $1", [body.userName]);
-                        if (u?.[0]) userId = u[0].id;
-                    }
-                    await runQuery("INSERT INTO certificates (user_id, user_name, course_title, issue_date, code) VALUES ($1, $2, $3, $4, $5)", 
-                        [userId, body.userName, body.courseTitle, date, code]);
-                }
-                return res.json({ success: true, code, date });
-            }
-
-            // GET: List All (Admin) or Search
-            if (method === 'GET') {
-                if (db) {
-                    // Simple logic: If ?all=true -> list all, otherwise maybe filtered
-                    const rows = await runQuery("SELECT * FROM certificates ORDER BY id DESC");
-                    return res.json(rows || []);
-                }
-                return res.json([]);
-            }
-
-            // DELETE: Revoke
-            if (method === 'DELETE') {
-                const id = url.searchParams.get("id");
-                if (db) await runQuery("DELETE FROM certificates WHERE id = $1", [id]);
-                return res.json({ success: true });
-            }
-        }
-
-        if (pathname === '/api/portfolios') {
-            if (method === 'POST') {
-                const body = req.body;
-                if(db) await runQuery("INSERT INTO portfolios (user_id, title, description, media_url, type, created_at) VALUES ($1, $2, $3, $4, $5, $6)", 
-                    [body.user_id, body.title, body.description, body.media_url, body.type, new Date().toISOString()]);
-                return res.json({ success: true });
-            }
-            if (method === 'DELETE') {
-                if(db) await runQuery("DELETE FROM portfolios WHERE id = $1", [url.searchParams.get("id")]);
-                return res.json({ success: true });
-            }
-        }
-
-        // --- AI CHAT (Gemini) ---
-        if (pathname === '/api/chat' && method === 'POST') {
-            const apiKey = process.env.GEMINI_API_KEY;
-            if (!apiKey) return res.json({ success: true, reply: "Simulation Mode: No API Key", isSimulated: true });
-
-            const { message, history, userContext } = req.body;
-            try {
-                // Use Native Fetch (Node 18+)
-                const apiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        contents: [
-                            { role: "user", parts: [{ text: `You are a tutor for ${userContext?.name || 'Student'}. Reply in Thai.` }] },
-                            ...(history || []),
-                            { role: "user", parts: [{ text: message }] }
-                        ]
-                    })
-                });
-                const data = await apiRes.json();
-                const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "AI Error";
-                return res.json({ success: true, reply });
-            } catch (e) {
-                return res.json({ success: false, error: e.message });
-            }
-        }
-
-        // --- ACTIVITIES / COURSES (CRUD) ---
-        if (pathname === '/api/activities') {
-            // GET: List All (Filtered by Instructor optional)
-            if (method === 'GET') {
-                const instructorId = url.searchParams.get("instructorId");
-                
-                // Debug Log
-                console.log(`API GET /activities - Params: ${instructorId}`);
-
-                // DEBUG: Force fetch all rows if requested
-                if (instructorId === 'debug') {
-                    if (db) {
-                        const all = await runQuery("SELECT * FROM activities");
-                        return res.json(all || []);
-                    }
-                    return res.json([]);
-                }
-
-                // SIMPLIFIED QUERY (No Joins for now, to ensure data visibility)
-                let query = "SELECT * FROM activities";
-                const params = [];
-                
-                if (instructorId && instructorId !== 'undefined' && instructorId !== 'null') {
-                    query += " WHERE CAST(creator_id AS TEXT) = $1";
-                    params.push(String(instructorId));
-                }
-                
-                query += " ORDER BY id DESC";
-                
-                if (db) {
-                    try {
-                        const rows = await runQuery(query, params);
-                        console.log(`API Result Count: ${rows?.length}`);
-                        return res.json(rows || []);
-                    } catch(e) {
-                        console.error("Fetch Activities Error:", e);
-                        return res.status(500).json({ error: e.message });
-                    }
-                }
-                return res.json(MOCK_DB.activities);
-            }
-
-            // POST: Create New Course
-            if (method === 'POST') {
-                const body = req.body;
-                if (!db) return res.json({ success: true, id: Date.now(), message: "Mock Create OK" });
-
-                try {
-                    // Safe Content Parsing
-                    let contentJson = '[]';
-                    if (typeof body.content === 'object') contentJson = JSON.stringify(body.content);
-                    else if (typeof body.content === 'string') contentJson = body.content;
-
-                    const creatorId = parseInt(body.creator_id) || null;
-
-                    await runQuery(`
-                        INSERT INTO activities (title, type, difficulty, duration, content, category, credits, course_code, certificate_theme, price, creator_id) 
-                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-                    `, [
-                        body.title || 'Untitled', 
-                        body.type || 'mixed', 
-                        body.difficulty || 'Easy', 
-                        body.duration || '1h', 
-                        contentJson, 
-                        body.category || 'General', 
-                        body.credits || 1, 
-                        body.course_code || '', 
-                        body.certificate_theme || 'classic',
-                        body.price || 0,
-                        creatorId
-                    ]);
+            if (course?.[0] && user?.[0]) {
+                if (user[0].coins >= course[0].price) {
+                    await runQuery("UPDATE users SET coins = coins - $1 WHERE id = $2", [course[0].price, userId]);
+                    await runQuery("INSERT INTO enrollments (user_id, activity_id, enrolled_at) VALUES ($1, $2, $3)", [userId, activityId, new Date().toISOString()]);
                     return res.json({ success: true });
-                } catch(e) {
-                    console.error("Create Course Error:", e);
-                    return res.status(500).json({ error: "Database Insert Failed", details: e.message });
                 }
+                return res.status(400).json({ error: "Insufficient coins" });
             }
-
-            // PUT: Update Course
-            if (method === 'PUT') {
-                const body = req.body;
-                console.log("PUT Body:", JSON.stringify(body)); // Debug
-
-                if (!db) return res.json({ success: true, message: "Mock Update OK" });
-
-                try {
-                    // 1. Permission Check
-                    const existing = await runQuery("SELECT creator_id FROM activities WHERE id = $1", [body.id]);
-                    if (!existing || existing.length === 0) return res.status(404).json({ error: "Course ID not found." });
-                    
-                    const ownerId = existing[0].creator_id;
-                    const reqId = parseInt(body.requester_id);
-                    const isAdmin = body.requester_role === 'admin';
-                    
-                    // console.log(`Check: Owner=${ownerId} Req=${reqId} Admin=${isAdmin}`);
-
-                    if (!isAdmin && ownerId && ownerId !== reqId) {
-                        return res.status(403).json({ error: "Permission Denied." });
-                    }
-
-                    // 2. Prepare Data
-                    let contentJson = '[]';
-                    try {
-                        contentJson = (typeof body.content === 'object') ? JSON.stringify(body.content) : body.content;
-                    } catch(e) {}
-
-                    const price = parseInt(body.price) || 0;
-                    const credits = parseInt(body.credits) || 0;
-                    const courseId = parseInt(body.id);
-
-                    // 3. Execute Update (Standard)
-                    await runQuery(`
-                        UPDATE activities SET 
-                        title=$1, type=$2, difficulty=$3, duration=$4, content=$5, category=$6, credits=$7, course_code=$8, certificate_theme=$9, price=$10 
-                        WHERE id=$11
-                    `, [
-                        body.title || 'Untitled', 
-                        body.type || 'mixed', 
-                        body.difficulty || 'Easy', 
-                        body.duration || '1h', 
-                        contentJson, 
-                        body.category || 'General', 
-                        credits, 
-                        body.course_code || '', 
-                        body.certificate_theme || 'classic',
-                        price,
-                        courseId
-                    ]);
-                    
-                    return res.json({ success: true, message: "Updated" });
-
-                } catch(e) {
-                    console.error("FATAL Update Error:", e);
-                    return res.status(500).json({ error: "Database Error", details: e.message });
-                }
-            }
-
-            // DELETE: Remove Course
-            if (method === 'DELETE') {
-                const id = url.searchParams.get("id");
-                const reqId = url.searchParams.get("requester_id");
-                
-                if (!db) return res.json({ success: true });
-
-                const existing = await runQuery("SELECT creator_id FROM activities WHERE id = $1", [id]);
-                if (!existing?.[0]) return res.status(404).json({ error: "Not found" });
-
-                // Check Owner (Admin check needs role from somewhere, assuming owner for simple delete via param)
-                if (String(existing[0].creator_id) !== String(reqId)) {
-                     // In real app, we'd fetch user role from DB using reqId to check if admin
-                     const u = await runQuery("SELECT role FROM users WHERE id = $1", [reqId]);
-                     if (u?.[0]?.role !== 'admin') return res.status(403).json({ error: "Permission Denied" });
-                }
-
-                await runQuery("DELETE FROM activities WHERE id = $1", [id]);
-                return res.json({ success: true });
-            }
+            return res.status(404).json({ error: "Not found" });
         }
 
-        // --- LEADERBOARD (Dual Ranking) ---
-        if (pathname === '/api/leaderboard') {
-            if (db) {
-                // 1. Student Ranking (By XP)
-                const students = await runQuery("SELECT id, name, avatar, level, xp, role FROM users WHERE role = 'student' ORDER BY xp DESC LIMIT 10");
-                
-                // 2. Instructor Ranking (By Course Ratings)
-                // Score = AvgRating of all their courses * Log(TotalReviews + 1) -> Simple weighted score
-                const instructors = await runQuery(`
-                    SELECT u.id, u.name, u.avatar, u.role,
-                    COALESCE(AVG(r.rating), 0) as avg_rating,
-                    COUNT(r.id) as review_count
-                    FROM users u
-                    JOIN activities a ON u.id = a.creator_id
-                    LEFT JOIN reviews r ON a.id = r.activity_id
-                    WHERE u.role IN ('teacher', 'admin')
-                    GROUP BY u.id
-                    ORDER BY avg_rating DESC, review_count DESC
-                    LIMIT 10
-                `);
-
-                return res.json({ students: students || [], instructors: instructors || [] });
-            }
-            return res.json({ students: MOCK_DB.users, instructors: [] });
+        // Catch-all for other basic routes
+        if (pathname === '/api/visit') {
+            const ip = req.headers['x-forwarded-for'] || 'unknown';
+            await runQuery("INSERT INTO site_visits (ip_address, visit_time) VALUES ($1, $2)", [ip, new Date().toISOString()]);
+            const count = await runQuery("SELECT COUNT(*) FROM site_visits");
+            return res.json({ total_visits: count[0].count });
         }
 
-        if (pathname === '/api/history') {
-            const userId = url.searchParams.get("userId");
-            if (db && userId) {
-                const rows = await runQuery('SELECT * FROM login_history WHERE user_id = $1 ORDER BY login_time DESC LIMIT 20', [userId]);
-                return res.json(rows || []);
-            }
-            return res.json([]);
-        }
+        return res.status(404).json({ error: "Route not found" });
 
-        return res.status(404).json({ error: "Not found" });
-
-    } catch (criticalError) {
-        console.error("CRITICAL CRASH:", criticalError);
-        // Return JSON even on crash, preventing 500 HTML page
-        return res.status(500).json({ 
-            error: "Internal Server Error", 
-            message: criticalError.message, 
-            stack: criticalError.stack 
-        });
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
     }
 };
