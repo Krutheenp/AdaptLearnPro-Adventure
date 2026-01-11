@@ -1,4 +1,4 @@
-// Vercel API Handler - Ultimate Production Version
+// Vercel API Handler - Final Production Build
 const { Pool } = require('pg');
 
 let pool = null;
@@ -7,7 +7,7 @@ function getPool() {
         pool = new Pool({
             connectionString: process.env.POSTGRES_URL,
             ssl: { rejectUnauthorized: false },
-            max: 15,
+            max: 10,
             idleTimeoutMillis: 30000,
             connectionTimeoutMillis: 10000,
         });
@@ -30,22 +30,18 @@ module.exports = async (req, res) => {
 
     const runQuery = async (text, params) => {
         if (!db) return null;
-        try {
-            const result = await db.query(text, params);
-            return result.rows;
-        } catch (e) {
-            console.error("DB Query Error:", text, e.message);
-            throw e;
-        }
+        const result = await db.query(text, params);
+        return result.rows;
     };
 
     try {
-        // --- 1. SYSTEM & INIT ---
+        // --- 1. SYSTEM CONTROL ---
         if (pathname === '/api/init') {
             const schema = [
                 `CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username TEXT UNIQUE NOT NULL, password TEXT NOT NULL, role TEXT DEFAULT 'student', name TEXT, level INT DEFAULT 1, xp INT DEFAULT 0, coins INT DEFAULT 0, streak INT DEFAULT 0, avatar TEXT DEFAULT '🙂', status TEXT DEFAULT 'active', email TEXT, phone TEXT, bio TEXT, school TEXT, address TEXT, last_login TEXT)`,
                 `CREATE TABLE IF NOT EXISTS activities (id SERIAL PRIMARY KEY, title TEXT, type TEXT, difficulty TEXT, duration TEXT, content TEXT, category TEXT DEFAULT 'General', credits INT DEFAULT 1, price INT DEFAULT 0, course_code TEXT, certificate_theme TEXT DEFAULT 'classic', description TEXT, thumbnail TEXT, creator_id INT)`,
                 `CREATE TABLE IF NOT EXISTS enrollments (id SERIAL PRIMARY KEY, user_id INT, activity_id INT, enrolled_at TEXT)`,
+                `CREATE UNIQUE INDEX IF NOT EXISTS idx_enrollments_unique ON enrollments(user_id, activity_id)`,
                 `CREATE TABLE IF NOT EXISTS user_progress (id SERIAL PRIMARY KEY, user_id INT, activity_id INT, score INT, status TEXT, completed_at TEXT)`,
                 `CREATE TABLE IF NOT EXISTS items (id SERIAL PRIMARY KEY, name TEXT, description TEXT, price INT, type TEXT, icon TEXT)`,
                 `CREATE TABLE IF NOT EXISTS user_items (id SERIAL PRIMARY KEY, user_id INT, item_id INT, acquired_at TEXT)`,
@@ -55,51 +51,22 @@ module.exports = async (req, res) => {
                 `CREATE TABLE IF NOT EXISTS login_history (id SERIAL PRIMARY KEY, user_id INT, login_time TEXT, ip_address TEXT, device_info TEXT)`
             ];
             for (const q of schema) await db.query(q);
-            return res.json({ success: true, message: "System Initialized" });
+            return res.json({ success: true, status: "Schema Ready" });
         }
 
         if (pathname === '/api/seed') {
-            try {
-                // 1. Seed Admins
-                await db.query(`INSERT INTO users (username, password, role, name, level, xp, coins, avatar) VALUES ('admin', 'password123', 'admin', 'Super Admin', 99, 99999, 99999, '👑') ON CONFLICT (username) DO NOTHING`);
-                await db.query(`INSERT INTO users (username, password, role, name, level, xp, coins, avatar) VALUES ('master', '1234', 'admin', 'Game Master', 80, 50000, 50000, '🧙‍♂️') ON CONFLICT (username) DO NOTHING`);
-
-                // 2. Seed Teachers
-                const teachers = [
-                    ['teacher1', '1234', 'teacher', 'ครูสมศรี ใจดี', 50, 15000, 10000, '👩‍🏫'],
-                    ['prof_oak', '1234', 'teacher', 'Prof. Oak', 65, 25000, 20000, '👨‍🔬']
-                ];
-                for (const t of teachers) { 
-                    await db.query(`INSERT INTO users (username, password, role, name, level, xp, coins, avatar) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (username) DO NOTHING`, t); 
-                }
-
-                // 3. Seed Students
-                const students = [
-                    ['student1', '1234', 'student', 'สมชาย ขยันเรียน', 15, 2500, 500, '👦'],
-                    ['araya', '1234', 'student', 'อารยา สมใจ', 22, 4800, 1200, '👩‍🎓'],
-                    ['winner', '1234', 'student', 'The Champion', 45, 12000, 8500, '🏆']
-                ];
-                for (const s of students) { 
-                    await db.query(`INSERT INTO users (username, password, role, name, level, xp, coins, avatar) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (username) DO NOTHING`, s); 
-                }
-
-                // 4. Seed Items
-                const items = [
-                    ['Streak Freeze', 'Protect your daily streak', 50, 'consumable', '🧊'],
-                    ['Golden Frame', 'Shining border for your profile', 500, 'cosmetic', '🖼️'],
-                    ['XP Potion', 'Instantly gain 500 XP', 200, 'consumable', '🧪']
-                ];
-                for (const i of items) { 
-                    await db.query(`INSERT INTO items (name, description, price, type, icon) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING`, i); 
-                }
-
-                return res.json({ success: true, message: "Database restored with full demo data" });
-            } catch (e) {
-                return res.status(500).json({ success: false, error: e.message });
-            }
+            await db.query(`INSERT INTO users (username, password, role, name, level, xp, coins, avatar) VALUES ('admin', 'password123', 'admin', 'Super Admin', 99, 99999, 99999, '👑') ON CONFLICT (username) DO NOTHING`);
+            await db.query(`INSERT INTO items (name, price, icon, type) VALUES ('Streak Freeze', 50, '🧊', 'consumable'), ('Golden Frame', 500, '🖼️', 'cosmetic') ON CONFLICT DO NOTHING`);
+            return res.json({ success: true, message: "Base Data Seeded" });
         }
 
-        // --- 2. AUTHENTICATION ---
+        if (pathname === '/api/check-db') {
+            if (!db) return res.json({ status: "Error", message: "POSTGRES_URL missing" });
+            const result = await db.query('SELECT current_database(), now()');
+            return res.json({ status: "Connected ✅", db: result.rows[0].current_database, time: result.rows[0].now });
+        }
+
+        // --- 2. USERS & AUTH ---
         if (pathname === '/api/login' && method === 'POST') {
             const { username, password } = req.body;
             const rows = await runQuery("SELECT * FROM users WHERE username = $1 AND password = $2", [username, password]);
@@ -107,13 +74,6 @@ module.exports = async (req, res) => {
             return res.status(401).json({ success: false, message: "Invalid credentials" });
         }
 
-        if (pathname === '/api/register' && method === 'POST') {
-            const { username, password, name, email } = req.body;
-            await runQuery("INSERT INTO users (username, password, name, email) VALUES ($1, $2, $3, $4)", [username, password, name, email]);
-            return res.json({ success: true });
-        }
-
-        // --- 3. ANALYTICS ---
         if (pathname === '/api/analytics') {
             const userId = url.searchParams.get("userId");
             const user = await runQuery("SELECT * FROM users WHERE id = $1", [userId]);
@@ -122,129 +82,47 @@ module.exports = async (req, res) => {
             return res.json({ user: user?.[0] || {}, activities: progress || [], certificates: certs || [] });
         }
 
-        // --- 4. USERS (Admin) ---
         if (pathname === '/api/users') {
-            if (method === 'GET') return res.json(await runQuery("SELECT * FROM users ORDER BY id DESC") || []);
-            
-            if (method === 'POST') {
-                const b = req.body;
-                if (!b.username || !b.name) return res.status(400).json({ error: "Username and Name are required" });
-                
-                try {
-                    await runQuery("INSERT INTO users (username, password, name, role, coins, xp, level, avatar) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)", 
-                        [b.username, b.password || '1234', b.name, b.role || 'student', parseInt(b.coins) || 0, parseInt(b.xp) || 0, parseInt(b.level) || 1, b.avatar || '🙂']);
-                    return res.json({ success: true });
-                } catch (e) {
-                    if (e.message.includes('unique constraint')) return res.status(400).json({ error: "Username already exists" });
-                    throw e;
-                }
-            }
-            
+            if (method === 'GET') return res.json(await runQuery("SELECT * FROM users ORDER BY id DESC"));
             if (method === 'PUT') {
-                const b = req.body;
-                if (!b.id) return res.status(400).json({ error: "User ID is required" });
-                
-                const fields = []; const vals = []; let i = 1;
-                // List of fields that admin is allowed to update
-                const allowed = ['name','role','level','xp','coins','status','password','avatar','username','email','phone','bio','school','address'];
-                
-                allowed.forEach(f => { 
-                    if(b[f] !== undefined) { 
-                        fields.push(`${f} = $${i++}`); 
-                        // Handle numeric types explicitly
-                        if (['level','xp','coins'].includes(f)) vals.push(parseInt(b[f]) || 0);
-                        else vals.push(b[f]);
-                    } 
-                });
-
-                if (fields.length === 0) return res.json({ success: true, message: "No fields to update" });
-
-                vals.push(parseInt(b.id)); 
-                await runQuery(`UPDATE users SET ${fields.join(', ')} WHERE id = $${i}`, vals);
+                const b = req.body; const fields = []; const vals = []; let i = 1;
+                ['name','role','level','xp','coins','status','password','avatar'].forEach(f => { if(b[f] !== undefined) { fields.push(`${f} = $${i++}`); vals.push(b[f]); } });
+                vals.push(b.id); await runQuery(`UPDATE users SET ${fields.join(', ')} WHERE id = $${i}`, vals);
                 return res.json({ success: true });
             }
-            
-            if (method === 'DELETE') { 
-                const id = url.searchParams.get("id");
-                if (!id) return res.status(400).json({ error: "ID required" });
-                await runQuery("DELETE FROM users WHERE id = $1", [parseInt(id)]); 
-                return res.json({ success: true }); 
-            }
+            if (method === 'DELETE') { await runQuery("DELETE FROM users WHERE id = $1", [url.searchParams.get("id")]); return res.json({ success: true }); }
         }
 
-        // --- 5. ACTIVITIES (Courses) ---
+        // --- 3. ACTIVITIES ---
         if (pathname === '/api/activities') {
             if (method === 'GET') {
                 const instructorId = url.searchParams.get("instructorId");
-                const studentId = url.searchParams.get("studentId") || 0;
-                let q = "SELECT a.*, COALESCE(e.id, 0) as is_enrolled FROM activities a LEFT JOIN enrollments e ON a.id = e.activity_id AND e.user_id = $1";
-                const params = [studentId];
-                if (instructorId && instructorId !== 'debug') { q += " WHERE a.creator_id = $2"; params.push(instructorId); }
+                let q = "SELECT * FROM activities";
+                const params = [];
+                if (instructorId && instructorId !== 'debug') { q += " WHERE creator_id = $1"; params.push(instructorId); }
                 return res.json(await runQuery(q + " ORDER BY id DESC", params));
             }
             if (method === 'POST') {
-                const b = req.body; const content = typeof b.content === 'string' ? b.content : JSON.stringify(b.content || []);
-                await runQuery("INSERT INTO activities (title, type, difficulty, duration, content, category, credits, price, course_code, certificate_theme, creator_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)", 
-                    [b.title, b.type, b.difficulty, b.duration, content, b.category, b.credits, b.price, b.course_code, b.certificate_theme, b.creator_id]);
+                const b = req.body; const content = typeof b.content === 'object' ? JSON.stringify(b.content) : b.content;
+                await runQuery("INSERT INTO activities (title, type, difficulty, duration, content, category, credits, price, creator_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)", 
+                    [b.title, b.type, b.difficulty, b.duration, content, b.category, b.credits, b.price, b.creator_id]);
                 return res.json({ success: true });
             }
-            if (method === 'PUT') {
-                const b = req.body; const content = typeof b.content === 'string' ? b.content : JSON.stringify(b.content || []);
-                await runQuery("UPDATE activities SET title=$1, type=$2, difficulty=$3, duration=$4, content=$5, category=$6, credits=$7, price=$8, course_code=$9, certificate_theme=$10 WHERE id=$11",
-                    [b.title, b.type, b.difficulty, b.duration, content, b.category, b.credits, b.price, b.course_code, b.certificate_theme, b.id]);
-                return res.json({ success: true });
-            }
-            if (method === 'DELETE') { await runQuery("DELETE FROM activities WHERE id = $1", [url.searchParams.get("id")]); return res.json({ success: true }); }
         }
 
-        // --- 6. SHOP & CERTIFICATES ---
+        // --- 4. SHOP & OTHERS ---
         if (pathname === '/api/shop') {
             if (method === 'GET') return res.json(await runQuery("SELECT * FROM items ORDER BY price ASC"));
-            
             if (method === 'POST') {
                 const b = req.body;
-                if (!b.name) return res.status(400).json({ error: "Item name required" });
-                try {
-                    await runQuery("INSERT INTO items (name, price, icon, type, description) VALUES ($1, $2, $3, $4, $5)", 
-                        [b.name, parseInt(b.price) || 0, b.icon || '📦', b.type || 'consumable', b.description || '']);
-                    return res.json({ success: true });
-                } catch (e) {
-                    return res.status(500).json({ error: "Failed to create item", details: e.message });
-                }
+                await runQuery("INSERT INTO items (name, price, icon, type, description) VALUES ($1, $2, $3, $4, $5)", [b.name, b.price, b.icon, b.type, b.description]);
+                return res.json({ success: true });
             }
-            
-            if (method === 'PUT') {
-                const b = req.body;
-                if (!b.id) return res.status(400).json({ error: "Item ID required" });
-                try {
-                    await runQuery("UPDATE items SET name=$1, price=$2, icon=$3, type=$4, description=$5 WHERE id=$6", 
-                        [b.name, parseInt(b.price) || 0, b.icon, b.type, b.description || '', parseInt(b.id)]);
-                    return res.json({ success: true });
-                } catch (e) {
-                    return res.status(500).json({ error: "Failed to update item", details: e.message });
-                }
-            }
-            
-            if (method === 'DELETE') { 
-                const id = url.searchParams.get("id");
-                if (!id) return res.status(400).json({ error: "ID required" });
-                await runQuery("DELETE FROM items WHERE id = $1", [parseInt(id)]); 
-                return res.json({ success: true }); 
-            }
+            if (method === 'DELETE') { await runQuery("DELETE FROM items WHERE id = $1", [url.searchParams.get("id")]); return res.json({ success: true }); }
         }
 
-        // --- 7. CERTIFICATES ---
-        if (pathname === '/api/certificate') {
-            if (method === 'GET') return res.json(await runQuery("SELECT * FROM certificates ORDER BY id DESC"));
-            if (method === 'POST') {
-                const b = req.body; const code = "CERT-" + Math.random().toString(36).substr(2,9).toUpperCase();
-                await runQuery("INSERT INTO certificates (user_id, user_name, course_title, issue_date, code) VALUES ($1, $2, $3, $4, $5)", [b.userId, b.userName, b.courseTitle, new Date().toLocaleDateString('th-TH'), code]);
-                return res.json({ success: true, code });
-            }
-            if (method === 'DELETE') { await runQuery("DELETE FROM certificates WHERE id = $1", [url.searchParams.get("id")]); return res.json({ success: true }); }
-        }
+        if (pathname === '/api/certificate' && method === 'GET') return res.json(await runQuery("SELECT * FROM certificates ORDER BY id DESC"));
 
-        // --- 8. CONFIG & LOGS ---
         if (pathname === '/api/config') {
             if (method === 'GET') {
                 const rows = await runQuery("SELECT * FROM system_config");
@@ -257,18 +135,18 @@ module.exports = async (req, res) => {
         }
 
         if (pathname === '/api/visit') {
-            if (method === 'POST') {
-                const ip = req.headers['x-forwarded-for'] || 'unknown';
-                await runQuery("INSERT INTO site_visits (ip_address, visit_time) VALUES ($1, $2)", [ip, new Date().toISOString()]);
-                return res.json({ success: true });
+            if (method === 'GET') {
+                const rows = await runQuery("SELECT COUNT(*) as count FROM site_visits");
+                return res.json({ total_visits: rows[0].count });
             }
-            const rows = await runQuery("SELECT COUNT(*) as total FROM site_visits");
-            return res.json({ total_visits: rows[0].total });
+            const ip = req.headers['x-forwarded-for'] || 'unknown';
+            await runQuery("INSERT INTO site_visits (ip_address, visit_time) VALUES ($1, $2)", [ip, new Date().toISOString()]);
+            return res.json({ success: true });
         }
 
         return res.status(404).json({ error: "Route not found" });
     } catch (err) {
-        console.error("Critical API Error:", err);
+        console.error(err);
         return res.status(500).json({ error: err.message });
     }
 };
